@@ -29,12 +29,12 @@ export const SearchByCategory: FC = () => {
     <TextField
       select
       size="small"
-      label="Category"
+      label="分類"
       sx={styles.searchField}
       value={category?.id ?? ANY_CATEGORY_VALUE}
       onChange={handleChange}
     >
-      <MenuItem value={ANY_CATEGORY_VALUE}>Any</MenuItem>
+      <MenuItem value={ANY_CATEGORY_VALUE}>全部</MenuItem>
       {categories.length > 0 && <Divider />}
       {categories.map(({ id, name }) => (
         <MenuItem key={id} value={id}>

@@ -22,9 +22,9 @@ const renderSelectDate = () => {
 test('should submit the picked date', async () => {
   const { user, onSubmitDate } = renderSelectDate();
 
-  await user.click(screen.getByRole('button', { name: /19 oct 2023/i }));
+  await user.click(screen.getByRole('button', { name: /2023年10月19日/ }));
   await user.click(screen.getByRole('gridcell', { name: '20' }));
-  await user.click(screen.getByRole('button', { name: /ok/i }));
+  await user.click(screen.getByRole('button', { name: '確定' }));
 
   expect(onSubmitDate).toHaveBeenCalledExactlyOnceWith(new Date(2023, 9, 20));
 });
@@ -32,9 +32,9 @@ test('should submit the picked date', async () => {
 test('should close without submitting when the picked date is cancelled', async () => {
   const { user, onSubmitDate } = renderSelectDate();
 
-  await user.click(screen.getByRole('button', { name: /19 oct 2023/i }));
+  await user.click(screen.getByRole('button', { name: /2023年10月19日/ }));
   await user.click(screen.getByRole('gridcell', { name: '20' }));
-  await user.click(screen.getByRole('button', { name: /cancel/i }));
+  await user.click(screen.getByRole('button', { name: '取消' }));
 
   expect(screen.queryByRole('grid')).not.toBeInTheDocument();
   expect(onSubmitDate).not.toHaveBeenCalled();
@@ -43,20 +43,20 @@ test('should close without submitting when the picked date is cancelled', async 
 test('should confirm the picked date in a single place', async () => {
   const { user } = renderSelectDate();
 
-  await user.click(screen.getByRole('button', { name: /19 oct 2023/i }));
+  await user.click(screen.getByRole('button', { name: /2023年10月19日/ }));
   await user.click(screen.getByRole('gridcell', { name: '20' }));
 
-  expect(screen.getAllByRole('button', { name: /cancel/i })).toHaveLength(1);
-  expect(screen.getAllByRole('button', { name: /ok/i })).toHaveLength(1);
+  expect(screen.getAllByRole('button', { name: '取消' })).toHaveLength(1);
+  expect(screen.getAllByRole('button', { name: '確定' })).toHaveLength(1);
 });
 
 test('should reopen on the current date after being dismissed', async () => {
   const { user } = renderSelectDate();
 
-  await user.click(screen.getByRole('button', { name: /19 oct 2023/i }));
+  await user.click(screen.getByRole('button', { name: /2023年10月19日/ }));
   await user.click(screen.getByRole('gridcell', { name: '20' }));
   await user.keyboard('{Escape}');
-  await user.click(screen.getByRole('button', { name: /19 oct 2023/i }));
+  await user.click(screen.getByRole('button', { name: /2023年10月19日/ }));
 
   expect(screen.getByRole('gridcell', { name: '19' })).toHaveAttribute('aria-selected', 'true');
 });

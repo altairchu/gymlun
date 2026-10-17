@@ -37,11 +37,12 @@ export const WeightChart: FC<Props> = ({ weightLogsRequest }) => {
       series={[
         {
           dataKey: 'value',
-          label: 'Weight, kg',
+          label: '體重 (kg)',
           showMark: true,
         },
       ]}
       hideLegend
+      localeText={{ loading: '載入數據中…', noData: '未有數據' }}
       dataset={dataset}
       height={300}
     />

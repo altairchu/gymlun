@@ -21,7 +21,7 @@ export const Route = createFileRoute('/_app/history')({
   staticData: {
     appBar: {
       variant: 'menu',
-      title: 'History',
+      title: '歷史記錄',
       Actions: HistoryFilterSlot,
     },
   },

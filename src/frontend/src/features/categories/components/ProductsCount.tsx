@@ -9,15 +9,10 @@ interface CategoryProductsCountProps {
 const ProductsCount: FC<CategoryProductsCountProps> = ({
   category,
 }: CategoryProductsCountProps) => {
-  const { countProducts: value } = category;
-  const prefix = value === 0 ? 'no' : value.toString();
-  const suffix = value === 1 ? 'product' : 'products';
+  const { countProducts } = category;
+  const text = countProducts === 0 ? '沒有食物' : `${countProducts} 款食物`;
 
-  return (
-    <Typography aria-label={`There are ${prefix} ${suffix} in ${category.name}`}>
-      {`${prefix} ${suffix}`}
-    </Typography>
-  );
+  return <Typography aria-label={`${category.name}：${text}`}>{text}</Typography>;
 };
 
 export default ProductsCount;

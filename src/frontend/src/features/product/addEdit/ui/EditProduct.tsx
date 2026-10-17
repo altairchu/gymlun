@@ -44,8 +44,8 @@ export const EditProduct: FC<Props> = ({ product, renderTrigger }) => {
       {renderTrigger(handleEditClick)}
       <ProductInputDialog
         opened={isEditDialogOpened}
-        title="Edit product"
-        submitText="Save"
+        title="編輯食物"
+        submitText="儲存"
         isLoading={editProductRequest.isLoading || products.isFetching}
         productFormValues={productFormData}
         categories={categories}

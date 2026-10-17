@@ -31,37 +31,34 @@ const ProductsTableRow: FC<ProductsTableRowProps> = ({ product }: ProductsTableR
           onChange={handleCheckedChange}
           slotProps={{
             input: {
-              'aria-label': `Select ${product.name}`,
+              'aria-label': `選取「${product.name}」`,
             },
           }}
         />
       </TableCell>
       <TableCell>{product.name}</TableCell>
-      <TableCell
-        align="right"
-        aria-label={`${product.name} calories cost is ${product.caloriesCost}`}
-      >
+      <TableCell align="right" aria-label={`「${product.name}」的卡路里為 ${product.caloriesCost}`}>
         {product.caloriesCost}
       </TableCell>
       <TableCell
         align="right"
-        aria-label={`${product.name} default quantity is ${product.defaultQuantity}`}
+        aria-label={`「${product.name}」的預設份量為 ${product.defaultQuantity}`}
       >
         {product.defaultQuantity}
       </TableCell>
-      <TableCell aria-label={`${product.name} is in ${product.categoryName} category`}>
+      <TableCell aria-label={`「${product.name}」屬於「${product.categoryName}」分類`}>
         {product.categoryName}
       </TableCell>
       <TableCell>
         <EditProduct
           product={product}
           renderTrigger={openEditDialog => (
-            <Tooltip title="Edit product">
+            <Tooltip title="編輯食物">
               <span>
                 <IconButton
                   onClick={openEditDialog}
                   size="large"
-                  aria-label={`Open edit product dialog for ${product.name}`}
+                  aria-label={`編輯食物「${product.name}」`}
                 >
                   <EditIcon />
                 </IconButton>

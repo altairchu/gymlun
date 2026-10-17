@@ -35,7 +35,7 @@ const ModalDialog: FC<Props> = ({
     }}
   >
     <IconButton
-      aria-label="close"
+      aria-label="關閉"
       onClick={onClose}
       sx={{
         position: 'absolute',

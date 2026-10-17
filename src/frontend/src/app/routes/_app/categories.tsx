@@ -4,7 +4,7 @@ import { CategoriesPage } from '@/pages/ui/CategoriesPage';
 
 export const Route = createFileRoute('/_app/categories')({
   staticData: {
-    appBar: { variant: 'menu', title: 'Categories' },
+    appBar: { variant: 'menu', title: '分類' },
   },
   loader: async ({ context }) => {
     const categoriesQueryPromise = context.store.dispatch(

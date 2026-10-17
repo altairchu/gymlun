@@ -4,7 +4,7 @@ import { ProductsPage } from '@/pages/ui/ProductsPage';
 
 export const Route = createFileRoute('/_app/products')({
   staticData: {
-    appBar: { variant: 'menu', title: 'Products' },
+    appBar: { variant: 'menu', title: '食物' },
   },
   loader: async ({ context }) => {
     const request = productLib.mapToGetProductsRequest(context.store.getState().products.filter);

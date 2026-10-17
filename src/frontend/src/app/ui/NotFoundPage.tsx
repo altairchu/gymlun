@@ -6,9 +6,9 @@ export const NotFoundPage: FC = () => {
   return (
     <>
       <Typography variant="h1" gutterBottom>
-        Page not found
+        找不到頁面
       </Typography>
-      <RouterLink to="/">Go to diary</RouterLink>
+      <RouterLink to="/">返回日記</RouterLink>
     </>
   );
 };

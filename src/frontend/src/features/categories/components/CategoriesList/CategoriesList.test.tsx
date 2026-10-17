@@ -5,6 +5,6 @@ describe('when categories are empty', () => {
   test('should show empty data message', () => {
     render(<CategoriesList categories={[]} />);
 
-    expect(screen.getByText(/no categories/i));
+    expect(screen.getByText(/找不到分類/));
   });
 });

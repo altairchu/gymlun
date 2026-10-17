@@ -249,7 +249,7 @@ describe('nutrition suggestions', () => {
 
     await whenDialogOpened(user);
     await whenNutritionPanelExpanded(user);
-    await whenSuggestClicked(user, /suggest protein/i);
+    await whenSuggestClicked(user, /估算蛋白質/);
 
     await thenProteinEventuallyHasValue('25');
     await thenFatsEventuallyHasValue('33.1');
@@ -269,7 +269,7 @@ describe('nutrition suggestions', () => {
     );
 
     await whenDialogOpened(user);
-    await whenSuggestClicked(user, /suggest calories/i);
+    await whenSuggestClicked(user, /估算卡路里/);
 
     await thenCaloriesEventuallyHasValue('402');
   });
@@ -287,7 +287,7 @@ describe('nutrition suggestions', () => {
     );
 
     await whenDialogOpened(user);
-    await whenSuggestClicked(user, /suggest protein/i);
+    await whenSuggestClicked(user, /估算蛋白質/);
 
     await thenProteinEventuallyHasValue('25');
     await thenCarbsEventuallyHasValue('5');
@@ -309,7 +309,7 @@ describe('nutrition suggestions', () => {
     await whenNutritionPanelExpanded(user);
     await whenProteinChanged(user, '5');
     await whenProteinCleared(user);
-    await whenSuggestClicked(user, /suggest calories/i);
+    await whenSuggestClicked(user, /估算卡路里/);
 
     await thenCaloriesEventuallyHasValue('402');
     await thenProteinEventuallyHasValue('25');
@@ -330,7 +330,7 @@ describe('nutrition suggestions', () => {
     await whenDialogOpened(user);
     await whenNutritionPanelExpanded(user);
     await whenProteinChanged(user, '   ');
-    await whenSuggestClicked(user, /suggest calories/i);
+    await whenSuggestClicked(user, /估算卡路里/);
 
     await thenCaloriesEventuallyHasValue('402');
     await thenProteinEventuallyHasValue('25');
@@ -343,10 +343,10 @@ describe('nutrition suggestions', () => {
     render(givenProductInputDialog().withCategoriesForSelect(categories).please());
 
     await whenDialogOpened(user);
-    thenSuggestButtonIsDisabled(/suggest calories/i);
+    thenSuggestButtonIsDisabled(/估算卡路里/);
 
     await whenProductNameChanged(user, 'Cheddar cheese');
-    thenSuggestButtonIsEnabled(/suggest calories/i);
+    thenSuggestButtonIsEnabled(/估算卡路里/);
   });
 
   test.each([
@@ -361,7 +361,7 @@ describe('nutrition suggestions', () => {
     await whenDialogOpened(user);
     await whenProductNameChanged(user, name);
 
-    thenSuggestButtonIsDisabled(/suggest calories/i);
+    thenSuggestButtonIsDisabled(/估算卡路里/);
   });
 
   test('the trimmed name is sent for suggestion', async () => {
@@ -377,7 +377,7 @@ describe('nutrition suggestions', () => {
     );
 
     await whenDialogOpened(user);
-    await whenSuggestClicked(user, /suggest calories/i);
+    await whenSuggestClicked(user, /估算卡路里/);
     await thenCaloriesEventuallyHasValue('402');
 
     expect(requests.names).toStrictEqual<string[]>(['Cheddar cheese']);
@@ -396,7 +396,7 @@ describe('nutrition suggestions', () => {
     );
 
     await whenDialogOpened(user);
-    await whenSuggestClicked(user, /suggest calories/i);
+    await whenSuggestClicked(user, /估算卡路里/);
 
     thenNameInputIsDisabled();
     thenSubmitIsDisabled();
@@ -419,7 +419,7 @@ describe('nutrition suggestions', () => {
     );
 
     await whenDialogOpened(user);
-    await whenSuggestClicked(user, /suggest calories/i);
+    await whenSuggestClicked(user, /估算卡路里/);
 
     await thenAlertShown(/model response was invalid/i);
   });
@@ -437,9 +437,9 @@ describe('nutrition suggestions', () => {
     );
 
     await whenDialogOpened(user);
-    await whenSuggestClicked(user, /suggest calories/i);
+    await whenSuggestClicked(user, /估算卡路里/);
 
-    await thenAlertShown(/couldn't estimate nutrition/i);
+    await thenAlertShown(/未能估算/);
   });
 
   test('nutrition panel auto-expands when a calories suggestion also fills macro fields', async () => {
@@ -462,7 +462,7 @@ describe('nutrition suggestions', () => {
     );
 
     await whenDialogOpened(user);
-    await whenSuggestClicked(user, /suggest calories/i);
+    await whenSuggestClicked(user, /估算卡路里/);
 
     await thenNutritionPanelIsExpanded();
   });
@@ -480,7 +480,7 @@ describe('nutrition suggestions', () => {
     );
 
     await whenDialogOpened(user);
-    await whenSuggestClicked(user, /suggest calories/i);
+    await whenSuggestClicked(user, /估算卡路里/);
 
     await whenCloseIconClicked(user);
     await thenProductFormIsVisible();

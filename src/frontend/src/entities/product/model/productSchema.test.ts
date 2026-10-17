@@ -36,9 +36,7 @@ describe('productSchema name', () => {
     ['101 characters', 'a'.repeat(101)],
     ['51 emoji, 102 UTF-16 units', '😀'.repeat(51)],
   ])('should reject %s', (_, name) => {
-    expect(getNameErrors(name)).toStrictEqual<string[]>([
-      'Product name must be between 1 and 100 characters',
-    ]);
+    expect(getNameErrors(name)).toStrictEqual<string[]>(['食物名稱須為 1 至 100 個字元']);
   });
 });
 

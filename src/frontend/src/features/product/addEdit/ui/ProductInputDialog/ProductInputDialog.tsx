@@ -70,7 +70,7 @@ export const ProductInputDialog: FC<ProductInputDialogProps> = ({
           disabled={isLoading || isNutritionSuggesting}
           onClick={handleClose}
         >
-          Cancel
+          取消
         </Button>
       )}
     />

@@ -22,8 +22,8 @@ const isProblemDetails = (value: unknown): value is ProblemDetails =>
 const isProblemDetailsError = (error: unknown): error is ProblemDetailsError =>
   isFetchBaseQueryError(error) && isProblemDetails(error.data);
 
-const UNKNOWN_ERROR_TITLE = 'An error occurred';
-const UNKNOWN_ERROR_MESSAGE = 'Something went wrong. Please try again later.';
+const UNKNOWN_ERROR_TITLE = '發生錯誤';
+const UNKNOWN_ERROR_MESSAGE = '出了點問題，請稍後再試。';
 
 export interface ClientError {
   title: string;

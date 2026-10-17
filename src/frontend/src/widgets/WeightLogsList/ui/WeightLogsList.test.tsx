@@ -20,24 +20,24 @@ test('I can log my current weight', async () => {
     </RootProvider>,
   );
 
-  await user.click(screen.getByRole('button', { name: /log weight/i }));
+  await user.click(screen.getByRole('button', { name: /記錄體重/ }));
   expect(await screen.findByRole('dialog')).toBeVisible();
 
-  const dateField = await screen.findByRole('group', { name: /date/i });
-  const weightField = await screen.findByPlaceholderText(/weight/i);
-  expect(within(dateField).getByRole('spinbutton', { name: /day/i })).toHaveTextContent('30');
-  expect(within(dateField).getByRole('spinbutton', { name: /month/i })).toHaveTextContent('Jan');
-  expect(within(dateField).getByRole('spinbutton', { name: /year/i })).toHaveTextContent('2022');
+  const dateField = await screen.findByRole('group', { name: /日期/ });
+  const weightField = await screen.findByPlaceholderText(/體重/);
+  expect(within(dateField).getByRole('spinbutton', { name: '日' })).toHaveTextContent('30');
+  expect(within(dateField).getByRole('spinbutton', { name: '月' })).toHaveTextContent('01');
+  expect(within(dateField).getByRole('spinbutton', { name: '年' })).toHaveTextContent('2022');
   expect(weightField).toHaveValue('73');
 
-  await user.click(screen.getByRole('button', { name: /choose date/i }));
+  await user.click(screen.getByRole('button', { name: /選擇日期/ }));
   await user.click(
-    within(screen.getByRole('dialog', { name: /date/i })).getByRole('gridcell', { name: '29' }),
+    within(screen.getByRole('dialog', { name: /日期/ })).getByRole('gridcell', { name: '29' }),
   );
 
   await user.clear(weightField);
   await user.type(weightField, '75');
 
-  await user.click(screen.getByRole('button', { name: /save/i }));
-  expect(await screen.findByRole('listitem', { name: /75 kg on 29 Jan 2022/i })).toBeVisible();
+  await user.click(screen.getByRole('button', { name: '儲存' }));
+  expect(await screen.findByRole('listitem', { name: /2022年1月29日：75 kg/ })).toBeVisible();
 });

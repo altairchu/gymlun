@@ -39,11 +39,11 @@ const DeleteProductsDialog: FC<DeleteProductsDialogProps> = ({
 
   return (
     <AppDialog
-      title="Delete products"
+      title="刪除食物"
       isOpened={isDialogOpened}
       content={
         <form id="delete-products" onSubmit={handleSubmit}>
-          <Typography>Do you really want to delete selected products?</Typography>
+          <Typography>確定要刪除已選取的食物嗎？</Typography>
         </form>
       }
       actionSubmit={
@@ -55,7 +55,7 @@ const DeleteProductsDialog: FC<DeleteProductsDialogProps> = ({
           loading={deleteProductRequest.isLoading || products.isFetching}
           autoFocus
         >
-          Yes
+          是
         </Button>
       }
       actionCancel={
@@ -66,7 +66,7 @@ const DeleteProductsDialog: FC<DeleteProductsDialogProps> = ({
           onClick={handleClose}
           disabled={deleteProductRequest.isLoading}
         >
-          No
+          否
         </Button>
       }
       onClose={handleClose}

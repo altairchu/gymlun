@@ -66,7 +66,7 @@ export const useNutritionSuggestions = ({
       ];
 
       if (values.every(value => value === null)) {
-        onInfo("Couldn't estimate nutrition for this product");
+        onInfo('未能估算此食物的營養數值');
         return;
       }
 

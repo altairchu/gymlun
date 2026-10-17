@@ -52,8 +52,6 @@ interface SnackbarState {
 
 const OPTIONAL_NUTRITION_FIELDS = ['protein', 'fats', 'carbs', 'sugar', 'salt'] as const;
 
-const capitalize = (value: string): string => value.charAt(0).toUpperCase() + value.slice(1);
-
 export const ProductForm: FC<Props> = ({
   formId,
   defaultValues,
@@ -98,7 +96,7 @@ export const ProductForm: FC<Props> = ({
   const submit = (data: ProductFormValues): Promise<void> =>
     onSubmit(perServing ? { ...data, ...toPer100g(data, data.defaultQuantity) } : data);
 
-  const nutritionBasis = perServing ? 'per serving' : 'per 100 g';
+  const nutritionBasis = perServing ? '每份' : '每 100 g';
 
   const atLeastOneNutritionFieldHasValue = getValues([
     'protein',
@@ -135,8 +133,8 @@ export const ProductForm: FC<Props> = ({
             fullWidth
             autoFocus={autoFocus}
             disabled={isSuggesting}
-            label="Name"
-            placeholder="Product name"
+            label="名稱"
+            placeholder="食物名稱"
             margin="normal"
             error={!!fieldState.error}
             helperText={fieldState.error?.message ?? ' '}
@@ -158,8 +156,8 @@ export const ProductForm: FC<Props> = ({
             renderInput={params => (
               <TextField
                 {...params}
-                label="Category"
-                placeholder="Choose category"
+                label="分類"
+                placeholder="選擇分類"
                 error={!!fieldState.error}
                 helperText={fieldState.error?.message ?? ' '}
                 margin="normal"
@@ -189,8 +187,8 @@ export const ProductForm: FC<Props> = ({
                 {...field}
                 fullWidth
                 disabled={isSuggesting}
-                label={`Calories ${nutritionBasis}, ${nutritionValuesConfig.calories.unit}`}
-                placeholder="Calories per 100 g"
+                label={`${nutritionValuesConfig.calories.label}（${nutritionBasis}，${nutritionValuesConfig.calories.unit}）`}
+                placeholder="每 100 g 卡路里"
                 margin="normal"
                 error={!!fieldState.error}
                 helperText={fieldState.error?.message ?? ' '}
@@ -205,7 +203,7 @@ export const ProductForm: FC<Props> = ({
                     endAdornment: (
                       <InputAdornment position="end">
                         <NutritionSuggestButton
-                          label="Calories"
+                          label={nutritionValuesConfig.calories.label}
                           suggesting={suggestingField === 'calories'}
                           disabled={suggestDisabled}
                           onClick={handleSuggestClick('calories')}
@@ -231,8 +229,8 @@ export const ProductForm: FC<Props> = ({
                 {...field}
                 fullWidth
                 disabled={isSuggesting}
-                label={perServing ? 'Serving, g' : 'Default quantity, g'}
-                placeholder="Default quantity"
+                label={perServing ? '每份份量 (g)' : '預設份量 (g)'}
+                placeholder="預設份量"
                 margin="normal"
                 error={!!fieldState.error}
                 helperText={fieldState.error?.message ?? ' '}
@@ -257,7 +255,7 @@ export const ProductForm: FC<Props> = ({
               onChange={(_, checked) => handlePerServingChange(checked)}
             />
           }
-          label="Enter nutrition per serving"
+          label="按每份輸入營養數值"
         />
         <Controller
           name="isFavorite"
@@ -271,7 +269,7 @@ export const ProductForm: FC<Props> = ({
                   onChange={(_, checked) => field.onChange(checked)}
                 />
               }
-              label="Eat often: show in quick add"
+              label="常吃：顯示於快速加入"
             />
           )}
         />
@@ -286,7 +284,7 @@ export const ProductForm: FC<Props> = ({
           aria-controls="nutrition-components-panel-content"
           id="nutrition-components-panel-header"
         >
-          <Typography component="span">Nutrition {nutritionBasis}</Typography>
+          <Typography component="span">營養成分（{nutritionBasis}）</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Grid container spacing={2}>
@@ -299,8 +297,8 @@ export const ProductForm: FC<Props> = ({
                     <NutritionValueInput
                       {...field}
                       type={fieldName}
-                      label={capitalize(fieldName)}
-                      placeholder={capitalize(fieldName)}
+                      label={nutritionValuesConfig[fieldName].label}
+                      placeholder={nutritionValuesConfig[fieldName].label}
                       disabled={isSuggesting}
                       suggesting={suggestingField === fieldName}
                       suggestDisabled={suggestDisabled}

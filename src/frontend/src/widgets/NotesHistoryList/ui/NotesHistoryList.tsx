@@ -21,7 +21,7 @@ interface Props {
 
 export const NotesHistoryList: FC<Props> = ({ notes }) => {
   if (notes.length === 0) {
-    return <Typography color="textSecondary">No items found</Typography>;
+    return <Typography color="textSecondary">找不到記錄</Typography>;
   }
 
   return (

@@ -19,6 +19,7 @@ export type NutritionValues = Record<RequiredNutritionValueType, number> & Optio
 type Unit = 'kcal' | 'g';
 
 interface NutritionValueConfig {
+  readonly label: string;
   readonly IconComponent: ComponentType<SvgIconProps>;
   readonly color: string;
   readonly unit: Unit;
@@ -28,31 +29,37 @@ type NutritionValuesConfig = Readonly<Record<NutritionValueType, NutritionValueC
 
 export const nutritionValuesConfig: NutritionValuesConfig = {
   calories: {
+    label: '卡路里',
     IconComponent: WhatshotOutlinedIcon,
     color: green[500],
     unit: 'kcal',
   },
   protein: {
+    label: '蛋白質',
     IconComponent: FitnessCenterOutlinedIcon,
     color: blue[500],
     unit: 'g',
   },
   fats: {
+    label: '脂肪',
     IconComponent: WaterDropOutlinedIcon,
     color: amber.A700,
     unit: 'g',
   },
   carbs: {
+    label: '碳水化合物',
     IconComponent: GrainOutlinedIcon,
     color: purple[500],
     unit: 'g',
   },
   sugar: {
+    label: '糖',
     IconComponent: CookieOutlinedIcon,
     color: pink[500],
     unit: 'g',
   },
   salt: {
+    label: '鹽',
     IconComponent: AdjustOutlinedIcon,
     color: grey[500],
     unit: 'g',

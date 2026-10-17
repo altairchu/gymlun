@@ -14,8 +14,8 @@ test('I can add new note with existing product', async () => {
 
   steps.givenMealsListItem({ mealType: noteModel.MealType.Lunch });
 
-  await steps.whenAddNoteButtonClicked(user, 'Lunch');
-  await steps.thenDialogVisible(/lunch/i);
+  await steps.whenAddNoteButtonClicked(user, '午餐');
+  await steps.thenDialogVisible(/午餐/);
   steps.thenNoteCannotBeAdded();
 
   await steps.whenProductSearched(user, 'che');
@@ -34,7 +34,7 @@ test('I can add a favorite product in one tap', async () => {
 
   steps.givenMealsListItem({ mealType: noteModel.MealType.Lunch });
 
-  await steps.whenFavoriteQuickAdded(user, /add bread, 50 g/i);
+  await steps.whenFavoriteQuickAdded(user, /加入「bread」，50 g/i);
   await steps.thenNoteAppears(/bread 50 g 125/i);
 });
 
@@ -43,12 +43,12 @@ test('I can add new note with adding new product "on the fly"', async () => {
 
   steps.givenMealsListItem({ mealType: noteModel.MealType.Lunch });
 
-  await steps.whenAddNoteButtonClicked(user, 'Lunch');
-  await steps.thenDialogVisible(/lunch/i);
+  await steps.whenAddNoteButtonClicked(user, '午餐');
+  await steps.thenDialogVisible(/午餐/);
 
   await steps.whenProductSearched(user, 'Ora');
   await steps.whenProductAddedFromInput(user, 'Ora');
-  await steps.thenDialogVisible(/product/i);
+  await steps.thenDialogVisible(/^食物$/);
   steps.thenProductCategoryHasValue('Bakery');
   steps.thenProductCanBeAdded();
 
@@ -57,7 +57,7 @@ test('I can add new note with adding new product "on the fly"', async () => {
   await steps.whenProductDefaultQuantitySet(user, 200);
   await steps.whenProductCategorySelected(user, /fruits/i);
   await steps.whenProductAdded(user);
-  await steps.thenDialogVisible(/lunch/i);
+  await steps.thenDialogVisible(/午餐/);
   steps.thenProductHasValue('Orange');
   steps.thenQuantityHasValue('200');
 
@@ -74,7 +74,7 @@ test('I can change quantity for existing note', async () => {
 
   await steps.whenNoteExpanded(user, /cheese 200 g 804/i);
   await steps.whenEditNoteClicked(user);
-  await steps.thenDialogVisible(/lunch/i);
+  await steps.thenDialogVisible(/午餐/);
   steps.thenProductHasValue('Cheese');
   steps.thenQuantityHasValue('200');
 
@@ -89,18 +89,18 @@ test('I can edit product via note form', async () => {
 
   steps.givenMealsListItem({ mealType: noteModel.MealType.Lunch });
 
-  await steps.whenAddNoteButtonClicked(user, 'Lunch');
-  await steps.thenDialogVisible(/lunch/i);
+  await steps.whenAddNoteButtonClicked(user, '午餐');
+  await steps.thenDialogVisible(/午餐/);
 
   await steps.whenProductSearched(user, 'che');
   await steps.whenExistingProductSelected(user, /cheese/i);
   await steps.whenProductEditClicked(user);
-  await steps.thenDialogVisible(/product/i);
+  await steps.thenDialogVisible(/^食物$/);
   steps.thenProductCategoryHasValue('Dairy');
   steps.thenProductCanBeSaved();
 
   await steps.whenProductNameEdited(user, 'Mozarella cheese');
   await steps.whenProductSaved(user);
-  await steps.thenDialogVisible(/lunch/i);
+  await steps.thenDialogVisible(/午餐/);
   steps.thenProductHasValue('Mozarella cheese');
 });

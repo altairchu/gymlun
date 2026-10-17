@@ -51,7 +51,7 @@ export const UploadImagesButton: FC = () => {
 
   return (
     <>
-      <Tooltip title="Upload images" placement="left">
+      <Tooltip title="上載圖片" placement="left">
         <IconButton edge="end" onClick={() => imageInputRef.current?.click()}>
           <PhotoIcon />
         </IconButton>

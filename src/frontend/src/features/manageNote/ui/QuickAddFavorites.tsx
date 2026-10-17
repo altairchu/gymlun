@@ -49,10 +49,10 @@ export const QuickAddFavorites: FC<Props> = ({ date, mealType }) => {
 
     setSnackbar(
       response.error
-        ? { severity: 'error', message: `Could not add ${product.name}` }
+        ? { severity: 'error', message: `未能加入「${product.name}」` }
         : {
             severity: 'success',
-            message: `Added ${product.name}, ${product.defaultQuantity} g`,
+            message: `已加入「${product.name}」，${product.defaultQuantity} g`,
           },
     );
   };
@@ -62,7 +62,7 @@ export const QuickAddFavorites: FC<Props> = ({ date, mealType }) => {
       <Stack
         direction="row"
         spacing={1}
-        aria-label="Quick add favorites"
+        aria-label="快速加入常吃食物"
         sx={{ width: '100%', overflowX: 'auto', pb: 0.5 }}
       >
         {favorites.map(product => (
@@ -70,7 +70,7 @@ export const QuickAddFavorites: FC<Props> = ({ date, mealType }) => {
             key={product.id}
             icon={<StarIcon fontSize="small" />}
             label={`${product.name} · ${Math.round((product.calories * product.defaultQuantity) / 100)} kcal`}
-            aria-label={`Add ${product.name}, ${product.defaultQuantity} g`}
+            aria-label={`加入「${product.name}」，${product.defaultQuantity} g`}
             color="primary"
             variant="outlined"
             disabled={!notesLoaded || isAdding}

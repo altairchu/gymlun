@@ -66,11 +66,11 @@ export const LogWeightButton: FC<Props> = ({ weightLogsRequest }) => {
   return (
     <>
       <Button startIcon={<AddIcon />} color="primary" variant="contained" onClick={toggleDialog}>
-        Log weight
+        記錄體重
       </Button>
       <Dialog
         renderMode="fullScreenOnMobile"
-        title="Log weight"
+        title="記錄體重"
         opened={dialogVisible}
         onClose={toggleDialog}
         content={
@@ -81,7 +81,7 @@ export const LogWeightButton: FC<Props> = ({ weightLogsRequest }) => {
               render={({ field, fieldState }) => (
                 <DatePicker
                   {...field}
-                  label="Date"
+                  label="日期"
                   format={dateLib.DateFormat.UserFriendly}
                   slotProps={{
                     textField: {
@@ -103,8 +103,8 @@ export const LogWeightButton: FC<Props> = ({ weightLogsRequest }) => {
                   onFocus={event => {
                     event.target.select();
                   }}
-                  label="Weight"
-                  placeholder="Enter your weight"
+                  label="體重"
+                  placeholder="輸入你的體重"
                   margin="normal"
                   fullWidth
                   autoFocus
@@ -126,7 +126,7 @@ export const LogWeightButton: FC<Props> = ({ weightLogsRequest }) => {
         }
         renderCancel={props => (
           <Button {...props} onClick={toggleDialog}>
-            Cancel
+            取消
           </Button>
         )}
         renderSubmit={props => (
@@ -137,7 +137,7 @@ export const LogWeightButton: FC<Props> = ({ weightLogsRequest }) => {
             disabled={!formState.isValid}
             loading={formState.isSubmitting}
           >
-            Save
+            儲存
           </Button>
         )}
       />

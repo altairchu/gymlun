@@ -24,24 +24,24 @@ export const FilterNotesHistory: FC<Props> = ({ date, onApply }) => {
         gap: 1,
       }}
     >
-      <Tooltip title="Add notes">
+      <Tooltip title="加入記錄">
         <RouterIconButton color="inherit" to="/">
           <AddIcon />
         </RouterIconButton>
       </Tooltip>
-      <Tooltip title={filterVisible ? 'Hide filter' : 'Show filter'}>
+      <Tooltip title={filterVisible ? '隱藏篩選' : '顯示篩選'}>
         <IconButton color="inherit" edge="end" onClick={toggleFilter}>
           <FilterAltIcon />
         </IconButton>
       </Tooltip>
       <Dialog
         renderMode="fullScreenOnMobile"
-        title="Filter history"
+        title="篩選歷史記錄"
         opened={filterVisible}
         onClose={toggleFilter}
         renderCancel={props => (
           <Button {...props} onClick={toggleFilter}>
-            Cancel
+            取消
           </Button>
         )}
         renderSubmit={props => (
@@ -52,7 +52,7 @@ export const FilterNotesHistory: FC<Props> = ({ date, onApply }) => {
               toggleFilter();
             }}
           >
-            Apply
+            套用
           </Button>
         )}
         content={

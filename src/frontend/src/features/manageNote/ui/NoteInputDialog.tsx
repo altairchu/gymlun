@@ -117,7 +117,7 @@ export const NoteInputDialog: FC<Props> = ({ date, mealType, note }) => {
       content={renderContent()}
       renderCancel={props => (
         <Button {...props} type="button" disabled={isLoading} onClick={handleDialogClose}>
-          Cancel
+          取消
         </Button>
       )}
       renderSubmit={props => (
