@@ -1,5 +1,5 @@
 import { ThemeProvider } from '@mui/material';
-import { screen, waitFor, waitForElementToBeRemoved } from '@testing-library/react';
+import { screen, waitFor, waitForElementToBeRemoved, within } from '@testing-library/react';
 import { type UserEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { type ReactElement } from 'react';
@@ -7,7 +7,9 @@ import { Provider } from 'react-redux';
 import { type Mock } from 'vitest';
 import { configureStore } from '@/app/store';
 import { theme } from '@/app/theme';
+import { type CreateCategoryRequest } from '@/entities/category';
 import {
+  type OnSubmitProductFn,
   productModel,
   type SuggestProductNutritionRequest,
   type SuggestProductNutritionResponse,
@@ -19,6 +21,9 @@ import { WithTriggerButton } from '@tests/sideEffects';
 import { ProductInputDialog } from './ProductInputDialog';
 
 const NUTRITION_SUGGESTIONS_URL = `${API_URL}/api/v1/products/nutrition/suggestions`;
+const CATEGORIES_URL = `${API_URL}/api/v1/categories`;
+
+const DEFAULT_QUANTITY_LABEL = /^(預設份量|每份份量|每份重量) \(g\)$/;
 
 const EMPTY_NUTRITION_SUGGESTIONS: SuggestProductNutritionResponse = {
   calories: null,
@@ -30,7 +35,7 @@ const EMPTY_NUTRITION_SUGGESTIONS: SuggestProductNutritionResponse = {
 };
 
 class ProductInputDialogBuilder {
-  private _onSubmitMock: Mock = vi.fn();
+  private _onSubmitMock: Mock<OnSubmitProductFn> = vi.fn<OnSubmitProductFn>();
   private _product: productModel.ProductFormValues = productModel.EMPTY_FORM_VALUES;
   private readonly _categories: SelectOption[] = [];
 
@@ -58,7 +63,7 @@ class ProductInputDialogBuilder {
     );
   }
 
-  withOnSubmitMock(onSubmitMock: Mock): this {
+  withOnSubmitMock(onSubmitMock: Mock<OnSubmitProductFn>): this {
     this._onSubmitMock = onSubmitMock;
     return this;
   }
@@ -72,7 +77,8 @@ class ProductInputDialogBuilder {
     name = '',
     calories = 100,
     defaultQuantity = 100,
-    category = this._categories[0],
+    quantityUnit = productModel.QuantityUnit.Grams,
+    categories = [],
     protein = null,
     fats = null,
     carbs = null,
@@ -84,7 +90,8 @@ class ProductInputDialogBuilder {
       name,
       calories,
       defaultQuantity,
-      category,
+      quantityUnit,
+      categories,
       protein,
       fats,
       carbs,
@@ -128,6 +135,35 @@ export const givenNutritionSuggestion = (
 interface PendingNutritionSuggestion {
   resolve: () => void;
 }
+
+interface CategoryCreationRequests {
+  names: string[];
+}
+
+export const givenCategoryCreatedWithId = (id: number): CategoryCreationRequests => {
+  const requests: CategoryCreationRequests = { names: [] };
+
+  server.use(
+    http.post(CATEGORIES_URL, async ({ request }) => {
+      const body = (await request.json()) as CreateCategoryRequest;
+      requests.names.push(body.name);
+      return HttpResponse.json<number>(id);
+    }),
+  );
+
+  return requests;
+};
+
+export const givenCategoryCreationFails = (): void => {
+  server.use(
+    http.post(CATEGORIES_URL, () =>
+      HttpResponse.json(
+        { title: 'Bad Request', detail: 'Category name is already taken' },
+        { status: 400 },
+      ),
+    ),
+  );
+};
 
 export const givenPendingNutritionSuggestion = (
   response: Partial<SuggestProductNutritionResponse>,
@@ -183,17 +219,54 @@ export const whenCaloriesChanged = async (user: UserEvent, cost: string): Promis
   await user.type(screen.getByPlaceholderText(/卡路里/), cost);
 };
 
+const getDefaultQuantityInput = (): HTMLElement =>
+  screen.getByRole('textbox', { name: DEFAULT_QUANTITY_LABEL });
+
+const getCategoriesInput = (): HTMLElement => screen.getByRole('combobox', { name: /分類/ });
+
 export const whenDefaultQuantityChanged = async (
   user: UserEvent,
   quantity: string,
 ): Promise<void> => {
-  await user.clear(screen.getByPlaceholderText(/預設份量/));
-  await user.type(screen.getByPlaceholderText(/預設份量/), quantity);
+  await user.clear(getDefaultQuantityInput());
+  await user.type(getDefaultQuantityInput(), quantity);
 };
 
 export const whenCategorySelected = async (user: UserEvent, name: RegExp): Promise<void> => {
-  await user.click(screen.getByRole('combobox', { name: /分類/ }));
+  await user.click(getCategoriesInput());
   await user.click(screen.getByRole('option', { name }));
+};
+
+export const whenCategoriesOpened = async (user: UserEvent): Promise<void> => {
+  await user.click(getCategoriesInput());
+};
+
+export const whenCategoryNameTyped = async (user: UserEvent, name: string): Promise<void> => {
+  await user.type(getCategoriesInput(), name);
+};
+
+export const whenNewCategoryOptionClicked = async (
+  user: UserEvent,
+  name: string,
+): Promise<void> => {
+  await user.click(screen.getByRole('option', { name: `新增分類「${name}」` }));
+};
+
+export const whenCategoryRemoved = async (user: UserEvent, name: string): Promise<void> => {
+  const chip = screen.getByRole('button', { name });
+  await user.click(within(chip).getByTestId('CancelIcon'));
+};
+
+export const whenCountedInServings = async (user: UserEvent): Promise<void> => {
+  await user.click(screen.getByRole('button', { name: '按件／份' }));
+};
+
+export const whenCountedInGrams = async (user: UserEvent): Promise<void> => {
+  await user.click(screen.getByRole('button', { name: '按重量（克）' }));
+};
+
+export const whenPerServingNutritionEnabled = async (user: UserEvent): Promise<void> => {
+  await user.click(screen.getByRole('switch', { name: '按每份輸入營養數值' }));
 };
 
 export const whenNutritionPanelExpanded = async (user: UserEvent): Promise<void> => {
@@ -229,10 +302,6 @@ export const whenSaltChanged = async (user: UserEvent, salt: string): Promise<vo
   await user.type(screen.getByPlaceholderText(/鹽/), salt);
 };
 
-export const whenCategoryCleared = async (user: UserEvent): Promise<void> => {
-  await user.clear(screen.getByRole('combobox', { name: /分類/ }));
-};
-
 export const whenProductSaved = async (user: UserEvent): Promise<void> => {
   await user.click(screen.getByRole('button', { name: /submit/i }));
 };
@@ -249,7 +318,7 @@ export const thenProductFormIsVisible = async (): Promise<void> => {
 };
 
 export const thenFormValueContains = (
-  onSubmitMock: Mock,
+  onSubmitMock: Mock<OnSubmitProductFn>,
   product: productModel.ProductFormValues,
 ): void => {
   expect(onSubmitMock).toHaveBeenCalledWith<[productModel.ProductFormValues]>(product);
@@ -276,19 +345,47 @@ export const thenCaloriesHasValue = (value: number): void => {
 };
 
 export const thenDefaultQuantityIsInvalid = (): void => {
-  expect(screen.getByPlaceholderText(/預設份量/)).toBeInvalid();
+  expect(getDefaultQuantityInput()).toBeInvalid();
 };
 
 export const thenDefaultQuantityHasValue = (value: number): void => {
-  expect(screen.getByPlaceholderText(/預設份量/)).toHaveValue(value.toString());
+  expect(getDefaultQuantityInput()).toHaveValue(value.toString());
 };
 
-export const thenCategoryIsInvalid = (): void => {
-  expect(screen.getByRole('combobox', { name: /分類/ })).toBeInvalid();
+export const thenDefaultQuantityIsLabelled = (label: string): void => {
+  expect(getDefaultQuantityInput()).toHaveAccessibleName(label);
 };
 
-export const thenCategoryHasValue = (value: string): void => {
-  expect(screen.getByRole('combobox', { name: /分類/ })).toHaveValue(value);
+export const thenCountingUnitIs = (label: string): void => {
+  expect(screen.getByRole('button', { name: label })).toBePressed();
+};
+
+export const thenCategoryIsSelected = (name: string): void => {
+  expect(screen.getByRole('button', { name })).toBeVisible();
+};
+
+export const thenCategoryIsNotSelected = (name: string): void => {
+  expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+};
+
+export const thenCategoryIsOffered = (name: string): void => {
+  expect(screen.getByRole('option', { name })).toBeVisible();
+};
+
+export const thenCategoryOptionIsDisabled = (name: string): void => {
+  expect(screen.getByRole('option', { name })).toHaveAttribute('aria-disabled', 'true');
+};
+
+export const thenNewCategoryIsNotOffered = (): void => {
+  expect(screen.queryByRole('option', { name: /新增分類/ })).not.toBeInTheDocument();
+};
+
+export const thenCategoryLimitIsShown = (): void => {
+  expect(getCategoriesInput()).toHaveAccessibleDescription('最多可選 10 個分類');
+};
+
+export const thenCategoryEventuallySelected = async (name: string): Promise<void> => {
+  expect(await screen.findByRole('button', { name })).toBeVisible();
 };
 
 export const thenDialogShouldBeHidden = async (): Promise<void> => {

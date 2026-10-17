@@ -4,6 +4,7 @@ using FoodDiary.ComponentTests.Scenarios.Auth;
 using FoodDiary.ComponentTests.Scenarios.Categories;
 using FoodDiary.ComponentTests.Scenarios.ErrorHandling;
 using FoodDiary.ComponentTests.Scenarios.Mcp;
+using FoodDiary.ComponentTests.Scenarios.Migrations;
 using FoodDiary.ComponentTests.Scenarios.Notes;
 using FoodDiary.ComponentTests.Scenarios.Products;
 using FoodDiary.ComponentTests.Scenarios.WeightTracking;
@@ -29,6 +30,7 @@ public class InfrastructureFixture : IAsyncLifetime, IDisposable
             .AddScoped<ErrorHandlingContext>()
             .AddScoped<CategoriesApiContext>()
             .AddScoped<McpApiContext>()
+            .AddScoped<MigrationsContext>()
             .AddScoped<NotesApiContext>()
             .AddScoped<ProductsApiContext>()
             .AddScoped<WeightLogsApiContext>();

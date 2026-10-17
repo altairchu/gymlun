@@ -14,7 +14,9 @@ public class ProductsTool(GetProductsQueryHandler getProductsQueryHandler)
         """
         Products in the personal catalogue, ordered by name, one page at a time.
 
-        Nutrition under `per100g` is per 100 g of product: `calories` in kilocalories, the rest in grams (salt is sodium chloride). `defaultQuantity` is the usual portion in grams, not a number of servings.
+        Nutrition under `per100g` is per 100 g of product: `calories` in kilocalories, the rest in grams (salt is sodium chloride).
+
+        `countBy` is how the person counts the product. `grams` is for weighed foods such as rice or meat: `defaultQuantity` is the usual portion in grams. `servings` is for foods counted in pieces or servings such as dumplings, eggs or a bowl of soup: `defaultQuantity` is the grams in one piece or serving. `categories` group products and may be empty.
 
         A `null` nutrition value means the product has no value recorded for it: unknown, not zero.
 

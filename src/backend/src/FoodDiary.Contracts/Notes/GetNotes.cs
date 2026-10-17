@@ -17,6 +17,7 @@ public record GetNotesResponse(IReadOnlyCollection<GetNotesResponse.Note> Notes)
     public record Note(
         int Id,
         DateOnly Date,
+        TimeOnly Time,
         MealType MealType,
         int ProductQuantity,
         int DisplayOrder,
@@ -26,6 +27,7 @@ public record GetNotesResponse(IReadOnlyCollection<GetNotesResponse.Note> Notes)
         int Id,
         string Name,
         int DefaultQuantity,
+        QuantityUnit QuantityUnit,
         int Calories,
         decimal? Protein,
         decimal? Fats,

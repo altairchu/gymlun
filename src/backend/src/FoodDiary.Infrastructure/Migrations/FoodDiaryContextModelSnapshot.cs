@@ -67,6 +67,9 @@ namespace FoodDiary.Infrastructure.Migrations
                     b.Property<int>("ProductQuantity")
                         .HasColumnType("integer");
 
+                    b.Property<TimeOnly>("Time")
+                        .HasColumnType("time without time zone");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Date");
@@ -90,9 +93,6 @@ namespace FoodDiary.Infrastructure.Migrations
                     b.Property<decimal?>("Carbs")
                         .HasColumnType("numeric");
 
-                    b.Property<int>("CategoryId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("DefaultQuantity")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -113,6 +113,9 @@ namespace FoodDiary.Infrastructure.Migrations
                     b.Property<decimal?>("Protein")
                         .HasColumnType("numeric");
 
+                    b.Property<int>("QuantityUnit")
+                        .HasColumnType("integer");
+
                     b.Property<decimal?>("Salt")
                         .HasColumnType("numeric");
 
@@ -120,8 +123,6 @@ namespace FoodDiary.Infrastructure.Migrations
                         .HasColumnType("numeric");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CategoryId");
 
                     b.HasIndex("Name")
                         .IsUnique();
@@ -161,6 +162,21 @@ namespace FoodDiary.Infrastructure.Migrations
                     b.ToTable("DataProtectionKeys");
                 });
 
+            modelBuilder.Entity("ProductCategories", b =>
+                {
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ProductId", "CategoryId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("ProductCategories", (string)null);
+                });
+
             modelBuilder.Entity("FoodDiary.Domain.Entities.Note", b =>
                 {
                     b.HasOne("FoodDiary.Domain.Entities.Product", "Product")
@@ -172,20 +188,19 @@ namespace FoodDiary.Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("FoodDiary.Domain.Entities.Product", b =>
+            modelBuilder.Entity("ProductCategories", b =>
                 {
-                    b.HasOne("FoodDiary.Domain.Entities.Category", "Category")
-                        .WithMany("Products")
+                    b.HasOne("FoodDiary.Domain.Entities.Category", null)
+                        .WithMany()
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Category");
-                });
-
-            modelBuilder.Entity("FoodDiary.Domain.Entities.Category", b =>
-                {
-                    b.Navigation("Products");
+                    b.HasOne("FoodDiary.Domain.Entities.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("FoodDiary.Domain.Entities.Product", b =>

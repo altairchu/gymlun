@@ -16,13 +16,13 @@ public class GetProductsQueryHandler(IProductRepository productRepository)
         if (!string.IsNullOrWhiteSpace(query.ProductName))
             dbQuery = dbQuery.Where(p => p.Name.ToLower().Contains(query.ProductName.ToLower()));
         if (query.CategoryId.HasValue)
-            dbQuery = dbQuery.Where(p => p.CategoryId == query.CategoryId);
+            dbQuery = dbQuery.Where(p => p.Categories.Any(c => c.Id == query.CategoryId));
         if (query.FavoritesOnly)
             dbQuery = dbQuery.Where(p => p.IsFavorite);
 
         var totalProductsCount = await productRepository.CountByQueryAsync(dbQuery, cancellationToken);
 
-        dbQuery = productRepository.LoadCategory(dbQuery);
+        dbQuery = productRepository.LoadCategories(dbQuery);
         dbQuery = dbQuery.OrderBy(p => p.Name)
             .Skip((query.PageNumber - 1) * query.PageSize)
             .Take(query.PageSize);

@@ -12,4 +12,11 @@ public class CategoriesRepository(DbSet<Category> categories) : ICategoriesRepos
             .OrderBy(c => c.Name)
             .ToArrayAsync(cancellationToken);
     }
+
+    public Task<Category[]> FindByIds(IReadOnlyCollection<int> ids, CancellationToken cancellationToken)
+    {
+        return categories
+            .Where(c => ids.Contains(c.Id))
+            .ToArrayAsync(cancellationToken);
+    }
 }

@@ -5,10 +5,3 @@ export enum MealType {
   AfternoonSnack = 4,
   Dinner = 5,
 }
-
-export interface FormValues {
-  date: string;
-  mealType: MealType;
-  displayOrder: number;
-  quantity: number;
-}

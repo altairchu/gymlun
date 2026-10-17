@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The diary home is a grid of every food: filter it by several categories at once (only foods in all of them show) or by favourites, pick foods, set each one's amount in servings or grams, and log them together at a time picked from meal shortcuts
+- The day is a 0:00–23:59 timeline; drag a food, or a whole meal, to another time
+- Foods can be in several categories, and each food is counted either by weight or by servings
+- The MCP `log_food` tool takes a time of day and a number of servings; `create_product` takes several categories and how the food is counted
+
+### Changed
+
+- Food logs have a time of day; existing ones get their meal's usual time
+
+### Removed
+
+- The per-meal food log lists, and with them the photo recognition dialog; the food grid and the timeline replace them
+
+### Fixed
+
+- Category names of one or two characters, such as Chinese names, are accepted
+- Deleting a category no longer deletes its foods and their food logs
+
 ## [0.9.2] - Router & Zod upgrades, AI suggestion fixes
 
 ### Changed

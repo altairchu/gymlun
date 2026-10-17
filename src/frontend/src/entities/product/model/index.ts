@@ -3,3 +3,5 @@ export * from './productSlice';
 export * from './productSchema';
 export * from './nutritionValues';
 export * from './servings';
+export * from './quantityUnit';
+export * from './amount';

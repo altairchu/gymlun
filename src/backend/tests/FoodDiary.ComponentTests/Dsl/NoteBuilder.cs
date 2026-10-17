@@ -8,6 +8,7 @@ public class NoteBuilder
 {
     private int? _id;
     private DateOnly _date = FakeDateTimeProvider.Today();
+    private TimeOnly? _time;
     private MealType _mealType = MealType.Breakfast;
     private Product? _product = Create.Product().Please();
     private int _productId;
@@ -18,6 +19,7 @@ public class NoteBuilder
     {
         Id = _id ?? Random.Shared.Next(),
         Date = _date,
+        Time = _time ?? _mealType.DefaultTime,
         MealType = _mealType,
         Product = _product,
         ProductId = _productId,
@@ -34,6 +36,16 @@ public class NoteBuilder
     public NoteBuilder WithDate(DateOnly date)
     {
         _date = date;
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the time of day, and the meal it falls in
+    /// </summary>
+    public NoteBuilder WithTime(string time)
+    {
+        _time = TimeOnly.Parse(time);
+        _mealType = MealType.FromTime(_time.Value);
         return this;
     }
 
@@ -74,6 +86,7 @@ public class NoteBuilder
     {
         _id = note.Id;
         _date = note.Date;
+        _time = note.Time;
         _mealType = note.MealType;
         _product = note.Product;
         _productId = note.ProductId;

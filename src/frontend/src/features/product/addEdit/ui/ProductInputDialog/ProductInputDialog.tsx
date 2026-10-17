@@ -1,4 +1,5 @@
 import { type FC, useState } from 'react';
+import { categoryApi } from '@/entities/category';
 import { ProductForm, type productModel } from '@/entities/product';
 import { type SelectOption } from '@/shared/types';
 import { Button, Dialog } from '@/shared/ui';
@@ -27,11 +28,17 @@ export const ProductInputDialog: FC<ProductInputDialogProps> = ({
   onClose,
 }) => {
   const [isNutritionSuggesting, setIsNutritionSuggesting] = useState(false);
+  const [createCategory, createCategoryRequest] = categoryApi.useCreateCategoryMutation();
 
   const handleClose = (): void => {
     if (!isNutritionSuggesting) {
       onClose();
     }
+  };
+
+  const handleCreateCategory = async (name: string): Promise<SelectOption> => {
+    const id = await createCategory({ name }).unwrap();
+    return { id, name };
   };
 
   return (
@@ -48,7 +55,9 @@ export const ProductInputDialog: FC<ProductInputDialogProps> = ({
           defaultValues={productFormValues}
           categories={categories}
           categoriesLoading={categoriesLoading}
+          categoryCreating={createCategoryRequest.isLoading}
           onSubmit={onSubmit}
+          onCreateCategory={handleCreateCategory}
           onNutritionSuggestingChange={setIsNutritionSuggesting}
         />
       }
@@ -57,7 +66,7 @@ export const ProductInputDialog: FC<ProductInputDialogProps> = ({
           {...submitProps}
           type="submit"
           form="product-input-form"
-          disabled={isNutritionSuggesting}
+          disabled={isNutritionSuggesting || createCategoryRequest.isLoading}
           loading={isLoading}
         >
           {submitText}

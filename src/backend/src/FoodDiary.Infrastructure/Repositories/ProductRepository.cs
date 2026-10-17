@@ -6,9 +6,9 @@ namespace FoodDiary.Infrastructure.Repositories;
 
 public class ProductRepository(FoodDiaryContext context) : Repository<Product>(context), IProductRepository
 {
-    public IQueryable<Product> LoadCategory(IQueryable<Product> query)
+    public IQueryable<Product> LoadCategories(IQueryable<Product> query)
     {
-        return query.Include(p => p.Category);
+        return query.Include(p => p.Categories);
     }
 
     public Task<Dictionary<string, Product>> GetDictionaryByQueryAsync(IQueryable<Product> query, CancellationToken cancellationToken)

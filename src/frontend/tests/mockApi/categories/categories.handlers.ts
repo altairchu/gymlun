@@ -28,8 +28,8 @@ export const handlers: HttpHandler[] = [
 
   http.post<PathParams, CategoryFormData>(`${API_URL}/api/v1/categories`, async ({ request }) => {
     const body = await request.json();
-    categoriesService.create(body);
-    return await DelayedHttpResponse.ok();
+    const id = categoriesService.create(body);
+    return await DelayedHttpResponse.json(id);
   }),
 
   http.put<{ id: string }, CategoryFormData>(

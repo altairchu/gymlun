@@ -29,7 +29,10 @@ public class DeleteNotesCommandHandler(INoteRepository noteRepository, INotesOrd
         var remainingQuery = noteRepository.GetQuery()
             .Where(n => n.Date == date)
             .Where(n => n.MealType == mealType)
-            .Where(n => !notesForDeleteIds.Contains(n.Id));
+            .Where(n => !notesForDeleteIds.Contains(n.Id))
+            .OrderBy(n => n.Time)
+            .ThenBy(n => n.DisplayOrder)
+            .ThenBy(n => n.Id);
         var remainingNotes = await noteRepository.GetByQueryAsync(remainingQuery, cancellationToken);
 
         notesOrderCalculator.RecalculateDisplayOrders(remainingNotes);

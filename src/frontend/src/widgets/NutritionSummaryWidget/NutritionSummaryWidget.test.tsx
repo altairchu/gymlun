@@ -5,11 +5,11 @@ import { NutritionSummaryWidget } from './NutritionSummaryWidget';
 
 const nutritionValues: Record<productModel.NutritionValueType, number> = {
   calories: 2994,
-  protein: 97.58,
-  fats: 47.86,
-  carbs: 146.34,
-  sugar: 19.07,
-  salt: 2.42,
+  protein: 97.6,
+  fats: 47.9,
+  carbs: 146.3,
+  sugar: 19.1,
+  salt: 2.4,
 };
 
 const types: productModel.NutritionValueType[] = [
@@ -27,4 +27,16 @@ test.each(types)('the %s value is shown in the colour that identifies it', async
   const { color } = productModel.nutritionValuesConfig[type];
 
   expect(screen.getByText(nutritionValues[type].toString())).toHaveStyle({ color });
+});
+
+test('nutrient values are rounded to one decimal place', async () => {
+  await render(<NutritionSummaryWidget nutritionValues={{ ...nutritionValues, protein: 97.58 }} />);
+
+  expect(screen.getByText('97.6')).toBeVisible();
+});
+
+test('an unknown nutrient value is shown as a dash', async () => {
+  await render(<NutritionSummaryWidget nutritionValues={{ ...nutritionValues, sugar: null }} />);
+
+  expect(screen.getByText('—')).toBeVisible();
 });

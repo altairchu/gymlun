@@ -1,4 +1,8 @@
-import { type CreateProductRequest, type EditProductRequest } from '@/entities/product';
+import {
+  type Category,
+  type CreateProductRequest,
+  type EditProductRequest,
+} from '@/entities/product';
 import { db, type DbUpdatableProduct, type DbProduct } from '../db';
 
 interface GetProductsRequest {
@@ -15,19 +19,18 @@ export const get = ({
   productSearchName,
 }: GetProductsRequest): DbProduct[] => {
   let productItems = db.product.findMany({
-    where: {
-      categoryId: categoryId === null ? {} : { equals: categoryId },
-    },
     orderBy: { name: 'asc' },
-    skip: (pageNumber - 1) * pageSize,
-    take: pageSize,
   });
+
+  if (categoryId !== null) {
+    productItems = productItems.filter(p => p.categoryIds.includes(categoryId));
+  }
 
   if (productSearchName) {
     productItems = productItems.filter(p => p.name.toLowerCase().startsWith(productSearchName));
   }
 
-  return productItems;
+  return productItems.slice((pageNumber - 1) * pageSize, pageNumber * pageSize);
 };
 
 export const getById = (id: number): DbProduct | null =>
@@ -39,27 +42,22 @@ export const getById = (id: number): DbProduct | null =>
 
 export const getAll = (): DbProduct[] => db.product.getAll();
 
-export const getCategoryNames = (products: DbProduct[]): Map<number, string> => {
-  return products
-    .map(p => p.categoryId)
-    .reduce((map, id) => {
-      if (map.has(id)) {
-        return map;
-      }
+export const getCategories = (product: DbProduct): Category[] =>
+  db.category
+    .findMany({
+      where: {
+        id: { in: product.categoryIds },
+      },
+      orderBy: { name: 'asc' },
+    })
+    .map(({ id, name }) => ({ id, name }));
 
-      const category = db.category.findFirst({
-        where: {
-          id: { equals: id },
-        },
-      });
-
-      if (category) {
-        map.set(id, category.name);
-      }
-
-      return map;
-    }, new Map<number, string>());
-};
+const allCategoriesExist = (categoryIds: number[]): boolean =>
+  db.category.count({
+    where: {
+      id: { in: categoryIds },
+    },
+  }) === new Set(categoryIds).size;
 
 export const count = (): number => db.product.count();
 
@@ -77,7 +75,8 @@ export const create = ({
   name,
   caloriesCost,
   defaultQuantity,
-  categoryId,
+  quantityUnit,
+  categoryIds,
   protein,
   fats,
   carbs,
@@ -85,13 +84,7 @@ export const create = ({
   salt,
   isFavorite,
 }: CreateProductRequest): CreateProductResult => {
-  const category = db.category.findFirst({
-    where: {
-      id: { equals: categoryId },
-    },
-  });
-
-  if (!category) {
+  if (!allCategoriesExist(categoryIds)) {
     return { type: 'CategoryNotFound' };
   }
 
@@ -112,7 +105,8 @@ export const create = ({
     name,
     caloriesCost,
     defaultQuantity,
-    categoryId,
+    quantityUnit,
+    categoryIds,
     protein,
     fats,
     carbs,
@@ -132,7 +126,8 @@ export const update = (
     name,
     caloriesCost,
     defaultQuantity,
-    categoryId,
+    quantityUnit,
+    categoryIds,
     protein,
     fats,
     carbs,
@@ -141,13 +136,7 @@ export const update = (
     isFavorite,
   }: EditProductRequest,
 ): UpdateProductResult => {
-  const category = db.category.findFirst({
-    where: {
-      id: { equals: categoryId },
-    },
-  });
-
-  if (!category) {
+  if (!allCategoriesExist(categoryIds)) {
     return 'CategoryNotFound';
   }
 
@@ -159,7 +148,8 @@ export const update = (
       name,
       caloriesCost,
       defaultQuantity,
-      categoryId,
+      quantityUnit,
+      categoryIds,
       protein,
       fats,
       carbs,

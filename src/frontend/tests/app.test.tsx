@@ -107,10 +107,12 @@ test('an expired session shows the sign-in screen', async () => {
 });
 
 test('opening a diary date by URL shows the Food Logs of that date', async () => {
+  const user = userEvent.setup();
   await renderApp('/?date=2023-10-20', { signedIn: true });
 
   expect(await screen.findByRole('button', { name: /2023年10月20日/ })).toBeVisible();
-  const breakfast = await screen.findByRole('listitem', { name: /^早餐/ });
+  await user.click(screen.getByRole('tab', { name: /時間線/ }));
+  const breakfast = await screen.findByRole('listitem', { name: /^08:00，/ });
   expect(await within(breakfast).findByText('Apple')).toBeVisible();
   expect(within(breakfast).getByText('Milk')).toBeVisible();
 });
@@ -133,7 +135,8 @@ test('switching the date on the diary shows the Food Logs of the new date', asyn
   await user.click(screen.getByRole('button', { name: '確定' }));
 
   expect(await screen.findByRole('button', { name: /2023年10月20日/ })).toBeVisible();
-  const breakfast = screen.getByRole('listitem', { name: /^早餐/ });
+  await user.click(screen.getByRole('tab', { name: /時間線/ }));
+  const breakfast = await screen.findByRole('listitem', { name: /^08:00，/ });
   expect(await within(breakfast).findByText('Apple')).toBeVisible();
   expect(within(breakfast).queryByText('Beef')).not.toBeInTheDocument();
 });
@@ -163,7 +166,7 @@ test.each<DrawerLinkCase>([
   {
     link: '食物',
     from: '/',
-    findSectionContent: () => screen.findByRole('cell', { name: 'Chocolate cake' }),
+    findSectionContent: () => screen.findByRole('cell', { name: /^Chocolate cake/ }),
   },
   {
     link: '分類',
@@ -224,7 +227,7 @@ test.each<SectionHeadingCase>([
   {
     title: '食物',
     url: '/products',
-    findSectionContent: () => screen.findByRole('cell', { name: 'Chocolate cake' }),
+    findSectionContent: () => screen.findByRole('cell', { name: /^Chocolate cake/ }),
   },
   {
     title: '分類',

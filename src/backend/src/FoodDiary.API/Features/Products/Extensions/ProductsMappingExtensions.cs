@@ -12,6 +12,7 @@ public static class ProductsMappingExtensions
             Id = p.Id,
             Name = p.Name,
             DefaultQuantity = p.DefaultQuantity,
+            QuantityUnit = p.QuantityUnit,
             CaloriesCost = p.CaloriesCost,
             Protein = p.Protein,
             Fats = p.Fats,
@@ -19,12 +20,16 @@ public static class ProductsMappingExtensions
             Sugar = p.Sugar,
             Salt = p.Salt,
             IsFavorite = p.IsFavorite,
-            Category = new Contracts.Category
-            {
-                Id = p.CategoryId,
-                Name = p.Category!.Name
-            }
+            Categories = p.Categories.ToResponseCategories()
         };
+    }
+
+    public static IReadOnlyList<Contracts.Category> ToResponseCategories(this IEnumerable<Domain.Entities.Category> categories)
+    {
+        return categories
+            .OrderBy(c => c.Name)
+            .Select(c => new Contracts.Category { Id = c.Id, Name = c.Name })
+            .ToList();
     }
     
     public static SearchProductsResponse.Product[] ToResponse(this SearchProductsResult result)
@@ -40,6 +45,8 @@ public static class ProductsMappingExtensions
             Id: product.Id,
             Name: product.Name,
             DefaultQuantity: product.DefaultQuantity,
+            QuantityUnit: product.QuantityUnit,
+            CategoryIds: product.Categories.Select(c => c.Id).Order().ToList(),
             Calories: product.CaloriesCost,
             Protein: product.Protein,
             Fats: product.Fats,

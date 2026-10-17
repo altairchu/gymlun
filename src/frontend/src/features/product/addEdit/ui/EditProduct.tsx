@@ -29,10 +29,7 @@ export const EditProduct: FC<Props> = ({ product, renderTrigger }) => {
   const handleEditDialogSubmit = async (
     formData: productModel.ProductFormValues,
   ): Promise<void> => {
-    if (formData.category) {
-      const request = mapToEditProductRequest(product.id, formData.category.id, formData);
-      await editProduct(request);
-    }
+    await editProduct(mapToEditProductRequest(product.id, formData));
   };
 
   const handleEditDialogClose = (): void => {

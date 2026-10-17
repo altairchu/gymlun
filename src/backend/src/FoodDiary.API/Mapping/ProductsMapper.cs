@@ -1,4 +1,5 @@
 using FoodDiary.API.Dtos;
+using FoodDiary.API.Features.Products.Extensions;
 using FoodDiary.Contracts.Products;
 using FoodDiary.Domain.Entities;
 
@@ -12,8 +13,8 @@ public static class ProductsMapper
         Name = product.Name,
         CaloriesCost = product.CaloriesCost,
         DefaultQuantity = product.DefaultQuantity,
-        CategoryId = product.CategoryId,
-        CategoryName = product.Category!.Name,
+        QuantityUnit = product.QuantityUnit,
+        Categories = product.Categories.ToResponseCategories(),
         Protein = product.Protein,
         Fats = product.Fats,
         Carbs = product.Carbs,

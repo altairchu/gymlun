@@ -1,8 +1,16 @@
 import { z } from 'zod';
-import { quantitySchema } from '@/shared/lib';
 import { NutritionValueSchema } from './NutritionValueSchema';
+import { QuantityUnit } from './quantityUnit';
 
-const CALORIES_ERROR = { error: '請輸入 1 至 1000 之間的整數' };
+export const MAX_PRODUCT_CATEGORIES = 10;
+
+const WHOLE_NUMBER_ERROR = { error: '請輸入 1 至 1000 之間的整數' };
+
+const wholeNumberFrom1To1000 = z.coerce
+  .number<number>(WHOLE_NUMBER_ERROR)
+  .int(WHOLE_NUMBER_ERROR)
+  .min(1, WHOLE_NUMBER_ERROR)
+  .max(1000, WHOLE_NUMBER_ERROR);
 
 export const productNameSchema = z
   .string()
@@ -14,19 +22,17 @@ export const productNameSchema = z
 export const productSchema = z.object({
   id: z.number().optional(),
   name: productNameSchema,
-  defaultQuantity: quantitySchema,
-  category: z
-    .object({
-      id: z.number(),
-      name: z.string(),
-    })
-    .nullable()
-    .refine((category): boolean => category !== null, { error: '請選擇分類' }),
-  calories: z.coerce
-    .number<number>(CALORIES_ERROR)
-    .int(CALORIES_ERROR)
-    .min(1, CALORIES_ERROR)
-    .max(1000, CALORIES_ERROR),
+  defaultQuantity: wholeNumberFrom1To1000,
+  quantityUnit: z.enum(QuantityUnit),
+  categories: z
+    .array(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+      }),
+    )
+    .max(MAX_PRODUCT_CATEGORIES, { error: `最多可選 ${MAX_PRODUCT_CATEGORIES} 個分類` }),
+  calories: wholeNumberFrom1To1000,
   protein: NutritionValueSchema,
   fats: NutritionValueSchema,
   carbs: NutritionValueSchema,

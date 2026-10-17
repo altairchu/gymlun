@@ -6,6 +6,7 @@ public class Note
 {
     public int Id { get; set; }
     public DateOnly Date { get; set; }
+    public TimeOnly Time { get; set; }
     public MealType MealType { get; set; }
     public int ProductId { get; set; }
     public int ProductQuantity { get; set; }

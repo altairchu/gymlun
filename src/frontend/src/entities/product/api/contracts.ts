@@ -1,10 +1,12 @@
+import { type QuantityUnit } from '../model/quantityUnit';
+
 export interface Product {
   id: number;
   name: string;
   caloriesCost: number;
   defaultQuantity: number;
-  categoryId: number;
-  categoryName: string;
+  quantityUnit: QuantityUnit;
+  categories: Category[];
   protein: number | null;
   fats: number | null;
   carbs: number | null;
@@ -35,7 +37,8 @@ export interface GetProductByIdResponse {
   name: string;
   caloriesCost: number;
   defaultQuantity: number;
-  category: Category;
+  quantityUnit: QuantityUnit;
+  categories: Category[];
   protein: number | null;
   fats: number | null;
   carbs: number | null;
@@ -48,6 +51,8 @@ export interface ProductSelectOption {
   id: number;
   name: string;
   defaultQuantity: number;
+  quantityUnit: QuantityUnit;
+  categoryIds: number[];
   calories: number;
   protein: number | null;
   fats: number | null;
@@ -61,7 +66,8 @@ export interface CreateProductRequest {
   name: string;
   caloriesCost: number;
   defaultQuantity: number;
-  categoryId: number;
+  quantityUnit: QuantityUnit;
+  categoryIds: number[];
   protein: number | null;
   fats: number | null;
   carbs: number | null;
@@ -79,7 +85,8 @@ export interface EditProductRequest {
   name: string;
   caloriesCost: number;
   defaultQuantity: number;
-  categoryId: number;
+  quantityUnit: QuantityUnit;
+  categoryIds: number[];
   protein: number | null;
   fats: number | null;
   carbs: number | null;

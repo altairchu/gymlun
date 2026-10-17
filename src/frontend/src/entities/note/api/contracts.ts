@@ -1,3 +1,4 @@
+import { type productModel } from '@/entities/product';
 import { type MealType } from '../model';
 
 export interface GetNotesRequest {
@@ -11,6 +12,8 @@ export interface GetNotesResponse {
 export interface NoteItem {
   id: number;
   date: string;
+  /** Time of day it was eaten, `HH:mm:ss` */
+  time: string;
   mealType: MealType;
   displayOrder: number;
   productQuantity: number;
@@ -21,6 +24,7 @@ export interface Product {
   id: number;
   name: string;
   defaultQuantity: number;
+  quantityUnit: productModel.QuantityUnit;
   calories: number;
   protein: number | null;
   fats: number | null;
@@ -45,10 +49,28 @@ export interface NoteHistoryItem {
 
 export interface NoteRequestBody {
   date: string;
-  mealType: MealType;
+  /** `HH:mm:ss`; the meal is derived from it when `mealType` is left out */
+  time?: string;
+  mealType?: MealType;
   productId: number;
   productQuantity: number;
-  displayOrder: number;
+  displayOrder?: number;
+}
+
+export interface CreateNotesRequestItem {
+  productId: number;
+  productQuantity: number;
+}
+
+export interface CreateNotesRequest {
+  date: string;
+  /** `HH:mm:ss` */
+  time: string;
+  items: CreateNotesRequestItem[];
+}
+
+export interface CreateNotesResponse {
+  ids: number[];
 }
 
 export interface UpdateNoteRequest {

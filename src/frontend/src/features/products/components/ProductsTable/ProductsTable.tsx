@@ -3,11 +3,13 @@ import {
   Table,
   TableBody,
   TableCell,
+  tableCellClasses,
   TableContainer,
   TableHead,
   TableRow,
   Typography,
 } from '@mui/material';
+import { type SxProps, type Theme } from '@mui/material/styles';
 import { type FC, type ReactElement } from 'react';
 import { type Product } from '@/entities/product';
 import ProductsTableRow from '../ProductsTableRow';
@@ -17,6 +19,18 @@ interface ProductsTableProps {
   checkedIds: number[];
   onCheckedChange: (products: Product[], newCheckedIds: number[]) => void;
 }
+
+const COLUMNS_COUNT = 5;
+
+const tableSx: SxProps<Theme> = {
+  tableLayout: 'fixed',
+  [`& .${tableCellClasses.root}:not(.${tableCellClasses.paddingCheckbox})`]: {
+    px: { xs: 1, sm: 2 },
+  },
+  [`& .${tableCellClasses.head}`]: {
+    whiteSpace: 'nowrap',
+  },
+};
 
 const ProductsTable: FC<ProductsTableProps> = ({ products, checkedIds, onCheckedChange }) => {
   const allProductsChecked = products.length > 0 && products.length === checkedIds.length;
@@ -29,7 +43,7 @@ const ProductsTable: FC<ProductsTableProps> = ({ products, checkedIds, onChecked
     if (products.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={4} align="center">
+          <TableCell colSpan={COLUMNS_COUNT} align="center">
             <Typography
               sx={{
                 color: 'textSecondary',
@@ -53,7 +67,7 @@ const ProductsTable: FC<ProductsTableProps> = ({ products, checkedIds, onChecked
 
   return (
     <TableContainer>
-      <Table>
+      <Table sx={tableSx}>
         <TableHead>
           <TableRow>
             <TableCell padding="checkbox">
@@ -71,9 +85,12 @@ const ProductsTable: FC<ProductsTableProps> = ({ products, checkedIds, onChecked
               />
             </TableCell>
             <TableCell>名稱</TableCell>
-            <TableCell align="right">卡路里</TableCell>
-            <TableCell align="right">預設份量</TableCell>
-            <TableCell>分類</TableCell>
+            <TableCell align="right" sx={{ width: { xs: 64, sm: 96 } }}>
+              卡路里
+            </TableCell>
+            <TableCell align="right" sx={{ width: { xs: 64, sm: 120 } }}>
+              份量
+            </TableCell>
             <TableCell padding="checkbox" />
           </TableRow>
         </TableHead>

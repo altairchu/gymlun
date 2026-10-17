@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Globalization;
 using FoodDiary.Application.Notes.Create;
 using FoodDiary.Application.Notes.Delete;
 using FoodDiary.Domain.Entities;
@@ -22,16 +23,21 @@ public class FoodLogsWriteTool(
 {
     internal const int MinQuantity = 1;
     internal const int MaxQuantity = 5000;
+    internal const decimal MaxServings = 100;
+
+    private static readonly string[] TimeFormats = ["H:mm", "H:mm:ss"];
 
     private const string LogFoodToolDescription =
         """
-        Logs one product eaten in one meal on one date, and returns the food log it created.
+        Logs one product eaten at one time of day on one date, and returns the food log it created.
 
         Find `productId` with `list_products` first; products the person eats often have `isFavorite` set. When the product is not in the catalogue yet, create it with `create_product`, then log it.
 
-        `quantity` is grams, drinks included. Omit it to log the product's `defaultQuantity`, its usual portion. When the person counts pieces or servings ("2 bowls", "10 dumplings"), convert them to grams from `defaultQuantity` or from what the person said.
+        How much was eaten follows the product's `countBy`. For a product counted by `grams`, pass `quantity` in grams, drinks included. For a product counted by `servings`, pass the number of pieces or servings as `servings`, e.g. 10 for "10 dumplings" or 1.5 for "one and a half bowls": it logs `servings` × `defaultQuantity` grams, rounded. Pass `quantity` or `servings`, never both; omit both to log one serving of `defaultQuantity` grams.
 
-        `date` is a calendar date with no time or timezone: use the person's local date. Meals are fixed slots: Breakfast, SecondBreakfast, Lunch, AfternoonSnack, Dinner.
+        `time` is when it was eaten, `HH:mm` in the person's local time, e.g. 12:30, and the meal follows from it: Breakfast from 04:00, SecondBreakfast from 10:00, Lunch from 12:00, AfternoonSnack from 15:00, Dinner from 18:00 until 04:00. When the person gives only a meal, pass `mealType` without `time` and the meal's usual time is logged: 08:00, 10:30, 12:30, 15:30 or 19:00. Pass both only when the meal the person names differs from the one its time falls in, e.g. a late lunch at 15:30.
+
+        `date` is a calendar date with no time or timezone: use the person's local date.
         """;
 
     private const string DeleteFoodLogToolDescription =
@@ -43,23 +49,40 @@ public class FoodLogsWriteTool(
     [Description(LogFoodToolDescription)]
     public async Task<LogFoodResponse> LogFood(
         [Description("Calendar date, `yyyy-MM-dd`.")] DateOnly date,
-        [Description("Meal slot: Breakfast, SecondBreakfast, Lunch, AfternoonSnack or Dinner.")] string mealType,
         [Description("Id of the product eaten.")] int productId,
-        [Description("Grams eaten, from 1 to 5000. Omit to log the product's defaultQuantity.")] int? quantity = null,
+        [Description("Grams eaten, from 1 to 5000. Omit it when passing `servings`.")] int? quantity = null,
+        [Description("Pieces or servings eaten, more than 0 and at most 100, e.g. 1.5. Omit it when passing `quantity`.")] decimal? servings = null,
+        [Description("Time of day it was eaten, `HH:mm`, in the person's local time.")] string? time = null,
+        [Description("Meal slot: Breakfast, SecondBreakfast, Lunch, AfternoonSnack or Dinner. Omit it to follow from `time`.")] string? mealType = null,
         CancellationToken cancellationToken = default)
     {
+        if (quantity is not null && servings is not null)
+        {
+            throw new McpException("Pass either `quantity` or `servings`, not both.");
+        }
+
         if (quantity is < MinQuantity or > MaxQuantity)
         {
             throw new McpException($"Requested quantity {quantity}; it must be from {MinQuantity} to {MaxQuantity} grams.");
         }
 
-        if (!Enum.TryParse<MealType>(mealType, ignoreCase: true, out var meal) || !Enum.IsDefined(meal) || int.TryParse(mealType, out _))
+        if (servings is <= 0 or > MaxServings)
         {
-            throw new McpException($"Unknown mealType '{mealType}'. Use Breakfast, SecondBreakfast, Lunch, AfternoonSnack or Dinner.");
+            throw new McpException($"Requested servings {servings}; it must be more than 0 and at most {MaxServings}.");
         }
+
+        var (noteTime, meal) = MealType.ResolveTimeAndMeal(ParseTime(time), ParseMealType(mealType))
+                               ?? throw new McpException("Pass `time`, `mealType` or both.");
 
         var product = await productsRepository.FindById(productId, cancellationToken)
                       ?? throw new McpException($"Product {productId} not found. Look it up with `list_products`.");
+
+        var grams = quantity ?? ServingsToGrams(servings ?? 1, product);
+
+        if (grams is < MinQuantity or > MaxQuantity)
+        {
+            throw new McpException($"That is {grams} g; it must be from {MinQuantity} to {MaxQuantity} grams. Check `servings`.");
+        }
 
         var notesOfDate = await notesRepository.FindByDate(date, cancellationToken);
         var displayOrder = notesOfDate
@@ -69,7 +92,7 @@ public class FoodLogsWriteTool(
             .Max();
 
         var result = await createNoteCommandHandler.Handle(
-            new CreateNoteCommand(date, meal, productId, quantity ?? product.DefaultQuantity, displayOrder),
+            new CreateNoteCommand(date, noteTime, meal, productId, grams, displayOrder),
             cancellationToken);
 
         if (result is not CreateNoteResult.Success success)
@@ -81,9 +104,10 @@ public class FoodLogsWriteTool(
         {
             Id = success.NoteId,
             Date = date,
+            Time = noteTime,
             MealType = meal,
             ProductId = productId,
-            ProductQuantity = quantity ?? product.DefaultQuantity,
+            ProductQuantity = grams,
             Product = product
         };
 
@@ -104,5 +128,35 @@ public class FoodLogsWriteTool(
             DeleteNoteResult.NotFound => throw new McpException($"Food log {id} not found."),
             _ => throw new McpException($"Food log {id} could not be deleted.")
         };
+    }
+
+    private static int ServingsToGrams(decimal servings, Product product) =>
+        (int)Math.Round(servings * product.DefaultQuantity, MidpointRounding.AwayFromZero);
+
+    private static TimeOnly? ParseTime(string? time)
+    {
+        if (string.IsNullOrWhiteSpace(time))
+        {
+            return null;
+        }
+
+        return TimeOnly.TryParseExact(time.Trim(), TimeFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed)
+            ? parsed
+            : throw new McpException($"Unknown time '{time}'. Use `HH:mm`, e.g. 12:30.");
+    }
+
+    private static MealType? ParseMealType(string? mealType)
+    {
+        if (string.IsNullOrWhiteSpace(mealType))
+        {
+            return null;
+        }
+
+        if (!Enum.TryParse<MealType>(mealType, ignoreCase: true, out var meal) || !Enum.IsDefined(meal) || int.TryParse(mealType, out _))
+        {
+            throw new McpException($"Unknown mealType '{mealType}'. Use Breakfast, SecondBreakfast, Lunch, AfternoonSnack or Dinner.");
+        }
+
+        return meal;
     }
 }

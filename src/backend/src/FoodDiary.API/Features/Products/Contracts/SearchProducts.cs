@@ -1,3 +1,4 @@
+using FoodDiary.Domain.Enums;
 using JetBrains.Annotations;
 
 namespace FoodDiary.API.Features.Products.Contracts;
@@ -9,6 +10,8 @@ public record SearchProductsResponse(IReadOnlyCollection<SearchProductsResponse.
         int Id,
         string Name,
         int DefaultQuantity,
+        QuantityUnit QuantityUnit,
+        IReadOnlyList<int> CategoryIds,
         int Calories,
         decimal? Protein,
         decimal? Fats,

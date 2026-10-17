@@ -12,8 +12,9 @@ public class NotesRepository(FoodDiaryContext context) : INotesRepository
             .AsNoTracking()
             .Where(n => n.Date == date)
             .Include(n => n.Product)
-            .OrderBy(n => n.MealType)
+            .OrderBy(n => n.Time)
             .ThenBy(n => n.DisplayOrder)
+            .ThenBy(n => n.Id)
             .ToListAsync(cancellationToken);
     }
 
@@ -27,6 +28,9 @@ public class NotesRepository(FoodDiaryContext context) : INotesRepository
             .Where(n => n.Date >= from && n.Date <= to)
             .Include(n => n.Product)
             .OrderByDescending(n => n.Date)
+            .ThenBy(n => n.Time)
+            .ThenBy(n => n.DisplayOrder)
+            .ThenBy(n => n.Id)
             .ToListAsync(cancellationToken);
     }
 
@@ -38,6 +42,12 @@ public class NotesRepository(FoodDiaryContext context) : INotesRepository
     public Task Add(Note note, CancellationToken cancellationToken)
     {
         context.Notes.Add(note);
+        return context.SaveChangesAsync(cancellationToken);
+    }
+
+    public Task AddRange(IReadOnlyCollection<Note> notes, CancellationToken cancellationToken)
+    {
+        context.Notes.AddRange(notes);
         return context.SaveChangesAsync(cancellationToken);
     }
 

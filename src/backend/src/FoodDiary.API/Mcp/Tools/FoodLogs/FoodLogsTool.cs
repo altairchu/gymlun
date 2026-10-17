@@ -17,7 +17,7 @@ public class FoodLogsTool(
         """
         Food logs over a date range, grouped by day and meal, with nutrition totals per day and for the whole range.
 
-        One item per product eaten per meal per date. `quantity` is grams, drinks included. `calories` is kilocalories; `protein`, `fats`, `carbs`, `sugar` and `salt` are grams (salt is sodium chloride, not sodium), already scaled to the quantity eaten. `from` and `to` are inclusive calendar dates with no time or timezone. Meals within a day run in order: Breakfast, SecondBreakfast, Lunch, AfternoonSnack, Dinner.
+        One item per product eaten per meal per date. `quantity` is grams, drinks included. `calories` is kilocalories; `protein`, `fats`, `carbs`, `sugar` and `salt` are grams (salt is sodium chloride, not sodium), already scaled to the quantity eaten. `from` and `to` are inclusive calendar dates with no time or timezone. Meals within a day run in order: Breakfast, SecondBreakfast, Lunch, AfternoonSnack, Dinner. Items within a meal run in order of `time`, the time of day it was eaten, `HH:mm` in the person's local time.
 
         A `null` nutrition value means the product has no value recorded for it: unknown, not zero. Totals sum only the items that have a value, so every total carries `coveredItems` (items with a value) and `totalItems` (all items). When `coveredItems` is less than `totalItems`, the total is understated: qualify it, e.g. "based on 9 of 12 items".
 

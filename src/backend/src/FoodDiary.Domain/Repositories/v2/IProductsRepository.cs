@@ -7,6 +7,8 @@ namespace FoodDiary.Domain.Repositories.v2;
 public interface IProductsRepository
 {
     Task<Product?> FindById(int id, CancellationToken cancellationToken);
+
+    Task<Product[]> FindByIds(IReadOnlyCollection<int> ids, CancellationToken cancellationToken);
     
     Task<Product?> FindByExactName(string name, CancellationToken cancellationToken);
 

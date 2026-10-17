@@ -1,16 +1,5 @@
 import { z } from 'zod';
-import { type NoteItem } from '../api';
 import { MealType } from '../model';
-
-export type GetNotesByMealsResponse = Record<MealType, NoteItem[]>;
-
-export const createEmptyGetNotesByMealsResponse = (): GetNotesByMealsResponse => ({
-  [MealType.Breakfast]: [],
-  [MealType.SecondBreakfast]: [],
-  [MealType.Lunch]: [],
-  [MealType.AfternoonSnack]: [],
-  [MealType.Dinner]: [],
-});
 
 const MEAL_NAMES: Record<MealType, string> = {
   [MealType.Breakfast]: '早餐',

@@ -14,7 +14,7 @@ import { productModel } from '@/entities/product';
 import * as styles from '../styles';
 
 const DEBOUNCE_QUERY_DELAY = 500;
-const DEBOUNCE_QUERY_LENGTH_THRESHOLD = 3;
+const DEBOUNCE_QUERY_LENGTH_THRESHOLD = 1;
 
 export const SearchByName: FC = () => {
   const filterQuery = useAppSelector(state => state.products.filter.productSearchName ?? '');

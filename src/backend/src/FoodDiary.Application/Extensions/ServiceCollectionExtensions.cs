@@ -5,6 +5,7 @@ using FoodDiary.Application.Categories.Delete;
 using FoodDiary.Application.Categories.Get;
 using FoodDiary.Application.Categories.Update;
 using FoodDiary.Application.Notes.Create;
+using FoodDiary.Application.Notes.CreateMany;
 using FoodDiary.Application.Notes.Delete;
 using FoodDiary.Application.Notes.Get;
 using FoodDiary.Application.Notes.GetHistory;
@@ -56,6 +57,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<GetNotesQueryHandler>();
         services.AddScoped<GetNotesHistoryQueryHandler>();
         services.AddScoped<CreateNoteCommandHandler>();
+        services.AddScoped<CreateNotesCommandHandler>();
         services.AddScoped<UpdateNoteCommandHandler>();
         services.AddScoped<RecognizeNoteCommandHandler>();
         services.AddScoped<DeleteNoteCommandHandler>();
