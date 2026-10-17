@@ -8,8 +8,10 @@ import { renderApp } from '@tests/render';
 import { notesService } from './mockApi/notes';
 import { server } from './mockApi/server';
 
-// Whole-app navigations outlast the 1 s default while the rest of the suite runs in parallel
-configure({ asyncUtilTimeout: 3000 });
+// Whole-app navigations outlast the 1 s default while the rest of the suite runs in parallel;
+// signing in alone takes about 3 s on a busy machine, so both limits leave room for that
+configure({ asyncUtilTimeout: 8000 });
+vi.setConfig({ testTimeout: 15_000 });
 
 const seedSeptemberFoodLog = (): void => {
   notesService.create({

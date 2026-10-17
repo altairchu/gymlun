@@ -269,7 +269,7 @@ export const ProductForm: FC<Props> = ({
                   onChange={(_, checked) => field.onChange(checked)}
                 />
               }
-              label="常吃：顯示於快速加入"
+              label="常食：顯示於快速加入"
             />
           )}
         />

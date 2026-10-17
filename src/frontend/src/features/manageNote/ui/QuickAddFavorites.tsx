@@ -62,8 +62,9 @@ export const QuickAddFavorites: FC<Props> = ({ date, mealType }) => {
       <Stack
         direction="row"
         spacing={1}
-        aria-label="快速加入常吃食物"
-        sx={{ width: '100%', overflowX: 'auto', pb: 0.5 }}
+        aria-label="快速加入常食食物"
+        useFlexGap
+        sx={{ width: '100%', flexWrap: 'wrap', pb: 0.5 }}
       >
         {favorites.map(product => (
           <Chip
@@ -75,6 +76,7 @@ export const QuickAddFavorites: FC<Props> = ({ date, mealType }) => {
             variant="outlined"
             disabled={!notesLoaded || isAdding}
             onClick={() => void handleAdd(product)}
+            sx={{ height: 44, borderRadius: 22 }}
           />
         ))}
       </Stack>

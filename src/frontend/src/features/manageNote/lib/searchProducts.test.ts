@@ -1,7 +1,7 @@
 import { type ProductSelectOption } from '@/entities/product';
 import { searchProductsByName, shouldSuggestAddingNewProduct } from './searchProducts';
 
-type GivenProducts = 'cheese' | 'cheesecake' | 'chocolateCake' | 'creamCheese';
+type GivenProducts = 'cheese' | 'cheesecake' | 'chocolateCake' | 'creamCheese' | 'dumplings';
 
 const create = {
   product: ({
@@ -27,6 +27,7 @@ const given: Record<GivenProducts, ProductSelectOption> = {
   cheesecake: create.product({ id: 2, name: 'Cheesecake', defaultQuantity: 50 }),
   chocolateCake: create.product({ id: 3, name: 'Chocolate cake', defaultQuantity: 60 }),
   creamCheese: create.product({ id: 4, name: 'Cream cheese', defaultQuantity: 100 }),
+  dumplings: create.product({ id: 5, name: '豬肉韭菜餃', defaultQuantity: 25 }),
 } as const;
 
 const sourceProducts = Object.values(given);
@@ -36,11 +37,13 @@ describe('searchProductsByName', () => {
     ['che', [given.cheese, given.cheesecake, given.creamCheese]],
     ['cream', [given.creamCheese]],
     ['Cake ', [given.cheesecake, given.chocolateCake]],
+    ['ch', [given.cheese, given.cheesecake, given.chocolateCake, given.creamCheese]],
+    ['餃', [given.dumplings]],
   ])('should find products by search query: "%s"', (query, foundProducts) => {
     expect(searchProductsByName(sourceProducts, query)).toStrictEqual(foundProducts);
   });
 
-  test.each<string>(['', ' ', 'ch', 'sadsfafds'])(
+  test.each<string>(['', ' ', 'sadsfafds'])(
     'should not find any products by search query: "%s"',
     query => {
       expect(searchProductsByName(sourceProducts, query)).toStrictEqual<ProductSelectOption[]>([]);

@@ -93,6 +93,14 @@ export const ProductSearchResults: FC<Props> = ({ query }) => {
 
   return (
     <List>
+      {foundProducts.length > 0 && <ListSubheader disableGutters>找到的食物</ListSubheader>}
+      {foundProducts.map(product => (
+        <ListItem key={product.id} disableGutters disablePadding>
+          <ListItemButton onClick={() => handleSelectProduct(product)}>
+            <ListItemText>{product.name}</ListItemText>
+          </ListItemButton>
+        </ListItem>
+      ))}
       {suggestAddingNewProduct && (
         <ListItem disableGutters disablePadding>
           <ListItemButton onClick={handleAddProduct}>
@@ -103,14 +111,6 @@ export const ProductSearchResults: FC<Props> = ({ query }) => {
           </ListItemButton>
         </ListItem>
       )}
-      {foundProducts.length > 0 && <ListSubheader disableGutters>找到的食物</ListSubheader>}
-      {foundProducts.map(product => (
-        <ListItem key={product.id} disableGutters disablePadding>
-          <ListItemButton onClick={() => handleSelectProduct(product)}>
-            <ListItemText>{product.name}</ListItemText>
-          </ListItemButton>
-        </ListItem>
-      ))}
     </List>
   );
 };

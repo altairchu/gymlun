@@ -6,12 +6,14 @@ export const enum DateFormat {
   Iso = 'yyyy-MM-dd',
   UserFriendly = "yyyy'年'M'月'd'日'",
   MonthAndYear = "yyyy'年'M'月'",
+  DayAndMonth = "M'月'd'日'",
 }
 
 export const locale = zhHK;
 
 export const formatToISOStringWithoutTime = format(DateFormat.Iso);
 export const formatToUserFriendlyString = formatWithOptions({ locale }, DateFormat.UserFriendly);
+export const formatToDayAndMonthString = formatWithOptions({ locale }, DateFormat.DayAndMonth);
 export const getEndOfMonth = endOfMonth();
 
 export const getCurrentDate = (): Date => {
