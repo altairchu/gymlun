@@ -5,6 +5,9 @@ namespace FoodDiary.ComponentTests.Scenarios.Mcp;
 
 public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApiContext>(infrastructure)
 {
+    private static readonly string[] ReadTools = ["get_food_logs", "list_products"];
+    private static readonly string[] AllTools = [..ReadTools, "log_food", "delete_food_log", "create_product"];
+
     [Scenario]
     public Task The_client_can_discover_authorization_server()
     {
@@ -55,7 +58,7 @@ public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApi
             c => c.Given_notes(note),
             c => c.Given_access_token_was_issued(),
             c => c.When_mcp_client_calls_get_food_logs("2026-09-01", "2026-09-01"),
-            c => c.Then_mcp_client_lists_tools("get_food_logs", "list_products"),
+            c => c.Then_mcp_client_lists_tools(AllTools),
             c => c.Then_food_logs_contain(note));
     }
 
@@ -78,8 +81,53 @@ public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApi
             c => c.Given_products(oatmeal, apple),
             c => c.Given_access_token_was_issued(),
             c => c.When_mcp_client_calls_list_products("oat"),
-            c => c.Then_mcp_client_lists_tools("get_food_logs", "list_products"),
+            c => c.Then_mcp_client_lists_tools(AllTools),
             c => c.Then_products_contain(oatmeal));
+    }
+
+    [Scenario]
+    public Task The_client_can_log_food()
+    {
+        var dumplings = Create.Product("餃子").Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_products(dumplings),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_log_food("2026-09-01", "Lunch", dumplings),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_food_log_is_logged("2026-09-01", "Lunch", dumplings));
+    }
+
+    [Scenario]
+    public Task The_client_can_delete_food_log()
+    {
+        var note = Create.Note().WithDate("2026-09-01").WithProduct("Oatmeal", quantity: 60).Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_notes(note),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_delete_food_log(note),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_food_log_is_deleted(note));
+    }
+
+    [Scenario]
+    public Task The_client_can_create_product_from_serving_nutrition()
+    {
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_create_product("豬肉韭菜餃", "Dumplings", servingGrams: 250, calories: 550, protein: 22.5m),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_created_product_is_favorite_with_nutrition_per_100g("豬肉韭菜餃", "Dumplings", 250, 220, 9m));
+    }
+
+    [Scenario]
+    public Task The_client_with_read_only_access_token_cannot_see_write_tools()
+    {
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_read_only_access_token_was_issued(),
+            c => c.When_mcp_client_lists_tools(),
+            c => c.Then_mcp_client_lists_tools(ReadTools));
     }
 
     [Scenario]

@@ -13,7 +13,7 @@ public record CreateNoteCommand(
 
 public abstract record CreateNoteResult
 {
-    public record Success : CreateNoteResult;
+    public record Success(int NoteId) : CreateNoteResult;
 
     public record Failure(Error Error) : CreateNoteResult;
 
@@ -42,6 +42,6 @@ public class CreateNoteCommandHandler(IProductsRepository productsRepository, IN
         };
 
         await notesRepository.Add(note, cancellationToken);
-        return new CreateNoteResult.Success();
+        return new CreateNoteResult.Success(note.Id);
     }
 }

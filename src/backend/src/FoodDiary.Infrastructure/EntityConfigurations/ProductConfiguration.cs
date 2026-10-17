@@ -22,5 +22,8 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.Property(p => p.DefaultQuantity)
             .HasDefaultValue(100);
+
+        builder.Property(p => p.IsFavorite)
+            .HasDefaultValue(false);
     }
 }

@@ -65,6 +65,7 @@ public class FoodLogsToolTests
     {
         _notes.Add(new Note
         {
+            Id = _notes.Count + 1,
             Date = date,
             MealType = mealType,
             ProductId = product.Id,
@@ -93,6 +94,7 @@ public class FoodLogsToolTests
         ShouldBeJson(json["days"]![0]!["meals"]![0]!["items"]![0],
             """
             {
+              "id": 1,
               "product": { "id": 42, "name": "Oatmeal" },
               "quantity": 60,
               "calories": 219,

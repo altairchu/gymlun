@@ -15,18 +15,24 @@ public static class ProductsToolMapper
                 PageSize: pageSize,
                 TotalCount: result.TotalProductsCount);
         }
-
-        private static ListProductsToolResponse.Product ToResponseProduct(Product product) => new(
-            product.Id,
-            product.Name,
-            new ListProductsToolResponse.ProductCategory(product.Category!.Name),
-            product.DefaultQuantity,
-            new ListProductsToolResponse.ProductNutrition(
-                product.CaloriesCost,
-                product.Protein,
-                product.Fats,
-                product.Carbs,
-                product.Sugar,
-                product.Salt));
     }
+
+    extension(Product product)
+    {
+        public CreateProductToolResponse ToCreateProductToolResponse() => new(ToResponseProduct(product));
+    }
+
+    private static ListProductsToolResponse.Product ToResponseProduct(Product product) => new(
+        product.Id,
+        product.Name,
+        new ListProductsToolResponse.ProductCategory(product.Category!.Name),
+        product.DefaultQuantity,
+        product.IsFavorite,
+        new ListProductsToolResponse.ProductNutrition(
+            product.CaloriesCost,
+            product.Protein,
+            product.Fats,
+            product.Carbs,
+            product.Sugar,
+            product.Salt));
 }

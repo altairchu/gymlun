@@ -85,7 +85,8 @@ public class ProductsController : ControllerBase
             productData.Fats,
             productData.Carbs,
             productData.Sugar,
-            productData.Salt);
+            productData.Salt,
+            productData.IsFavorite);
 
         var result = await handler.Handle(command, cancellationToken);
 
@@ -126,7 +127,8 @@ public class ProductsController : ControllerBase
             updatedProductData.Fats,
             updatedProductData.Carbs,
             updatedProductData.Sugar,
-            updatedProductData.Salt);
+            updatedProductData.Salt,
+            updatedProductData.IsFavorite);
 
         var result = await handler.Handle(command, cancellationToken);
 

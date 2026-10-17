@@ -74,6 +74,12 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         return Task.CompletedTask;
     }
 
+    public Task Given_read_only_access_token_was_issued()
+    {
+        _accessToken = TokenService.IssueAccessToken(AccessGrantFor(AllowedUserEmail, "food:read"));
+        return Task.CompletedTask;
+    }
+
     public Task Given_mcp_is_disabled()
     {
         Factory = Factory.WithWebHostBuilder(builder => builder.ConfigureAppConfiguration((_, configuration) =>
@@ -118,6 +124,44 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
             ["pageSize"] = 100,
             ["productName"] = productName
         });
+    }
+
+    public Task When_mcp_client_calls_log_food(string date, string mealType, Product product)
+    {
+        return When_mcp_client_calls_listed_tool("log_food", new Dictionary<string, object?>
+        {
+            ["date"] = date,
+            ["mealType"] = mealType,
+            ["productId"] = product.Id
+        });
+    }
+
+    public Task When_mcp_client_calls_delete_food_log(Note note)
+    {
+        return When_mcp_client_calls_listed_tool("delete_food_log", new Dictionary<string, object?>
+        {
+            ["id"] = note.Id
+        });
+    }
+
+    public Task When_mcp_client_calls_create_product(string name, string category, int servingGrams, decimal calories, decimal protein)
+    {
+        return When_mcp_client_calls_listed_tool("create_product", new Dictionary<string, object?>
+        {
+            ["name"] = name,
+            ["category"] = category,
+            ["servingGrams"] = servingGrams,
+            ["calories"] = calories,
+            ["protein"] = protein
+        });
+    }
+
+    public async Task When_mcp_client_lists_tools()
+    {
+        await using var mcpClient = await ConnectMcpClient();
+
+        var tools = await mcpClient.ListToolsAsync();
+        _listedToolNames = tools.Select(tool => tool.Name).ToList();
     }
 
     private async Task When_mcp_client_calls_listed_tool(string toolName, Dictionary<string, object?> arguments)
@@ -301,7 +345,7 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
               "grant_types_supported": ["authorization_code", "refresh_token"],
               "code_challenge_methods_supported": ["S256"],
               "token_endpoint_auth_methods_supported": ["client_secret_post"],
-              "scopes_supported": ["food:read"],
+              "scopes_supported": ["food:read", "food:write"],
               "authorization_response_iss_parameter_supported": true
             }
             """);
@@ -315,7 +359,7 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         _mcpResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         _mcpResponse.Headers.WwwAuthenticate.Select(challenge => challenge.ToString()).Should().Equal(
             """
-            Bearer resource_metadata="http://localhost/.well-known/oauth-protected-resource/mcp", scope="food:read"
+            Bearer resource_metadata="http://localhost/.well-known/oauth-protected-resource/mcp", scope="food:read food:write"
             """);
 
         return Task.CompletedTask;
@@ -349,7 +393,7 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         metadata.RootElement.GetProperty("authorization_servers").EnumerateArray()
             .Select(server => server.GetString()).Should().Equal("http://localhost");
         metadata.RootElement.GetProperty("scopes_supported").EnumerateArray()
-            .Select(scope => scope.GetString()).Should().Equal("food:read");
+            .Select(scope => scope.GetString()).Should().Equal("food:read", "food:write");
     }
 
     public async Task Then_client_receives_new_access_token()
@@ -419,6 +463,53 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         return Task.CompletedTask;
     }
 
+    public Task Then_food_log_is_logged(string date, string mealType, Product product)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        using var response = JsonDocument.Parse(ToolResultText());
+        response.RootElement.GetProperty("date").GetString().Should().Be(date);
+        response.RootElement.GetProperty("mealType").GetString().Should().Be(mealType);
+
+        var foodLog = response.RootElement.GetProperty("foodLog");
+        foodLog.GetProperty("id").GetInt32().Should().BePositive();
+        foodLog.GetProperty("product").GetProperty("name").GetString().Should().Be(product.Name);
+        foodLog.GetProperty("quantity").GetInt32().Should().Be(product.DefaultQuantity);
+
+        return Task.CompletedTask;
+    }
+
+    public Task Then_food_log_is_deleted(Note note)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        using var response = JsonDocument.Parse(ToolResultText());
+        response.RootElement.GetProperty("deletedId").GetInt32().Should().Be(note.Id);
+
+        return Task.CompletedTask;
+    }
+
+    public Task Then_created_product_is_favorite_with_nutrition_per_100g(
+        string name,
+        string category,
+        int defaultQuantity,
+        int caloriesPer100g,
+        decimal proteinPer100g)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        using var response = JsonDocument.Parse(ToolResultText());
+        var product = response.RootElement.GetProperty("product");
+        product.GetProperty("name").GetString().Should().Be(name);
+        product.GetProperty("category").GetProperty("name").GetString().Should().Be(category);
+        product.GetProperty("defaultQuantity").GetInt32().Should().Be(defaultQuantity);
+        product.GetProperty("isFavorite").GetBoolean().Should().BeTrue();
+        product.GetProperty("per100g").GetProperty("calories").GetInt32().Should().Be(caloriesPer100g);
+        product.GetProperty("per100g").GetProperty("protein").GetDecimal().Should().Be(proteinPer100g);
+
+        return Task.CompletedTask;
+    }
+
     public Task Then_tool_call_is_error(string message)
     {
         _toolResult.IsError.Should().BeTrue();
@@ -445,7 +536,8 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
 
     private string ToolResultText() => _toolResult.Content.OfType<TextContentBlock>().Single().Text;
 
-    private AccessGrant AccessGrantFor(string email) => new(Client.ClientId!, email, "food:read", McpResource);
+    private AccessGrant AccessGrantFor(string email, string scope = "food:read food:write") =>
+        new(Client.ClientId!, email, scope, McpResource);
 
     private static async Task<JsonDocument> ReadJson(HttpResponseMessage response) =>
         JsonDocument.Parse(await response.Content.ReadAsStringAsync());

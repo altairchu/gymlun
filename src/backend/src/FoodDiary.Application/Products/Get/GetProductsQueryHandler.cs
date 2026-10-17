@@ -3,7 +3,7 @@ using FoodDiary.Domain.Repositories;
 
 namespace FoodDiary.Application.Products.Get;
 
-public record GetProductsQuery(int PageNumber, int PageSize, string? ProductName, int? CategoryId);
+public record GetProductsQuery(int PageNumber, int PageSize, string? ProductName, int? CategoryId, bool FavoritesOnly = false);
 
 public record GetProductsQueryResult(IReadOnlyCollection<Product> Products, int TotalProductsCount);
 
@@ -17,6 +17,8 @@ public class GetProductsQueryHandler(IProductRepository productRepository)
             dbQuery = dbQuery.Where(p => p.Name.ToLower().Contains(query.ProductName.ToLower()));
         if (query.CategoryId.HasValue)
             dbQuery = dbQuery.Where(p => p.CategoryId == query.CategoryId);
+        if (query.FavoritesOnly)
+            dbQuery = dbQuery.Where(p => p.IsFavorite);
 
         var totalProductsCount = await productRepository.CountByQueryAsync(dbQuery, cancellationToken);
 

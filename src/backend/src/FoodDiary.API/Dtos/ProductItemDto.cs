@@ -19,4 +19,5 @@ public class ProductItemDto
     public required decimal? Carbs { get; init; }
     public required decimal? Sugar { get; init; }
     public required decimal? Salt { get; init; }
+    public bool IsFavorite { get; init; }
 }

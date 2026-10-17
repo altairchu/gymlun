@@ -54,7 +54,7 @@ public class ProductsToolTests
     {
         var tool = new ProductsTool(new GetProductsQueryHandler(_productRepository.Object));
 
-        var response = await tool.ListProducts(pageNumber, pageSize, productName, CancellationToken.None);
+        var response = await tool.ListProducts(pageNumber, pageSize, productName, cancellationToken: CancellationToken.None);
 
         return JsonSerializer.SerializeToNode(response, McpJsonUtilities.DefaultOptions)!;
     }
@@ -73,6 +73,7 @@ public class ProductsToolTests
               "name": "Oatmeal",
               "category": { "name": "Cereals" },
               "defaultQuantity": 60,
+              "isFavorite": false,
               "per100g": {
                 "calories": 366,
                 "protein": 13.0,

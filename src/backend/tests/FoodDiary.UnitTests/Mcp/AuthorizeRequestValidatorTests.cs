@@ -23,13 +23,13 @@ public class AuthorizeRequestValidatorTests
         ]
     }));
 
-    private static AuthorizeRequest Request(string? clientId, string? redirectUri) => new(
+    private static AuthorizeRequest Request(string? clientId, string? redirectUri, string? scope = "food:read") => new(
         ResponseType: "code",
         ClientId: clientId,
         RedirectUri: redirectUri,
         CodeChallenge: "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
         CodeChallengeMethod: "S256",
-        Scope: "food:read",
+        Scope: scope,
         Resource: "https://diary.example.com/mcp",
         State: "af0ifjsldkj");
 
@@ -66,5 +66,26 @@ public class AuthorizeRequestValidatorTests
         var result = Validator.Validate(Request("claude", redirectUri));
 
         result.Should().BeOfType<AuthorizeRequestValidation.Refused>();
+    }
+
+    [Theory]
+    [InlineData(null, "food:read food:write")]
+    [InlineData("", "food:read food:write")]
+    [InlineData("food:read", "food:read")]
+    [InlineData("food:read food:write", "food:read food:write")]
+    [InlineData("food:write food:write", "food:write")]
+    public void RequestedScopes_AreGranted_AndNoScopeGrantsFullAccess(string? requested, string granted)
+    {
+        var result = Validator.Validate(Request("claude", ClaudeCallback, requested));
+
+        result.Should().BeOfType<AuthorizeRequestValidation.Accepted>().Which.Scope.Should().Be(granted);
+    }
+
+    [Fact]
+    public void UnknownScope_IsRedirectedWithInvalidScope()
+    {
+        var result = Validator.Validate(Request("claude", ClaudeCallback, "food:read admin"));
+
+        result.Should().BeOfType<AuthorizeRequestValidation.ErrorRedirect>().Which.Error.Should().Be("invalid_scope");
     }
 }

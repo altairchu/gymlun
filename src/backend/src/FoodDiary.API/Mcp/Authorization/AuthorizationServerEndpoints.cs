@@ -51,7 +51,7 @@ public static class AuthorizationServerEndpoints
             GrantTypesSupported: ["authorization_code", "refresh_token"],
             CodeChallengeMethodsSupported: ["S256"],
             TokenEndpointAuthMethodsSupported: ["client_secret_post"],
-            ScopesSupported: [McpScopes.FoodRead],
+            ScopesSupported: McpScopes.Supported,
             AuthorizationResponseIssParameterSupported: true);
 
         return Results.Json(metadata, SerializerOptions);

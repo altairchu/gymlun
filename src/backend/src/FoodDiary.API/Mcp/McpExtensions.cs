@@ -12,6 +12,7 @@ namespace FoodDiary.API.Mcp;
 public static class McpExtensions
 {
     private const string McpAuthorizationPolicy = "Mcp";
+    public const string McpWritePolicy = "McpWrite";
 
     private static readonly PathString[] McpAndOAuthPaths = ["/mcp", "/authorize", "/token", "/.well-known"];
 
@@ -75,15 +76,22 @@ public static class McpExtensions
                 {
                     Resource = mcpOptions.Value.McpResource,
                     AuthorizationServers = [mcpOptions.Value.BaseUrl!],
-                    ScopesSupported = [McpScopes.FoodRead]
+                    ScopesSupported = McpScopes.Supported
                 };
             });
 
         services.AddOptions<AuthorizationOptions>()
-            .Configure<IOptions<AuthOptions>>((options, authOptions) => options
-                .AddPolicy(McpAuthorizationPolicy, policy => policy
+            .Configure<IOptions<AuthOptions>>((options, authOptions) =>
+            {
+                options.AddPolicy(McpAuthorizationPolicy, policy => policy
                     .AddAuthenticationSchemes(McpAuthenticationDefaults.AuthenticationScheme)
                     .RequireAuthenticatedUser()
-                    .RequireClaim(Constants.ClaimTypes.Email, authOptions.Value.AllowedEmails)));
+                    .RequireClaim(Constants.ClaimTypes.Email, authOptions.Value.AllowedEmails));
+
+                options.AddPolicy(McpWritePolicy, policy => policy
+                    .AddAuthenticationSchemes(McpAuthenticationDefaults.AuthenticationScheme)
+                    .RequireAuthenticatedUser()
+                    .RequireClaim(McpScopes.ClaimType, McpScopes.FoodWrite));
+            });
     }
 }
