@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "yarn install --immutable",
+  "buildCommand": "yarn build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://gymlun-api.onrender.com/api/:path*" },
+    { "source": "/signin-google", "destination": "https://gymlun-api.onrender.com/signin-google" },
+    { "source": "/mcp", "destination": "https://gymlun-api.onrender.com/mcp" },
+    { "source": "/authorize", "destination": "https://gymlun-api.onrender.com/authorize" },
+    { "source": "/token", "destination": "https://gymlun-api.onrender.com/token" },
+    {
+      "source": "/.well-known/:path*",
+      "destination": "https://gymlun-api.onrender.com/.well-known/:path*"
+    }
+  ]
+}
