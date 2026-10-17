@@ -107,12 +107,12 @@ test('products can be filtered by a single Chinese character', async () => {
   const user = userEvent.setup();
 
   await render(<Products />);
-  const searchField = await screen.findByPlaceholderText(/按名稱搜尋/);
-  await user.type(searchField, '雞');
+  await screen.findByText('Beef');
+  await user.type(screen.getByPlaceholderText(/按名稱搜尋/), '雞');
 
-  await waitFor(() => expect(screen.queryByText(/beef/i)).not.toBeInTheDocument());
-  expect(screen.getByText('雞蛋'));
-  expect(screen.getByText('雞胸肉'));
+  expect(await screen.findByText('雞蛋')).toBeVisible();
+  expect(screen.getByText('雞胸肉')).toBeVisible();
+  expect(screen.queryByText('Beef')).not.toBeInTheDocument();
 });
 
 test('products in table are split by pages', async () => {
