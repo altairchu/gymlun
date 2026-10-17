@@ -7,7 +7,7 @@ namespace FoodDiary.API.Requests;
 public class ProductCreateEditRequest
 {
     [Required(ErrorMessage = "Product name is required")]
-    [StringLength(100, MinimumLength = 3, ErrorMessage = "Product name must be between 3 and 100 characters")]
+    [StringLength(100, MinimumLength = 1, ErrorMessage = "Product name must be between 1 and 100 characters")]
     public required string Name { get; init; }
 
     [Range(1, 1000, ErrorMessage = "Calories cost value must be between 1 and 1000")]
@@ -33,4 +33,6 @@ public class ProductCreateEditRequest
     
     [Range(0, 1000)]
     public decimal? Salt { get; init; }
+
+    public bool IsFavorite { get; init; }
 }

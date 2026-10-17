@@ -14,6 +14,7 @@ const toProductFormValues = (
     carbs,
     sugar,
     salt,
+    isFavorite,
   }: GetProductByIdResponse,
   productId: number,
 ): productModel.ProductFormValues => ({
@@ -30,6 +31,7 @@ const toProductFormValues = (
   carbs,
   sugar,
   salt,
+  isFavorite,
 });
 
 export const useLoadProductForEdit = (): [OnLoadProductForEditFn, boolean] => {

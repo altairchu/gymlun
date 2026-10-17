@@ -9,7 +9,7 @@ Why use it:
 
 - **Instant daily totals.** Log what you eat and immediately see your calories, protein, fats, carbs, sugar and salt for the day. Paper can't do that.
 - **Your data stays yours.** It runs on your own server. No subscription, no ads, no account with anyone else.
-- **Only the essentials.** Food logs, your own product list and weight tracking, plus AI that fills in nutrition values from a photo and read-only access for Claude or any other MCP client.
+- **Only the essentials.** Food logs, your own product list and weight tracking, plus AI that fills in nutrition values from a photo and access for Claude or any other MCP client to read and log what you eat.
 
 **You run your own copy.** There is no hosted version to sign up for. You need a server or container platform that runs Docker, a Google account to sign in with, and a domain with HTTPS to use it anywhere other than the machine it runs on.
 
@@ -41,7 +41,8 @@ To run your own copy:
 - ⚖️ Weight tracking
 - 📱 PWA and multi-device support
 - 📸 AI-powered food recognition from photos
-- 🤖 Read-only access for LLMs through an MCP connector
+- ⭐ Favorite products you eat often, logged in one tap
+- 🤖 Read and write access for LLMs through an MCP connector
 
 <table>
   <tr>
@@ -64,7 +65,7 @@ To run your own copy:
 
 ## MCP server
 
-Connect Claude, or any other compatible MCP client, to your Food Diary and ask it what you ate last week or how your protein intake is trending. Access is read-only and off by default; see the [MCP server guide](docs/guide/mcp-server.md).
+Connect Claude, or any other compatible MCP client, to your Food Diary and ask it what you ate last week, how your protein intake is trending, or to log "a plate of dumplings for lunch". The server is off by default; see the [MCP server guide](docs/guide/mcp-server.md).
 
 ## Self-hosting
 

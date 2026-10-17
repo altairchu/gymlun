@@ -12,7 +12,8 @@ public record UpdateProductCommand(
     decimal? Fats,
     decimal? Carbs,
     decimal? Sugar,
-    decimal? Salt);
+    decimal? Salt,
+    bool IsFavorite = false);
 
 public abstract record UpdateProductResult
 {
@@ -52,6 +53,7 @@ public class UpdateProductCommandHandler(IProductRepository productRepository)
         product.Carbs = command.Carbs;
         product.Sugar = command.Sugar;
         product.Salt = command.Salt;
+        product.IsFavorite = command.IsFavorite;
 
         productRepository.Update(product);
         await productRepository.UnitOfWork.SaveChangesAsync(cancellationToken);

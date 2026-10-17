@@ -78,11 +78,12 @@ public static class FoodLogsToolMapper
         return new FoodLogsDayTotal(coveredValues.Sum(), coveredValues.Count, items.Count);
     }
 
-    private static FoodLog ToFoodLog(Note note, ICaloriesCalculator caloriesCalculator)
+    internal static FoodLog ToFoodLog(Note note, ICaloriesCalculator caloriesCalculator)
     {
         var product = note.Product!;
 
         return new FoodLog(
+            note.Id,
             new FoodLogProduct(product.Id, product.Name),
             note.ProductQuantity,
             caloriesCalculator.Calculate(note),

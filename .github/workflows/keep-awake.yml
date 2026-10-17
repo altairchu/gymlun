@@ -1,0 +1,15 @@
+name: keep-awake
+
+# Render's free web services sleep after 15 minutes without traffic, and waking one takes about a minute.
+# Pinging the health check keeps the API awake; one service running all month fits in the free 750 hours.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    if: vars.KEEP_AWAKE_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl --fail --silent --show-error --max-time 120 --retry 2 "${{ vars.KEEP_AWAKE_URL }}"

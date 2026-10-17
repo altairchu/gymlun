@@ -29,6 +29,15 @@ test('I can add new note with existing product', async () => {
   steps.thenSingleNoteVisible(/cheese 120 g 482/i);
 });
 
+test('I can add a favorite product in one tap', async () => {
+  const user = userEvent.setup();
+
+  steps.givenMealsListItem({ mealType: noteModel.MealType.Lunch });
+
+  await steps.whenFavoriteQuickAdded(user, /add bread, 50 g/i);
+  await steps.thenNoteAppears(/bread 50 g 125/i);
+});
+
 test('I can add new note with adding new product "on the fly"', async () => {
   const user = userEvent.setup();
 

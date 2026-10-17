@@ -44,6 +44,7 @@ export const handlers: HttpHandler[] = [
           carbs,
           sugar,
           salt,
+          isFavorite,
         }) => ({
           id,
           name,
@@ -54,6 +55,7 @@ export const handlers: HttpHandler[] = [
           carbs,
           sugar,
           salt,
+          isFavorite,
           categoryId,
           categoryName: categoryNamesMap.get(categoryId) ?? 'NULL',
         }),
@@ -68,7 +70,18 @@ export const handlers: HttpHandler[] = [
     const response: SelectOption[] = productsService
       .getAll()
       .map<ProductSelectOption>(
-        ({ id, name, defaultQuantity, caloriesCost, protein, fats, carbs, sugar, salt }) => ({
+        ({
+          id,
+          name,
+          defaultQuantity,
+          caloriesCost,
+          protein,
+          fats,
+          carbs,
+          sugar,
+          salt,
+          isFavorite,
+        }) => ({
           id,
           name,
           defaultQuantity,
@@ -78,6 +91,7 @@ export const handlers: HttpHandler[] = [
           carbs,
           sugar,
           salt,
+          isFavorite,
         }),
       );
 
@@ -102,6 +116,7 @@ export const handlers: HttpHandler[] = [
       carbs: product.carbs,
       sugar: product.sugar,
       salt: product.salt,
+      isFavorite: product.isFavorite,
       category: {
         id: product.categoryId,
         name: productsService.getCategoryNames([product]).get(product.categoryId) ?? 'NULL',

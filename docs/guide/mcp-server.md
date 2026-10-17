@@ -1,6 +1,18 @@
 # MCP server
 
-Food Diary can share your food logs and products with Claude, or any other compatible [MCP](https://modelcontextprotocol.io) client, so you can ask things like "what did I eat last week?" or "plan my meals for next week". Access is read-only: the client can look at your data but never change it.
+Food Diary can share your food logs and products with Claude, or any other compatible [MCP](https://modelcontextprotocol.io) client, so you can ask things like "what did I eat last week?", "plan my meals for next week" or "I had a plate of dumplings for lunch, log it".
+
+## Tools
+
+| Tool | Scope | What it does |
+|------|-------|--------------|
+| `get_food_logs` | `food:read` | Food logs over a date range, with daily and range totals |
+| `list_products` | `food:read` | Products in your catalogue; `favoritesOnly` lists the ones you eat often |
+| `log_food` | `food:write` | Logs a product in a meal on a date, in its default quantity unless told otherwise |
+| `delete_food_log` | `food:write` | Deletes a food log, to undo a mistake |
+| `create_product` | `food:write` | Adds a product from nutrition values for one serving, marked as a favorite by default |
+
+A client that asks for no scope is granted both. To keep a client read-only, have it request only `food:read`: it then never sees the write tools.
 
 The server is off by default. It lives at `/mcp` on your Food Diary domain, and you turn it on with the [MCP settings in the configuration reference](deployment.md#mcp-server).
 

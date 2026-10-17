@@ -18,7 +18,8 @@ public static class ProductsMapper
         Fats = product.Fats,
         Carbs = product.Carbs,
         Sugar = product.Sugar,
-        Salt = product.Salt
+        Salt = product.Salt,
+        IsFavorite = product.IsFavorite
     };
 
     public static CreateProductResponse ToCreateProductResponse(this Product product) => new(product.Id);

@@ -78,6 +78,7 @@ class ProductInputDialogBuilder {
     carbs = null,
     sugar = null,
     salt = null,
+    isFavorite = false,
   }: Partial<productModel.ProductFormValues>): this {
     this._product = {
       name,
@@ -89,6 +90,7 @@ class ProductInputDialogBuilder {
       carbs,
       sugar,
       salt,
+      isFavorite,
     };
     return this;
   }

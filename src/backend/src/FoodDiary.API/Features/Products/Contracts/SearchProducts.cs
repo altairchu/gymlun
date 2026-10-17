@@ -14,5 +14,6 @@ public record SearchProductsResponse(IReadOnlyCollection<SearchProductsResponse.
         decimal? Fats,
         decimal? Carbs,
         decimal? Sugar,
-        decimal? Salt);
+        decimal? Salt,
+        bool IsFavorite);
 }

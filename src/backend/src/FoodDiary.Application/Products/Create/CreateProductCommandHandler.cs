@@ -12,7 +12,8 @@ public record CreateProductCommand(
     decimal? Fats,
     decimal? Carbs,
     decimal? Sugar,
-    decimal? Salt);
+    decimal? Salt,
+    bool IsFavorite = false);
 
 public abstract record CreateProductResult
 {
@@ -42,7 +43,8 @@ public class CreateProductCommandHandler(IProductsRepository repository)
             Fats = command.Fats,
             Carbs = command.Carbs,
             Sugar = command.Sugar,
-            Salt = command.Salt
+            Salt = command.Salt,
+            IsFavorite = command.IsFavorite
         };
 
         await repository.Create(product, cancellationToken);

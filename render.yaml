@@ -1,0 +1,33 @@
+# Render Blueprint for the gymlun API: the Docker image on a free web service.
+# The database is Neon (free), and the frontend is served by Vercel, which proxies API paths here.
+services:
+  - type: web
+    name: gymlun-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz/live
+    autoDeploy: true
+    envVars:
+      - key: ASPNETCORE_FORWARDEDHEADERS_ENABLED
+        value: "true"
+      - key: ForwardedHosts__0
+        value: gymlun.vercel.app
+      - key: Mcp__Enabled
+        value: "true"
+      - key: Mcp__BaseUrl
+        value: https://gymlun.vercel.app
+      - key: ConnectionStrings__Default
+        sync: false
+      - key: Auth__AllowedEmails__0
+        sync: false
+      - key: GoogleAuth__ClientId
+        sync: false
+      - key: GoogleAuth__ClientSecret
+        sync: false
+      - key: Mcp__Clients__0__ClientId
+        sync: false
+      - key: Mcp__Clients__0__ClientSecret
+        sync: false
+      - key: Mcp__Clients__0__RedirectUri
+        value: https://claude.ai/api/mcp/auth_callback

@@ -15,6 +15,7 @@ export const mapToCreateProductRequest = (
     carbs,
     sugar,
     salt,
+    isFavorite,
   }: productModel.ProductFormValues,
 ): CreateProductRequest => ({
   name,
@@ -26,6 +27,7 @@ export const mapToCreateProductRequest = (
   carbs,
   sugar,
   salt,
+  isFavorite,
 });
 
 export const mapToEditProductRequest = (
@@ -40,6 +42,7 @@ export const mapToEditProductRequest = (
     carbs,
     sugar,
     salt,
+    isFavorite,
   }: productModel.ProductFormValues,
 ): EditProductRequest => ({
   id,
@@ -52,4 +55,5 @@ export const mapToEditProductRequest = (
   carbs,
   sugar,
   salt,
+  isFavorite,
 });

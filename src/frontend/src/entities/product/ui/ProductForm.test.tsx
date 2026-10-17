@@ -17,6 +17,7 @@ const defaultValues: ProductFormValues = {
   carbs: null,
   sugar: null,
   salt: null,
+  isFavorite: false,
 };
 
 const renderForm = (autoFocus: boolean): void => {

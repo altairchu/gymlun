@@ -18,6 +18,7 @@ public static class ProductsMappingExtensions
             Carbs = p.Carbs,
             Sugar = p.Sugar,
             Salt = p.Salt,
+            IsFavorite = p.IsFavorite,
             Category = new Contracts.Category
             {
                 Id = p.CategoryId,
@@ -44,6 +45,7 @@ public static class ProductsMappingExtensions
             Fats: product.Fats,
             Carbs: product.Carbs,
             Sugar: product.Sugar,
-            Salt: product.Salt);
+            Salt: product.Salt,
+            IsFavorite: product.IsFavorite);
     }
 }

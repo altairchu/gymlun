@@ -48,7 +48,7 @@ export default defineConfig(() => ({
         display: 'standalone',
       },
       workbox: {
-        navigateFallbackDenylist: [/^\/api\/v1\/auth/, /^\/signin-google/],
+        navigateFallbackDenylist: [/^\/api\/v1\/auth/, /^\/signin-google/, /^\/authorize/],
       },
     }),
   ],

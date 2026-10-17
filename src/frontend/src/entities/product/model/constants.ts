@@ -10,4 +10,5 @@ export const EMPTY_FORM_VALUES: ProductFormValues = {
   carbs: null,
   sugar: null,
   salt: null,
+  isFavorite: false,
 };

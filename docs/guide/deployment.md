@@ -95,6 +95,7 @@ Environment variable                  | Default | Description
 --------------------------------------|---------|-------------------------------------------------------------------------------------------------------------
 `ASPNETCORE_FORWARDEDHEADERS_ENABLED` | `false` | Set to `true` when HTTPS terminates at a reverse proxy in front of the app. Without it, the app builds an `http://` redirect URI and Google sign-in fails
 `ASPNETCORE_HTTP_PORTS`               | `8080`  | Port the container listens on
+`ForwardedHosts__0`                   | —       | Host of a frontend that proxies to the app, e.g. `gymlun.vercel.app`. The app then trusts that host in `X-Forwarded-Host`, so sign-in redirects and cookies use it. Needs `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true`
 `App__Logging__WriteLogsInJsonFormat` | `false` | Write logs as JSON instead of plain text, for log collectors that parse JSON
 
 ### AI food recognition

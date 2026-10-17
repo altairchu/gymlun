@@ -32,7 +32,15 @@ internal sealed class McpAccessTokenHandler(
             return Task.FromResult(AuthenticateResult.Fail("Access token is invalid, expired or issued for another resource"));
         }
 
-        var identity = new ClaimsIdentity([new Claim(Constants.ClaimTypes.Email, grant.Email)], Scheme.Name);
+        Claim[] claims =
+        [
+            new(Constants.ClaimTypes.Email, grant.Email),
+            ..grant.Scope
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Select(scope => new Claim(McpScopes.ClaimType, scope))
+        ];
+
+        var identity = new ClaimsIdentity(claims, Scheme.Name);
         var ticket = new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name);
 
         return Task.FromResult(AuthenticateResult.Success(ticket));
@@ -43,7 +51,7 @@ internal sealed class McpAccessTokenHandler(
         Response.StatusCode = StatusCodes.Status401Unauthorized;
         Response.Headers.Append(
             HeaderNames.WWWAuthenticate,
-            $"Bearer resource_metadata=\"{mcpOptions.Value.ResourceMetadataUrl}\", scope=\"{McpScopes.FoodRead}\"");
+            $"Bearer resource_metadata=\"{mcpOptions.Value.ResourceMetadataUrl}\", scope=\"{string.Join(' ', McpScopes.Supported)}\"");
 
         return Task.CompletedTask;
     }

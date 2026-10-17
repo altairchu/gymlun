@@ -18,6 +18,7 @@ const create = {
     carbs: null,
     sugar: null,
     salt: null,
+    isFavorite: false,
   }),
 } as const;
 

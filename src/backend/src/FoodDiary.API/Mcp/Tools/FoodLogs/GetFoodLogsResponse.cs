@@ -42,6 +42,7 @@ public record FoodLogsMeal(string MealType, IReadOnlyList<FoodLog> Items);
 
 [PublicAPI]
 public record FoodLog(
+    int Id,
     FoodLogProduct Product,
     int Quantity,
     int Calories,

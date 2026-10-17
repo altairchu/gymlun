@@ -2,7 +2,7 @@ import { ListItem, Stack, Typography, Card, CardContent, CardActions, Badge } fr
 import { type FC } from 'react';
 import { noteLib, noteModel } from '@/entities/note';
 import { NutritionValueDisplay, productModel } from '@/entities/product';
-import { AddNoteButton } from '@/features/manageNote';
+import { AddNoteButton, QuickAddFavorites } from '@/features/manageNote';
 import { toOptionalNutritionValues } from '../lib/mapping';
 import { NotesList } from './NotesList';
 
@@ -79,7 +79,8 @@ export const MealsListItem: FC<Props> = ({ date, mealType }) => {
           <CardContent sx={{ padding: 0 }}>
             <NotesList date={date} mealType={mealType} />
           </CardContent>
-          <CardActions>
+          <CardActions sx={{ flexDirection: 'column', alignItems: 'stretch', gap: 1 }}>
+            <QuickAddFavorites date={date} mealType={mealType} />
             <AddNoteButton date={date} mealType={mealType} />
           </CardActions>
         </Card>

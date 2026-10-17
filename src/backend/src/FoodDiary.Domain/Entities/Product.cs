@@ -19,6 +19,11 @@ public class Product
 
     public int DefaultQuantity { get; set; } = 100;
 
+    /// <summary>
+    /// Marks a product the person eats often, so it can be logged in one tap
+    /// </summary>
+    public bool IsFavorite { get; set; }
+
     public int CategoryId { get; set; }
 
     public required decimal? Protein { get; set; }

@@ -58,10 +58,13 @@ public sealed class AuthorizeRequestValidator(IOptions<McpOptions> options)
 
         var requestedScopes = request.Scope?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? [];
 
-        if (requestedScopes.Any(scope => scope != McpScopes.FoodRead))
+        if (requestedScopes.Any(scope => !McpScopes.Supported.Contains(scope)))
         {
-            return Error("invalid_scope", $"The only supported scope is {McpScopes.FoodRead}");
+            return Error("invalid_scope", $"Supported scopes are {string.Join(' ', McpScopes.Supported)}");
         }
+
+        // A client that asks for no scope gets full access: the app has a single owner who approves the connection
+        var grantedScopes = requestedScopes.Length == 0 ? McpScopes.Supported : requestedScopes.Distinct();
 
         var mcpResource = options.Value.McpResource;
 
@@ -74,7 +77,7 @@ public sealed class AuthorizeRequestValidator(IOptions<McpOptions> options)
             client.ClientId!,
             redirectUri,
             request.CodeChallenge,
-            McpScopes.FoodRead,
+            string.Join(' ', grantedScopes),
             mcpResource,
             request.State);
     }

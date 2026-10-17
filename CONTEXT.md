@@ -26,6 +26,11 @@ An eatable product or dish in the personal database, holding nutrition values pe
 A Product is the catalogue item; a Food Log is one occasion of eating some of it.
 _Avoid_: ingredient
 
+**Favorite**:
+A Product the person eats often, marked so it can be logged in one tap in its default quantity
+and found first by an MCP client.
+_Avoid_: pinned, starred, frequent
+
 **Nutrition Values**:
 Calories in kilocalories, and protein, fats, carbs, sugar and salt in grams. Salt means
 sodium chloride, never sodium. On a Product they are per 100 g; on a Food Log they are scaled

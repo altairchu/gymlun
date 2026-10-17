@@ -13,6 +13,7 @@ using FoodDiary.Infrastructure.Extensions;
 using FoodDiary.Integrations.OpenAI.Extensions;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
@@ -39,6 +40,19 @@ public class Startup
         services.AddControllers();
         services.AddFoodDiarySwagger();
         services.AddHttpContextAccessor();
+
+        // A frontend host that proxies to the API (e.g. Vercel rewrites) must be trusted in X-Forwarded-Host,
+        // otherwise OAuth redirect URIs and cookies point at the API's own host
+        var forwardedHosts = _configuration.GetSection("ForwardedHosts").Get<string[]>() ?? [];
+
+        if (forwardedHosts.Length > 0)
+        {
+            services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders |= ForwardedHeaders.XForwardedHost;
+                options.AllowedHosts = forwardedHosts;
+            });
+        }
             
         services.AddSpaStaticFiles(configuration =>
         {
