@@ -11,7 +11,7 @@ export const NavigationDrawerActions: FC = () => {
     <List>
       <ListItem disableGutters disablePadding>
         <ListItemButton
-          aria-label="Logout"
+          aria-label="登出"
           onClick={() => {
             void signOut(router.history.push);
           }}
@@ -19,7 +19,7 @@ export const NavigationDrawerActions: FC = () => {
           <ListItemIcon>
             <LogoutIcon />
           </ListItemIcon>
-          <ListItemText>Logout</ListItemText>
+          <ListItemText>登出</ListItemText>
         </ListItemButton>
       </ListItem>
     </List>

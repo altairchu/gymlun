@@ -36,7 +36,7 @@ export const NutritionValueInput: FC<Props> = ({
     ref={ref}
     fullWidth
     disabled={disabled}
-    label={`${label}, ${nutritionValuesConfig[type].unit} (optional)`}
+    label={`${label}（${nutritionValuesConfig[type].unit}，選填）`}
     placeholder={placeholder}
     value={value ?? ''}
     margin="none"

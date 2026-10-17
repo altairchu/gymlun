@@ -41,11 +41,11 @@ const DeleteCategoryDialog: FC<DeleteCategoryDialogProps> = ({
 
   return (
     <AppDialog
-      title="Delete category"
+      title="刪除分類"
       isOpened={isDialogOpened}
       content={
         <form id="delete-category" onSubmit={handleSubmit}>
-          <Typography>{`Delete category "${category.name}"?`}</Typography>
+          <Typography>{`確定刪除分類「${category.name}」？`}</Typography>
         </form>
       }
       actionSubmit={
@@ -55,10 +55,10 @@ const DeleteCategoryDialog: FC<DeleteCategoryDialogProps> = ({
           variant="text"
           color="error"
           loading={deleteCategoryRequest.isLoading || categories.isFetching}
-          aria-label={`Delete ${category.name}`}
+          aria-label={`刪除「${category.name}」`}
           autoFocus
         >
-          Yes
+          是
         </Button>
       }
       actionCancel={
@@ -69,7 +69,7 @@ const DeleteCategoryDialog: FC<DeleteCategoryDialogProps> = ({
           onClick={handleClose}
           disabled={deleteCategoryRequest.isLoading}
         >
-          No
+          否
         </Button>
       }
       onClose={handleClose}

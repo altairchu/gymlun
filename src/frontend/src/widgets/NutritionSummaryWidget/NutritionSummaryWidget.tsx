@@ -13,7 +13,7 @@ export const NutritionSummaryWidget: FC<Props> = ({ nutritionValues }) => {
   return (
     <Card>
       <CardHeader
-        title="Daily Nutrition Summary"
+        title="每日營養摘要"
         slotProps={{
           title: { variant: 'h6' },
         }}

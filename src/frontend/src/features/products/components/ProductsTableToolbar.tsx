@@ -35,14 +35,10 @@ const ProductsTableToolbar: FC = () => {
               flexGrow: 1,
             }}
           >
-            {checkedProductIds.length} selected
+            已選取 {checkedProductIds.length} 項
           </Typography>
-          <Tooltip title="Delete product">
-            <IconButton
-              onClick={handleDeleteClick}
-              size="large"
-              aria-label="Delete selected products"
-            >
+          <Tooltip title="刪除食物">
+            <IconButton onClick={handleDeleteClick} size="large" aria-label="刪除已選取的食物">
               <DeleteIcon />
             </IconButton>
           </Tooltip>

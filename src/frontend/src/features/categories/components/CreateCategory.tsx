@@ -27,15 +27,15 @@ const CreateCategory: FC = () => {
 
   return (
     <>
-      <AppFab aria-label="Create new category" color="primary" onClick={handleCreate}>
+      <AppFab aria-label="新增分類" color="primary" onClick={handleCreate}>
         <AddIcon />
       </AppFab>
 
       <CategoryInputDialog
         isOpened={isCreateDialogOpened}
         setIsOpened={setIsCreateDialogOpened}
-        title="Create category"
-        submitText="Create"
+        title="新增分類"
+        submitText="新增"
         onSubmit={handleDialogSubmit}
         loading={createCategoryRequest.isLoading || categories.isFetching}
       />

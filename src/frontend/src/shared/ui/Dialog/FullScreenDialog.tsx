@@ -39,7 +39,7 @@ const FullScreenDialog: FC<DialogBaseProps> = ({
   >
     <AppBar position="relative">
       <Toolbar>
-        <IconButton edge="start" color="inherit" onClick={onClose} aria-label="close">
+        <IconButton edge="start" color="inherit" onClick={onClose} aria-label="關閉">
           <CloseIcon />
         </IconButton>
         <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">

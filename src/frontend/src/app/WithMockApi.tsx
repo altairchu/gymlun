@@ -33,7 +33,7 @@ export const WithMockApi: FC<PropsWithChildren> = ({ children }) => {
           p: 2,
         }}
       >
-        <Typography>Failed to initialize Mock API</Typography>
+        <Typography>無法啟動模擬 API</Typography>
       </Box>
     );
   }

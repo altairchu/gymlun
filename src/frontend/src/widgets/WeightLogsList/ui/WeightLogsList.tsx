@@ -21,13 +21,13 @@ export const WeightLogsList: FC<Props> = ({ weightLogsRequest }) => {
         disableGutters
         sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
       >
-        <span>Last logged</span>
+        <span>最近記錄</span>
         <LogWeightButton weightLogsRequest={weightLogsRequest} />
       </ListSubheader>
       {weightLogs.length === 0 && (
         <ListItem disableGutters disablePadding>
           <ListItemText
-            primary="You have not logged any weights yet"
+            primary="你尚未記錄任何體重"
             slotProps={{
               primary: { color: 'textSecondary' },
             }}
@@ -40,7 +40,7 @@ export const WeightLogsList: FC<Props> = ({ weightLogsRequest }) => {
           date: dateLib.formatToUserFriendlyString(date),
         }))
         .map(({ weight, date }) => (
-          <ListItem key={date} disableGutters disablePadding aria-label={`${weight} kg on ${date}`}>
+          <ListItem key={date} disableGutters disablePadding aria-label={`${date}：${weight} kg`}>
             <ListItemText primary={`${weight} kg`} secondary={date} />
           </ListItem>
         ))}

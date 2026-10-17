@@ -27,15 +27,15 @@ export const DeleteNoteDialog: FC<DeleteNoteDialogProps> = ({
 
   return (
     <AppDialog
-      title="Delete note?"
+      title="刪除記錄？"
       isOpened={isOpened}
       content={
         <form id="delete-note" onSubmit={handleSubmit}>
           <DialogContentText sx={{ marginBottom: 2 }}>
-            You are going to delete this note from <b>{noteLib.getMealName(note.mealType)}</b>:
+            你將從<b>{noteLib.getMealName(note.mealType)}</b>刪除以下記錄：
           </DialogContentText>
           <Typography>
-            {note.product.name} {note.productQuantity} g ({calories} cal)
+            {note.product.name} {note.productQuantity} g（{calories} kcal）
           </Typography>
           <DialogContentText />
         </form>
@@ -49,7 +49,7 @@ export const DeleteNoteDialog: FC<DeleteNoteDialogProps> = ({
           loading={submitInProgress}
           autoFocus
         >
-          Delete
+          刪除
         </Button>
       }
       actionCancel={
@@ -60,7 +60,7 @@ export const DeleteNoteDialog: FC<DeleteNoteDialogProps> = ({
           onClick={onClose}
           disabled={submitInProgress}
         >
-          Cancel
+          取消
         </Button>
       }
       onClose={onClose}

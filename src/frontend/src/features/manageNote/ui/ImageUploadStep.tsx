@@ -46,7 +46,7 @@ export const ImageUploadStep: FC<Props> = ({ images, onSubmitProduct }) => {
     return (
       <Stack spacing={3}>
         <Typography variant="h6" component="h2">
-          Analyzing Images...
+          正在分析圖片…
         </Typography>
         <LinearProgress />
         <SuggestionSkeleton />
@@ -65,7 +65,7 @@ export const ImageUploadStep: FC<Props> = ({ images, onSubmitProduct }) => {
             disabled={isSubmitting}
             onClick={() => recognizeNotes(images)}
           >
-            Retry
+            重試
           </Button>
         }
       >
@@ -81,7 +81,7 @@ export const ImageUploadStep: FC<Props> = ({ images, onSubmitProduct }) => {
     return (
       <Stack spacing={3}>
         <ImagePreviewList images={images} />
-        <Alert severity="warning">No food found. Please try other images</Alert>
+        <Alert severity="warning">找不到食物，請試試其他圖片</Alert>
       </Stack>
     );
   }
@@ -89,7 +89,7 @@ export const ImageUploadStep: FC<Props> = ({ images, onSubmitProduct }) => {
   return (
     <Stack spacing={3}>
       <Typography variant="h6" component="h2">
-        Review AI suggestions
+        檢查 AI 建議
       </Typography>
       <ImagePreviewList images={images} />
       {categoriesLoading ? (
@@ -111,7 +111,7 @@ export const ImageUploadStep: FC<Props> = ({ images, onSubmitProduct }) => {
         disabled={isSubmitting}
         onClick={() => recognizeNotes(images)}
       >
-        Retry
+        重試
       </Button>
     </Stack>
   );

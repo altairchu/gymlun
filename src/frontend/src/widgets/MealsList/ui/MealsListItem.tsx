@@ -21,7 +21,7 @@ export const MealsListItem: FC<Props> = ({ date, mealType }) => {
     .some(productModel.hasMissingNutritionValues);
 
   return (
-    <ListItem disableGutters disablePadding aria-label={`${mealName}, ${calories} kilocalories`}>
+    <ListItem disableGutters disablePadding aria-label={`${mealName}，${calories} kcal`}>
       <Stack
         sx={{
           width: '100%',

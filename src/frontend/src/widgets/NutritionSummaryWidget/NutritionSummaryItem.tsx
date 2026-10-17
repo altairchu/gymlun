@@ -8,7 +8,7 @@ interface Props {
 }
 
 export const NutritionSummaryItem: FC<Props> = ({ value, type }) => {
-  const { unit, color } = productModel.nutritionValuesConfig[type];
+  const { label, unit, color } = productModel.nutritionValuesConfig[type];
 
   return (
     <Stack
@@ -27,15 +27,8 @@ export const NutritionSummaryItem: FC<Props> = ({ value, type }) => {
       >
         <NutritionValueIcon type={type} size="medium" />
       </Box>
-      <Typography
-        variant="body2"
-        component="span"
-        color="textSecondary"
-        sx={{
-          textTransform: 'capitalize',
-        }}
-      >
-        {type}
+      <Typography variant="body2" component="span" color="textSecondary">
+        {label}
       </Typography>
       <Stack
         direction="row"

@@ -80,7 +80,7 @@ export const NoteForm: FC<Props> = ({
     if (productModel.hasMissingNutritionValues(nutritionValues)) {
       return (
         <Typography variant="caption" component="span" color="warning">
-          Nutrition values are missing
+          缺少營養數值
         </Typography>
       );
     }
@@ -91,7 +91,7 @@ export const NoteForm: FC<Props> = ({
   return (
     <form id={formId} onSubmit={handleSubmit(values => onSubmit(values))}>
       <TextField
-        label="Product"
+        label="食物"
         value={defaultValues.product?.name}
         variant="outlined"
         fullWidth
@@ -111,7 +111,7 @@ export const NoteForm: FC<Props> = ({
                     <CircularProgress size={20} />
                   </Box>
                 ) : (
-                  <Tooltip title="Edit product">
+                  <Tooltip title="編輯食物">
                     <IconButton
                       disabled={isSubmitting || submitDisabled}
                       onClick={handleEditProduct}
@@ -120,7 +120,7 @@ export const NoteForm: FC<Props> = ({
                     </IconButton>
                   </Tooltip>
                 )}
-                <Tooltip title="Discard and choose another product">
+                <Tooltip title="捨棄並選擇其他食物">
                   <IconButton
                     edge="end"
                     disabled={isSubmitting || submitDisabled}
@@ -142,8 +142,8 @@ export const NoteForm: FC<Props> = ({
             {...field}
             fullWidth
             margin="normal"
-            label="Quantity"
-            placeholder="Product quantity, g"
+            label="份量"
+            placeholder="食物份量 (g)"
             error={!!fieldState.error}
             helperText={fieldState.error?.message ?? ' '}
             onFocus={event => event.target.select()}

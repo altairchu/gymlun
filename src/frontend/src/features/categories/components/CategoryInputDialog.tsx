@@ -39,7 +39,7 @@ const CategoryInputDialog: FC<CreateEditCategoryDialogProps> = ({
     isTouched: isCategoryNameTouched,
   } = useInput({
     initialValue: category?.name ?? '',
-    errorHelperText: 'Category name is invalid',
+    errorHelperText: '分類名稱無效',
     validate: validateCategoryName,
     mapToInputProps: mapToTextInputProps,
   });
@@ -73,8 +73,8 @@ const CategoryInputDialog: FC<CreateEditCategoryDialogProps> = ({
             autoFocus
             margin="dense"
             fullWidth
-            label="Category name"
-            placeholder="Enter category name"
+            label="分類名稱"
+            placeholder="輸入分類名稱"
           />
         </form>
       }
@@ -86,7 +86,7 @@ const CategoryInputDialog: FC<CreateEditCategoryDialogProps> = ({
           color="primary"
           disabled={isSubmitDisabled}
           loading={loading}
-          aria-label={`${category ? 'Save' : 'Create'} ${categoryName} and close dialog`}
+          aria-label={`${category ? '儲存' : '新增'}「${categoryName}」並關閉對話框`}
         >
           {submitText}
         </Button>
@@ -99,7 +99,7 @@ const CategoryInputDialog: FC<CreateEditCategoryDialogProps> = ({
           disabled={loading}
           onClick={handleClose}
         >
-          Cancel
+          取消
         </Button>
       }
     />

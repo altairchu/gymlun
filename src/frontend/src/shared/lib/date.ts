@@ -1,13 +1,17 @@
 import { addDays, differenceInDays, subMonths } from 'date-fns';
-import { format, endOfMonth } from 'date-fns/fp';
+import { format, formatWithOptions, endOfMonth } from 'date-fns/fp';
+import { zhHK } from 'date-fns/locale/zh-HK';
 
 export const enum DateFormat {
   Iso = 'yyyy-MM-dd',
-  UserFriendly = 'd MMM yyyy',
+  UserFriendly = "yyyy'年'M'月'd'日'",
+  MonthAndYear = "yyyy'年'M'月'",
 }
 
+export const locale = zhHK;
+
 export const formatToISOStringWithoutTime = format(DateFormat.Iso);
-export const formatToUserFriendlyString = format(DateFormat.UserFriendly);
+export const formatToUserFriendlyString = formatWithOptions({ locale }, DateFormat.UserFriendly);
 export const getEndOfMonth = endOfMonth();
 
 export const getCurrentDate = (): Date => {

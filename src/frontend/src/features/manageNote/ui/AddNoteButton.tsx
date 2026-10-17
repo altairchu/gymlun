@@ -41,7 +41,7 @@ export const AddNoteButton: FC<Props> = ({ date, mealType }) => {
   return (
     <>
       <Button fullWidth startIcon={<AddIcon />} onClick={handleDialogOpen} disabled={!canAddNote}>
-        Add {mealName}
+        加入{mealName}
       </Button>
       <NoteInputDialog date={date} mealType={mealType} />
     </>

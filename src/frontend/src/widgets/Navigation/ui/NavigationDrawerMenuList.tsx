@@ -11,28 +11,28 @@ import { RouterListItemButton } from '@/shared/ui';
 const NAV_LINKS = linkOptions([
   {
     icon: <CalendarTodayIcon />,
-    title: 'Today',
+    title: '今日',
     to: '/',
     activeOptions: { exact: true, includeSearch: false },
   },
   {
     icon: <CalendarMonthIcon />,
-    title: 'History',
+    title: '歷史記錄',
     to: '/history',
   },
   {
     icon: <MonitorWeightIcon />,
-    title: 'Weight',
+    title: '體重',
     to: '/weight',
   },
   {
     icon: <RestaurantIcon />,
-    title: 'Products',
+    title: '食物',
     to: '/products',
   },
   {
     icon: <CategoryIcon />,
-    title: 'Categories',
+    title: '分類',
     to: '/categories',
   },
 ]);

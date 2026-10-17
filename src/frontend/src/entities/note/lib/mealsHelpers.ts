@@ -13,11 +13,11 @@ export const createEmptyGetNotesByMealsResponse = (): GetNotesByMealsResponse =>
 });
 
 const MEAL_NAMES: Record<MealType, string> = {
-  [MealType.Breakfast]: 'Breakfast',
-  [MealType.SecondBreakfast]: 'Second breakfast',
-  [MealType.Lunch]: 'Lunch',
-  [MealType.AfternoonSnack]: 'Afternoon snack',
-  [MealType.Dinner]: 'Dinner',
+  [MealType.Breakfast]: '早餐',
+  [MealType.SecondBreakfast]: '上午小食',
+  [MealType.Lunch]: '午餐',
+  [MealType.AfternoonSnack]: '下午茶',
+  [MealType.Dinner]: '晚餐',
 };
 
 const mealTypeSchema = z.enum(MealType);

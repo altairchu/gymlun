@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { weightSchema } from './weightSchema';
 
 export const schema = z.object({
-  date: z.date(),
+  date: z.date({ error: '請選擇有效日期' }),
   weight: weightSchema,
 });
 

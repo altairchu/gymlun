@@ -13,8 +13,8 @@ const createImage = (name: string): Image => ({
 test('should show one button per image', () => {
   render(<ImagePreviewList images={[createImage('a'), createImage('b')]} />);
 
-  expect(screen.getByRole('button', { name: 'Open uploaded image preview 1' })).toBeVisible();
-  expect(screen.getByRole('button', { name: 'Open uploaded image preview 2' })).toBeVisible();
+  expect(screen.getByRole('button', { name: '開啟已上載圖片 1' })).toBeVisible();
+  expect(screen.getByRole('button', { name: '開啟已上載圖片 2' })).toBeVisible();
 });
 
 test('should open the original image and not the resized copy', async () => {
@@ -22,9 +22,9 @@ test('should open the original image and not the resized copy', async () => {
   const image = createImage('a');
 
   render(<ImagePreviewList images={[image]} />);
-  await user.click(screen.getByRole('button', { name: 'Open uploaded image preview 1' }));
+  await user.click(screen.getByRole('button', { name: '開啟已上載圖片 1' }));
 
-  const viewerImage = within(screen.getByRole('dialog')).getByAltText('Uploaded image preview 1');
+  const viewerImage = within(screen.getByRole('dialog')).getByAltText('已上載圖片 1');
 
   expect(viewerImage).toHaveAttribute('src', image.originalUrl);
   expect(viewerImage).not.toHaveAttribute('src', image.base64);
@@ -36,9 +36,9 @@ test('should open the second image when its thumbnail tapped', async () => {
   const imageB = createImage('b');
 
   render(<ImagePreviewList images={[imageA, imageB]} />);
-  await user.click(screen.getByRole('button', { name: 'Open uploaded image preview 2' }));
+  await user.click(screen.getByRole('button', { name: '開啟已上載圖片 2' }));
 
-  const viewerImage = within(screen.getByRole('dialog')).getByAltText('Uploaded image preview 2');
+  const viewerImage = within(screen.getByRole('dialog')).getByAltText('已上載圖片 2');
 
   expect(viewerImage).toHaveAttribute('src', imageB.originalUrl);
 });
@@ -47,8 +47,8 @@ test('should dismiss the viewer on close', async () => {
   const user = userEvent.setup();
 
   render(<ImagePreviewList images={[createImage('a')]} />);
-  await user.click(screen.getByRole('button', { name: 'Open uploaded image preview 1' }));
-  await user.click(screen.getByRole('button', { name: 'Close image viewer' }));
+  await user.click(screen.getByRole('button', { name: '開啟已上載圖片 1' }));
+  await user.click(screen.getByRole('button', { name: '關閉圖片檢視' }));
 
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });

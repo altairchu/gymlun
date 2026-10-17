@@ -82,7 +82,7 @@ export const NotesListItem: FC<Props> = ({ note }) => {
           </Stack>
           {hasMissingNutritionValues && (
             <Alert severity="warning" icon={<WarningAmberOutlinedIcon sx={{ fontSize: 20 }} />}>
-              Nutrition values are missing
+              缺少營養數值
             </Alert>
           )}
           <Stack
@@ -96,7 +96,7 @@ export const NotesListItem: FC<Props> = ({ note }) => {
               note={note}
               renderTrigger={openDialog => (
                 <Button startIcon={<EditIcon />} color="info" onClick={openDialog}>
-                  Edit
+                  編輯
                 </Button>
               )}
             />
@@ -104,7 +104,7 @@ export const NotesListItem: FC<Props> = ({ note }) => {
               note={note}
               renderTrigger={openDeleteDialog => (
                 <Button startIcon={<DeleteIcon />} color="error" onClick={openDeleteDialog}>
-                  Delete
+                  刪除
                 </Button>
               )}
             />

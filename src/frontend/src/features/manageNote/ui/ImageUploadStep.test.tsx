@@ -55,25 +55,25 @@ test('should show a skeleton instead of the form while categories are loading', 
   renderStep([createSuggestion()]);
 
   expect(screen.getByTestId('suggestion-skeleton')).toBeVisible();
-  expect(screen.queryByRole('textbox', { name: /name/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole('textbox', { name: /名稱/ })).not.toBeInTheDocument();
 });
 
 test('should show the suggested values in an editable form', async () => {
   renderStep([createSuggestion()]);
 
-  expect(await screen.findByRole('textbox', { name: /name/i })).toHaveValue('Oat granola');
-  expect(screen.getByPlaceholderText(/calories/i)).toHaveValue('412');
-  expect(screen.getByPlaceholderText(/default quantity/i)).toHaveValue('100');
-  expect(screen.getByRole('button', { name: 'Retry' })).toBeVisible();
+  expect(await screen.findByRole('textbox', { name: /名稱/ })).toHaveValue('Oat granola');
+  expect(screen.getByPlaceholderText(/卡路里/)).toHaveValue('412');
+  expect(screen.getByPlaceholderText(/預設份量/)).toHaveValue('100');
+  expect(screen.getByRole('button', { name: '重試' })).toBeVisible();
 });
 
 test('should submit the corrected values', async () => {
   const user = userEvent.setup();
   const { onSubmitProduct } = renderStep([createSuggestion()]);
 
-  await screen.findByRole('textbox', { name: /name/i });
-  await user.clear(screen.getByPlaceholderText(/calories/i));
-  await user.type(screen.getByPlaceholderText(/calories/i), '380');
+  await screen.findByRole('textbox', { name: /名稱/ });
+  await user.clear(screen.getByPlaceholderText(/卡路里/));
+  await user.type(screen.getByPlaceholderText(/卡路里/), '380');
   await user.click(screen.getByRole('button', { name: 'Add' }));
 
   await waitFor(() => {
@@ -93,7 +93,7 @@ test('should submit the corrected values', async () => {
 test('should show a warning and no form when no food was found', async () => {
   renderStep([]);
 
-  expect(await screen.findByText('No food found. Please try other images')).toBeVisible();
-  expect(screen.queryByRole('textbox', { name: /name/i })).not.toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Open uploaded image preview 1' })).toBeVisible();
+  expect(await screen.findByText('找不到食物，請試試其他圖片')).toBeVisible();
+  expect(screen.queryByRole('textbox', { name: /名稱/ })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '開啟已上載圖片 1' })).toBeVisible();
 });

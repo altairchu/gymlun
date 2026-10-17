@@ -18,5 +18,5 @@ export const PostLogoutPage: FC<Props> = ({ navigate }) => {
     return null;
   }
 
-  return <AuthCallbackProgress label="Logging out..." />;
+  return <AuthCallbackProgress label="登出中…" />;
 };

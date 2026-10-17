@@ -46,7 +46,7 @@ export const UpdateAppBanner: FC<Props> = ({ withAppBar }) => {
           component={Paper}
           role="dialog"
           aria-modal="false"
-          aria-label="Update app banner"
+          aria-label="應用程式更新通知"
           square
           variant="elevation"
           tabIndex={-1}
@@ -73,10 +73,8 @@ export const UpdateAppBanner: FC<Props> = ({ withAppBar }) => {
               <BrowserUpdatedIcon />
             </Avatar>
             <Box sx={{ mb: 1 }}>
-              <Typography sx={{ fontWeight: 'bold' }}>New update available</Typography>
-              <Typography variant="body2">
-                Click on reload button to update the application
-              </Typography>
+              <Typography sx={{ fontWeight: 'bold' }}>有新版本可用</Typography>
+              <Typography variant="body2">按「重新載入」以更新應用程式</Typography>
             </Box>
           </Box>
           <Box
@@ -88,10 +86,10 @@ export const UpdateAppBanner: FC<Props> = ({ withAppBar }) => {
             }}
           >
             <Button onClick={close} variant="text">
-              Close
+              關閉
             </Button>
             <Button onClick={reload} variant="text">
-              Reload
+              重新載入
             </Button>
           </Box>
         </Box>
