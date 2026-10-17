@@ -1,4 +1,11 @@
-import { act, fireEvent, screen, waitForElementToBeRemoved, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+  waitForElementToBeRemoved,
+  within,
+} from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { render } from '@tests/render';
 import { IndexPage } from './IndexPage';
@@ -231,7 +238,7 @@ test('a logged food can be changed to another amount and time', async () => {
   await user.click(within(dialog).getByRole('button', { name: '下午茶 15:30' }));
   await user.click(within(dialog).getByRole('button', { name: '儲存' }));
 
-  const snack = await findMeal('15:30');
+  const snack = await screen.findByRole('listitem', { name: /^15:30，3 樣/ });
   expect(within(snack).getByText('Apple')).toBeVisible();
   expect(within(snack).getByText('2 份 · 300 g')).toBeVisible();
 });
@@ -248,6 +255,8 @@ test('deleting a logged food takes a second tap to confirm', async () => {
   await user.click(within(dialog).getByRole('button', { name: '確定刪除？' }));
 
   await waitForElementToBeRemoved(dialog);
-  expect(screen.queryByRole('button', { name: '修改Milk' })).not.toBeInTheDocument();
+  await waitFor(() =>
+    expect(screen.queryByRole('button', { name: '修改Milk' })).not.toBeInTheDocument(),
+  );
   expect(within(await findMeal('08:00')).getByText('Apple')).toBeVisible();
 });

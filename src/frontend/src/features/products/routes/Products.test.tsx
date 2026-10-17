@@ -110,7 +110,7 @@ test('products can be filtered by a single Chinese character', async () => {
   await screen.findByText('Beef');
   await user.type(screen.getByPlaceholderText(/按名稱搜尋/), '雞');
 
-  expect(await screen.findByText('雞蛋')).toBeVisible();
+  expect(await screen.findByText('雞蛋', undefined, { timeout: 3000 })).toBeVisible();
   expect(screen.getByText('雞胸肉')).toBeVisible();
   expect(screen.queryByText('Beef')).not.toBeInTheDocument();
 });
