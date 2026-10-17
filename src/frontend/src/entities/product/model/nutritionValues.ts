@@ -5,7 +5,7 @@ import GrainOutlinedIcon from '@mui/icons-material/GrainOutlined';
 import WaterDropOutlinedIcon from '@mui/icons-material/WaterDropOutlined';
 import WhatshotOutlinedIcon from '@mui/icons-material/WhatshotOutlined';
 import { type SvgIconProps } from '@mui/material';
-import { blue, pink, grey, amber, purple, green } from '@mui/material/colors';
+import { blue, pink, grey, amber, purple, deepOrange } from '@mui/material/colors';
 import { type ComponentType } from 'react';
 
 export type NutritionValueType = 'calories' | 'protein' | 'fats' | 'carbs' | 'sugar' | 'salt';
@@ -29,7 +29,7 @@ type NutritionValuesConfig = Readonly<Record<NutritionValueType, NutritionValueC
 export const nutritionValuesConfig: NutritionValuesConfig = {
   calories: {
     IconComponent: WhatshotOutlinedIcon,
-    color: green[500],
+    color: deepOrange[500],
     unit: 'kcal',
   },
   protein: {
