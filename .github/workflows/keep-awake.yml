@@ -9,7 +9,6 @@ on:
 
 jobs:
   ping:
-    if: vars.KEEP_AWAKE_URL != ''
     runs-on: ubuntu-latest
     steps:
-      - run: curl --fail --silent --show-error --max-time 120 --retry 2 "${{ vars.KEEP_AWAKE_URL }}"
+      - run: curl --fail --silent --show-error --max-time 120 --retry 2 "${{ vars.KEEP_AWAKE_URL || 'https://gymlun-api.onrender.com/healthz/live' }}"
