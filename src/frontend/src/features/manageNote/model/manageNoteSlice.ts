@@ -68,14 +68,14 @@ export const manageNoteSlice = createSlice({
     ),
 
     dialogTitle: ({ note, product }) =>
-      product ? 'Product' : noteLib.getMealName(note?.mealType ?? noteModel.MealType.Breakfast),
+      product ? '食物' : noteLib.getMealName(note?.mealType ?? noteModel.MealType.Breakfast),
 
     submitText: ({ note, product }) => {
       if (product) {
-        return typeof product.id === 'number' ? 'Save' : 'Add';
+        return typeof product.id === 'number' ? '儲存' : '加入';
       }
 
-      return note && typeof note.id === 'number' ? 'Save' : 'Add';
+      return note && typeof note.id === 'number' ? '儲存' : '加入';
     },
 
     addDialogVisible: (state, mealType: noteModel.MealType): boolean =>

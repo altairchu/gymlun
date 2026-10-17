@@ -38,11 +38,11 @@ const renderForm = (autoFocus: boolean): void => {
 test('should focus the name field when autoFocus enabled', () => {
   renderForm(true);
 
-  expect(screen.getByRole('textbox', { name: /name/i })).toHaveFocus();
+  expect(screen.getByRole('textbox', { name: /名稱/ })).toHaveFocus();
 });
 
 test('should not focus the name field when autoFocus disabled', () => {
   renderForm(false);
 
-  expect(screen.getByRole('textbox', { name: /name/i })).not.toHaveFocus();
+  expect(screen.getByRole('textbox', { name: /名稱/ })).not.toHaveFocus();
 });

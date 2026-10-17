@@ -49,24 +49,28 @@ const CategoriesListItem: FC<CategoriesListItemProps> = ({ category }) => {
         subheader={<ProductsCount category={category} />}
       />
       <CardActions sx={{ margin: '0 0.5rem' }}>
-        <Button aria-label={`Edit ${category.name}`} startIcon={<EditIcon />} onClick={handleEdit}>
-          Edit
+        <Button
+          aria-label={`編輯「${category.name}」`}
+          startIcon={<EditIcon />}
+          onClick={handleEdit}
+        >
+          編輯
         </Button>
         <Button
-          aria-label={`Delete ${category.name}`}
+          aria-label={`刪除「${category.name}」`}
           color="error"
           startIcon={<DeleteIcon />}
           onClick={handleDelete}
         >
-          Delete
+          刪除
         </Button>
       </CardActions>
 
       <CategoryInputDialog
         isOpened={isEditDialogOpened}
         setIsOpened={setIsEditDialogOpened}
-        title="Edit category"
-        submitText="Save"
+        title="編輯分類"
+        submitText="儲存"
         onSubmit={handleEditDialogSubmit}
         loading={editCategoryRequest.isLoading || categories.isFetching}
         category={category}

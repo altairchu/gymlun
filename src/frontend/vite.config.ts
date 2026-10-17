@@ -22,8 +22,8 @@ export default defineConfig(() => ({
       srcDir: 'src/app',
       filename: 'serviceWorker.ts',
       manifest: {
-        name: 'Food Diary',
-        short_name: 'Food Diary',
+        name: 'gymlun',
+        short_name: 'gymlun',
         start_url: BASE_PUBLIC_PATH,
         scope: BASE_PUBLIC_PATH,
         icons: [
@@ -43,7 +43,7 @@ export default defineConfig(() => ({
             purpose: 'maskable',
           },
         ],
-        theme_color: '#43a047',
+        theme_color: '#1e3a8a',
         background_color: '#ffffff',
         display: 'standalone',
       },

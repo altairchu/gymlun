@@ -21,7 +21,7 @@ export const noteSchema = z.object({
   displayOrder: z.coerce.number<number>().int().min(0),
   product: productSchema
     .nullable()
-    .refine((product): boolean => product !== null, { error: 'Product is required' }),
+    .refine((product): boolean => product !== null, { error: '請選擇食物' }),
   quantity: quantitySchema,
 });
 

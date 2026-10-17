@@ -19,7 +19,7 @@ export const ProductSearch: FC = () => {
         autoFocus
         variant="outlined"
         role="search"
-        placeholder="Search products"
+        placeholder="搜尋食物"
         margin="dense"
         value={query}
         onChange={event => setQuery(event.target.value)}
@@ -33,7 +33,7 @@ export const ProductSearch: FC = () => {
             endAdornment: (
               <InputAdornment position="end">
                 {query && (
-                  <IconButton aria-label="Clear search" onClick={() => setQuery('')}>
+                  <IconButton aria-label="清除搜尋" onClick={() => setQuery('')}>
                     <ClearIcon />
                   </IconButton>
                 )}

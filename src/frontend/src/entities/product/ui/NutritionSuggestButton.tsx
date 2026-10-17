@@ -11,14 +11,14 @@ interface Props {
 
 export const NutritionSuggestButton: FC<Props> = ({ label, suggesting, disabled, onClick }) => {
   if (suggesting) {
-    return <CircularProgress size={20} aria-label={`Suggesting ${label}`} />;
+    return <CircularProgress size={20} aria-label={`正在估算${label}`} />;
   }
 
   return (
     <IconButton
       edge="end"
       size="small"
-      aria-label={`Suggest ${label}`}
+      aria-label={`估算${label}`}
       disabled={disabled}
       onClick={onClick}
     >

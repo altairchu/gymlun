@@ -35,7 +35,7 @@ const ProductsTable: FC<ProductsTableProps> = ({ products, checkedIds, onChecked
                 color: 'textSecondary',
               }}
             >
-              No products found
+              找不到食物
             </Typography>
           </TableCell>
         </TableRow>
@@ -65,15 +65,15 @@ const ProductsTable: FC<ProductsTableProps> = ({ products, checkedIds, onChecked
                 disabled={products.length === 0}
                 slotProps={{
                   input: {
-                    'aria-label': 'Select all',
+                    'aria-label': '全選',
                   },
                 }}
               />
             </TableCell>
-            <TableCell>Name</TableCell>
-            <TableCell align="right">Calories cost</TableCell>
-            <TableCell align="right">Default quantity</TableCell>
-            <TableCell>Category</TableCell>
+            <TableCell>名稱</TableCell>
+            <TableCell align="right">卡路里</TableCell>
+            <TableCell align="right">預設份量</TableCell>
+            <TableCell>分類</TableCell>
             <TableCell padding="checkbox" />
           </TableRow>
         </TableHead>

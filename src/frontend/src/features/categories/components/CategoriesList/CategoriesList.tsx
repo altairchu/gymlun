@@ -15,7 +15,7 @@ const CategoriesList: FC<CategoriesListProps> = ({ categories }) => {
           color: 'GrayText',
         }}
       >
-        No categories found
+        找不到分類
       </Typography>
     );
   }

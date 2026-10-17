@@ -25,7 +25,7 @@ export const AppDialog: FC<AppDialogProps> = ({
   return (
     <Dialog open={isOpened} onClose={onClose} fullWidth>
       <IconButton
-        aria-label="close"
+        aria-label="關閉"
         onClick={onClose}
         sx={{
           position: 'absolute',

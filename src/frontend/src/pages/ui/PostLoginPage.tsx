@@ -19,5 +19,5 @@ export const PostLoginPage: FC<Props> = ({ returnUrl, navigate }) => {
     return null;
   }
 
-  return <AuthCallbackProgress label="Logging in..." />;
+  return <AuthCallbackProgress label="登入中…" />;
 };

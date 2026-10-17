@@ -5,7 +5,7 @@ import { dateLib } from '@/shared/lib';
 
 export const Route = createFileRoute('/_app/weight')({
   staticData: {
-    appBar: { variant: 'menu', title: 'Weight' },
+    appBar: { variant: 'menu', title: '體重' },
   },
   loader: async ({ context }) => {
     const today = dateLib.getCurrentDate();

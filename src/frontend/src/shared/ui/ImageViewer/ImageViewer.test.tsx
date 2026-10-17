@@ -107,7 +107,7 @@ test('should close on close button click', async () => {
     />,
   );
 
-  await user.click(screen.getByRole('button', { name: 'Close image viewer' }));
+  await user.click(screen.getByRole('button', { name: '關閉圖片檢視' }));
 
   expect(onClose).toHaveBeenCalled();
 });

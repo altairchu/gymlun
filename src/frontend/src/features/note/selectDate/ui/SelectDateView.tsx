@@ -57,14 +57,14 @@ export const SelectDateView: FC<Props> = ({ currentDate, onSubmitDate }) => {
           slotProps={{ actionBar: { actions: [] } }}
         />
         <DialogActions>
-          <Button onClick={closePopover}>Cancel</Button>
+          <Button onClick={closePopover}>取消</Button>
           <Button
             onClick={() => {
               onSubmitDate(selectedDate);
               closePopover();
             }}
           >
-            OK
+            確定
           </Button>
         </DialogActions>
       </Popover>

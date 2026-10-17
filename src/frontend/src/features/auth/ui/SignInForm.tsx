@@ -33,7 +33,7 @@ export const SignInForm: FC<Props> = ({ returnUrl, navigate }) => (
         },
       })}
     >
-      Sign in with Google
+      使用 Google 登入
     </Button>
   </Box>
 );

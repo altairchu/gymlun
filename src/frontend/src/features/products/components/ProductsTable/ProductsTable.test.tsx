@@ -5,6 +5,6 @@ describe('when products are empty', () => {
   test('should show empty data message', () => {
     render(<ProductsTable products={[]} checkedIds={[]} onCheckedChange={vi.fn()} />);
 
-    expect(screen.getByText(/no products found/i));
+    expect(screen.getByText(/找不到食物/));
   });
 });

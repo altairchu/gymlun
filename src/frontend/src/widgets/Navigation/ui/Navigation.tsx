@@ -58,7 +58,7 @@ export const Navigation: FC = () => {
             <IconButton
               color="inherit"
               edge="start"
-              aria-label="Open menu"
+              aria-label="開啟選單"
               onClick={() => {
                 setDrawerVisible(visible => !visible);
               }}

@@ -1,5 +1,4 @@
 import { createTheme } from '@mui/material';
-import { green } from '@mui/material/colors';
 
 declare module '@mui/material/styles' {
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -13,7 +12,10 @@ export const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: green[600],
+      main: '#1e3a8a',
+    },
+    success: {
+      main: '#1565c0',
     },
   },
   typography: {

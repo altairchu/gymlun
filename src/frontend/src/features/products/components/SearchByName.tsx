@@ -58,7 +58,7 @@ export const SearchByName: FC = () => {
   return (
     <TextField
       size="small"
-      placeholder="Search by name"
+      placeholder="按名稱搜尋"
       value={query}
       onChange={handleQueryChange}
       sx={styles.searchField}

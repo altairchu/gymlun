@@ -36,7 +36,7 @@ export const AddProduct: FC = () => {
 
   return (
     <>
-      <Tooltip title="Add new product">
+      <Tooltip title="加入新食物">
         <span>
           <IconButton
             size="large"
@@ -49,8 +49,8 @@ export const AddProduct: FC = () => {
       </Tooltip>
       <ProductInputDialog
         opened={isDialogOpened}
-        title="New product"
-        submitText="Add"
+        title="新食物"
+        submitText="加入"
         isLoading={createProductRequest.isLoading || products.isFetching}
         productFormValues={product}
         categories={categories}

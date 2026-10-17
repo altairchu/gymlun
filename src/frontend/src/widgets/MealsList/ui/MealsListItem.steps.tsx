@@ -24,7 +24,7 @@ export const whenAddNoteButtonClicked = async (
   user: UserEvent,
   mealName: string,
 ): Promise<void> => {
-  const addNoteButton = screen.getByRole('button', { name: new RegExp(`add ${mealName}`, 'i') });
+  const addNoteButton = screen.getByRole('button', { name: new RegExp(`加入${mealName}`) });
   await waitFor(() => expect(addNoteButton).toBeEnabled());
   await user.click(addNoteButton);
 };
@@ -35,12 +35,12 @@ export const whenNoteExpanded = async (user: UserEvent, noteName: RegExp): Promi
 };
 
 export const whenEditNoteClicked = async (user: UserEvent): Promise<void> => {
-  const noteButton = await screen.findByRole('button', { name: /edit/i });
+  const noteButton = await screen.findByRole('button', { name: '編輯' });
   await user.click(noteButton);
 };
 
 export const whenProductSearched = async (user: UserEvent, searchText: string): Promise<void> => {
-  await user.type(screen.getByPlaceholderText(/search products/i), searchText);
+  await user.type(screen.getByPlaceholderText(/搜尋食物/), searchText);
 };
 
 export const whenExistingProductSelected = async (
@@ -51,8 +51,8 @@ export const whenExistingProductSelected = async (
 };
 
 export const whenQuantityChanged = async (user: UserEvent, quantity: number): Promise<void> => {
-  await user.clear(screen.getByPlaceholderText(/quantity/i));
-  await user.type(screen.getByPlaceholderText(/quantity/i), quantity.toString());
+  await user.clear(screen.getByPlaceholderText(/食物份量/));
+  await user.type(screen.getByPlaceholderText(/食物份量/), quantity.toString());
 };
 
 export const whenProductAddedFromInput = async (
@@ -60,62 +60,62 @@ export const whenProductAddedFromInput = async (
   searchText: string,
 ): Promise<void> => {
   await user.click(
-    await screen.findByRole('button', { name: new RegExp(`add "${searchText}"`, 'i') }),
+    await screen.findByRole('button', { name: new RegExp(`加入「${searchText}」`, 'i') }),
   );
 };
 
 export const whenProductNameCompleted = async (user: UserEvent, nameEnd: string): Promise<void> => {
-  await user.type(screen.getByPlaceholderText(/name/i), nameEnd);
+  await user.type(screen.getByPlaceholderText(/食物名稱/), nameEnd);
 };
 
 export const whenProductNameEdited = async (user: UserEvent, name: string): Promise<void> => {
-  await user.clear(screen.getByPlaceholderText(/name/i));
-  await user.type(screen.getByPlaceholderText(/name/i), name);
+  await user.clear(screen.getByPlaceholderText(/食物名稱/));
+  await user.type(screen.getByPlaceholderText(/食物名稱/), name);
 };
 
 export const whenProductCaloriesSet = async (user: UserEvent, calories: number): Promise<void> => {
-  await user.clear(screen.getByPlaceholderText(/calories/i));
-  await user.type(screen.getByPlaceholderText(/calories/i), calories.toString());
+  await user.clear(screen.getByPlaceholderText(/卡路里/));
+  await user.type(screen.getByPlaceholderText(/卡路里/), calories.toString());
 };
 
 export const whenProductDefaultQuantitySet = async (
   user: UserEvent,
   quantity: number,
 ): Promise<void> => {
-  await user.clear(screen.getByPlaceholderText(/default quantity/i));
-  await user.type(screen.getByPlaceholderText(/default quantity/i), quantity.toString());
+  await user.clear(screen.getByPlaceholderText(/預設份量/));
+  await user.type(screen.getByPlaceholderText(/預設份量/), quantity.toString());
 };
 
 export const whenProductCategorySelected = async (
   user: UserEvent,
   category: RegExp,
 ): Promise<void> => {
-  await user.click(screen.getByRole('combobox', { name: /category/i }));
+  await user.click(screen.getByRole('combobox', { name: /分類/ }));
   await user.click(screen.getByRole('option', { name: category }));
 };
 
 export const whenProductAdded = async (user: UserEvent): Promise<void> => {
-  await user.click(screen.getByRole('button', { name: /add/i }));
+  await user.click(screen.getByRole('button', { name: '加入' }));
 };
 
 export const whenProductSaved = async (user: UserEvent): Promise<void> => {
-  await user.click(screen.getByRole('button', { name: /save/i }));
+  await user.click(screen.getByRole('button', { name: '儲存' }));
 };
 
 export const whenNoteAdded = async (user: UserEvent): Promise<void> => {
-  await user.click(screen.getByRole('button', { name: /add/i }));
+  await user.click(screen.getByRole('button', { name: '加入' }));
 };
 
 export const whenNoteSaved = async (user: UserEvent): Promise<void> => {
-  await user.click(screen.getByRole('button', { name: /save/i }));
+  await user.click(screen.getByRole('button', { name: '儲存' }));
 };
 
 export const whenProductEditClicked = async (user: UserEvent): Promise<void> => {
-  await user.click(screen.getByRole('button', { name: /edit product/i }));
+  await user.click(screen.getByRole('button', { name: '編輯食物' }));
 };
 
 export const thenMealHeaderIsVisible = async (): Promise<void> => {
-  const header = await screen.findByRole('listitem', { name: /lunch, [1-9][0-9]* kilocalories/i });
+  const header = await screen.findByRole('listitem', { name: /午餐，[1-9][0-9]* kcal/ });
   expect(header).toBeVisible();
 };
 
@@ -128,19 +128,19 @@ export const thenDialogVisible = async (dialogTitle: RegExp): Promise<void> => {
 };
 
 export const thenNoteCannotBeAdded = (): void => {
-  expect(screen.getByRole('button', { name: /add/i })).toBeDisabled();
+  expect(screen.getByRole('button', { name: '加入' })).toBeDisabled();
 };
 
 export const thenNoteCanBeAdded = (): void => {
-  expect(screen.getByRole('button', { name: /add/i })).toBeEnabled();
+  expect(screen.getByRole('button', { name: '加入' })).toBeEnabled();
 };
 
 export const thenProductCanBeAdded = (): void => {
-  expect(screen.getByRole('button', { name: /add/i })).toBeEnabled();
+  expect(screen.getByRole('button', { name: '加入' })).toBeEnabled();
 };
 
 export const thenProductCanBeSaved = (): void => {
-  expect(screen.getByRole('button', { name: /save/i })).toBeEnabled();
+  expect(screen.getByRole('button', { name: '儲存' })).toBeEnabled();
 };
 
 export const thenDialogNotVisible = async (): Promise<void> => {
@@ -148,15 +148,15 @@ export const thenDialogNotVisible = async (): Promise<void> => {
 };
 
 export const thenProductHasValue = (expectedValue: string): void => {
-  expect(screen.getByRole('textbox', { name: /product/i })).toHaveValue(expectedValue);
+  expect(screen.getByRole('textbox', { name: '食物' })).toHaveValue(expectedValue);
 };
 
 export const thenProductCategoryHasValue = (expectedValue: string): void => {
-  expect(screen.getByRole('combobox', { name: /category/i })).toHaveValue(expectedValue);
+  expect(screen.getByRole('combobox', { name: /分類/ })).toHaveValue(expectedValue);
 };
 
 export const thenQuantityHasValue = (expectedValue: string): void => {
-  expect(screen.getByPlaceholderText(/quantity/i)).toHaveValue(expectedValue);
+  expect(screen.getByPlaceholderText(/食物份量/)).toHaveValue(expectedValue);
 };
 
 export const thenSingleNoteVisible = (noteName: RegExp): void => {

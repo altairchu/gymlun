@@ -22,7 +22,7 @@ export const ImagePreviewList: FC<Props> = ({ images }) => {
         {images.map((image, index) => (
           <ButtonBase
             key={image.id}
-            aria-label={`Open uploaded image preview ${index + 1}`}
+            aria-label={`開啟已上載圖片 ${index + 1}`}
             onClick={() => setOpenedImage(image)}
             sx={{ width: 128, height: 128, borderRadius: 2 }}
           >
@@ -45,7 +45,7 @@ export const ImagePreviewList: FC<Props> = ({ images }) => {
           opened
           src={openedImage.originalUrl}
           fallbackSrc={openedImage.base64}
-          alt={`Uploaded image preview ${images.indexOf(openedImage) + 1}`}
+          alt={`已上載圖片 ${images.indexOf(openedImage) + 1}`}
           onClose={() => setOpenedImage(null)}
         />
       )}

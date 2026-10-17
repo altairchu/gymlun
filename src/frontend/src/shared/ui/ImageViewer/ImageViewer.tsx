@@ -70,7 +70,7 @@ export const ImageViewer: FC<Props> = ({ src, fallbackSrc, alt, opened, onClose 
           </TransformComponent>
         </TransformWrapper>
         <IconButton
-          aria-label="Close image viewer"
+          aria-label="關閉圖片檢視"
           onClick={onClose}
           sx={{
             position: 'absolute',

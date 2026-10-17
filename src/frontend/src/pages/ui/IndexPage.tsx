@@ -52,9 +52,7 @@ export const IndexPage: FC<Props> = ({ date }) => {
           }}
         >
           <Stack spacing={{ xs: 2, sm: 3 }}>
-            {hasMissingNutritionValues && (
-              <Alert severity="warning">Some nutrition values are missing</Alert>
-            )}
+            {hasMissingNutritionValues && <Alert severity="warning">部分食物缺少營養數值</Alert>}
             <NutritionSummaryWidget nutritionValues={nutritionValues} />
           </Stack>
           <MealsList date={date} />
