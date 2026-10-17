@@ -83,6 +83,7 @@ export const create = ({
   carbs,
   sugar,
   salt,
+  isFavorite,
 }: CreateProductRequest): CreateProductResult => {
   const category = db.category.findFirst({
     where: {
@@ -117,6 +118,7 @@ export const create = ({
     carbs,
     sugar,
     salt,
+    isFavorite,
   } satisfies DbProduct);
 
   return { type: 'Success', id };
@@ -136,6 +138,7 @@ export const update = (
     carbs,
     sugar,
     salt,
+    isFavorite,
   }: EditProductRequest,
 ): UpdateProductResult => {
   const category = db.category.findFirst({
@@ -162,6 +165,7 @@ export const update = (
       carbs,
       sugar,
       salt,
+      isFavorite,
     } satisfies DbUpdatableProduct,
   });
 

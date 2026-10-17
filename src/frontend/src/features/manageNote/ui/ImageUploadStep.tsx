@@ -30,6 +30,7 @@ const toProductFormValues = (
   carbs: product.carbs,
   sugar: product.sugar,
   salt: product.salt,
+  isFavorite: false,
 });
 
 export const ImageUploadStep: FC<Props> = ({ images, onSubmitProduct }) => {

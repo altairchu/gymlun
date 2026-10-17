@@ -20,6 +20,7 @@ const toCreateProductRequest = (
     carbs,
     sugar,
     salt,
+    isFavorite,
   }: productModel.ProductFormValues,
   categoryId: number,
 ): CreateProductRequest => ({
@@ -32,6 +33,7 @@ const toCreateProductRequest = (
   carbs,
   sugar,
   salt,
+  isFavorite,
 });
 
 const toEditProductRequest = (
@@ -44,6 +46,7 @@ const toEditProductRequest = (
     carbs,
     sugar,
     salt,
+    isFavorite,
   }: productModel.ProductFormValues,
   productId: number,
   categoryId: number,
@@ -58,6 +61,7 @@ const toEditProductRequest = (
   carbs,
   sugar,
   salt,
+  isFavorite,
 });
 
 const toNoteFormValuesProduct = (

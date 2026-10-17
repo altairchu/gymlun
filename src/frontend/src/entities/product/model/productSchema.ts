@@ -5,8 +5,8 @@ import { NutritionValueSchema } from './NutritionValueSchema';
 export const productNameSchema = z
   .string()
   .trim()
-  .refine(name => name.length >= 3 && name.length <= 100, {
-    error: 'Product name must be between 3 and 100 characters',
+  .refine(name => name.length >= 1 && name.length <= 100, {
+    error: 'Product name must be between 1 and 100 characters',
   });
 
 export const productSchema = z.object({
@@ -26,6 +26,7 @@ export const productSchema = z.object({
   carbs: NutritionValueSchema,
   sugar: NutritionValueSchema,
   salt: NutritionValueSchema,
+  isFavorite: z.boolean(),
 });
 
 export type ProductFormValues = z.infer<typeof productSchema>;

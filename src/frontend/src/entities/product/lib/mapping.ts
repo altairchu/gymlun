@@ -24,6 +24,7 @@ export const mapToProductFormData = ({
   carbs,
   sugar,
   salt,
+  isFavorite,
 }: Product): ProductFormValues => ({
   name,
   calories: caloriesCost,
@@ -37,4 +38,5 @@ export const mapToProductFormData = ({
   carbs,
   sugar,
   salt,
+  isFavorite,
 });

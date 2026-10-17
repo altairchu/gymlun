@@ -162,3 +162,13 @@ export const thenQuantityHasValue = (expectedValue: string): void => {
 export const thenSingleNoteVisible = (noteName: RegExp): void => {
   expect(screen.getByRole('button', { name: noteName })).toBeVisible();
 };
+
+export const whenFavoriteQuickAdded = async (user: UserEvent, chipName: RegExp): Promise<void> => {
+  const chip = await screen.findByRole('button', { name: chipName });
+  await waitFor(() => expect(chip).not.toHaveAttribute('aria-disabled', 'true'));
+  await user.click(chip);
+};
+
+export const thenNoteAppears = async (noteName: RegExp): Promise<void> => {
+  expect(await screen.findByRole('button', { name: noteName })).toBeVisible();
+};

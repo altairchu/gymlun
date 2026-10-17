@@ -10,6 +10,7 @@ export interface Product {
   carbs: number | null;
   sugar: number | null;
   salt: number | null;
+  isFavorite: boolean;
 }
 
 export interface Category {
@@ -40,6 +41,7 @@ export interface GetProductByIdResponse {
   carbs: number | null;
   sugar: number | null;
   salt: number | null;
+  isFavorite: boolean;
 }
 
 export interface ProductSelectOption {
@@ -52,6 +54,7 @@ export interface ProductSelectOption {
   carbs: number | null;
   sugar: number | null;
   salt: number | null;
+  isFavorite: boolean;
 }
 
 export interface CreateProductRequest {
@@ -64,6 +67,7 @@ export interface CreateProductRequest {
   carbs: number | null;
   sugar: number | null;
   salt: number | null;
+  isFavorite: boolean;
 }
 
 export interface CreateProductResponse {
@@ -81,6 +85,7 @@ export interface EditProductRequest {
   carbs: number | null;
   sugar: number | null;
   salt: number | null;
+  isFavorite: boolean;
 }
 
 export interface DeleteProductsRequest {

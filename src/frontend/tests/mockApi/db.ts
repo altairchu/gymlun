@@ -32,6 +32,7 @@ export const db = factory({
     carbs: nullable(Number),
     sugar: nullable(Number),
     salt: nullable(Number),
+    isFavorite: Boolean,
   },
 
   weightLog: {

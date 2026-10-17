@@ -7,9 +7,12 @@ import {
   Alert,
   Autocomplete,
   CircularProgress,
+  FormControlLabel,
   Grid,
   InputAdornment,
   Snackbar,
+  Stack,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material';
@@ -22,7 +25,10 @@ import {
   productNameSchema,
   productSchema,
   nutritionValuesConfig,
+  toPer100g,
+  toPerServing,
 } from '../model';
+import { NutritionValueSchema } from '../model/NutritionValueSchema';
 import { NutritionSuggestButton } from './NutritionSuggestButton';
 import { NutritionValueIcon } from './NutritionValueIcon';
 import { NutritionValueInput } from './NutritionValueInput';
@@ -64,6 +70,35 @@ export const ProductForm: FC<Props> = ({
   });
 
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
+  const [perServing, setPerServing] = useState(false);
+
+  const scaledFieldNames = ['calories', ...OPTIONAL_NUTRITION_FIELDS] as const;
+
+  const handlePerServingChange = (checked: boolean): void => {
+    const servingGrams = Number(getValues('defaultQuantity'));
+    const calories = Number(getValues('calories'));
+    const parsed = OPTIONAL_NUTRITION_FIELDS.map(field =>
+      NutritionValueSchema.safeParse(getValues(field)),
+    );
+
+    if (!(servingGrams > 0) || isNaN(calories) || parsed.some(result => !result.success)) {
+      return;
+    }
+
+    const [protein, fats, carbs, sugar, salt] = parsed.map(result => result.data ?? null);
+    const values = { calories, protein, fats, carbs, sugar, salt };
+    const converted = checked
+      ? toPerServing(values, servingGrams)
+      : toPer100g(values, servingGrams);
+
+    scaledFieldNames.forEach(field => setValue(field, converted[field]));
+    setPerServing(checked);
+  };
+
+  const submit = (data: ProductFormValues): Promise<void> =>
+    onSubmit(perServing ? { ...data, ...toPer100g(data, data.defaultQuantity) } : data);
+
+  const nutritionBasis = perServing ? 'per serving' : 'per 100 g';
 
   const atLeastOneNutritionFieldHasValue = getValues([
     'protein',
@@ -90,7 +125,7 @@ export const ProductForm: FC<Props> = ({
   const suggestDisabled = !productNameSchema.safeParse(name).success || isSuggesting;
 
   return (
-    <form id={formId} onSubmit={handleSubmit(data => onSubmit(data))}>
+    <form id={formId} onSubmit={handleSubmit(submit)}>
       <Controller
         name="name"
         control={control}
@@ -154,7 +189,7 @@ export const ProductForm: FC<Props> = ({
                 {...field}
                 fullWidth
                 disabled={isSuggesting}
-                label={`Calories, ${nutritionValuesConfig.calories.unit}`}
+                label={`Calories ${nutritionBasis}, ${nutritionValuesConfig.calories.unit}`}
                 placeholder="Calories per 100 g"
                 margin="normal"
                 error={!!fieldState.error}
@@ -196,7 +231,7 @@ export const ProductForm: FC<Props> = ({
                 {...field}
                 fullWidth
                 disabled={isSuggesting}
-                label="Default quantity, g"
+                label={perServing ? 'Serving, g' : 'Default quantity, g'}
                 placeholder="Default quantity"
                 margin="normal"
                 error={!!fieldState.error}
@@ -213,6 +248,34 @@ export const ProductForm: FC<Props> = ({
           />
         </Grid>
       </Grid>
+      <Stack sx={{ mb: 2 }}>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={perServing}
+              disabled={isSuggesting}
+              onChange={(_, checked) => handlePerServingChange(checked)}
+            />
+          }
+          label="Enter nutrition per serving"
+        />
+        <Controller
+          name="isFavorite"
+          control={control}
+          render={({ field }) => (
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={field.value}
+                  disabled={isSuggesting}
+                  onChange={(_, checked) => field.onChange(checked)}
+                />
+              }
+              label="Eat often: show in quick add"
+            />
+          )}
+        />
+      </Stack>
       <Accordion
         variant="outlined"
         expanded={nutritionExpanded}
@@ -223,7 +286,7 @@ export const ProductForm: FC<Props> = ({
           aria-controls="nutrition-components-panel-content"
           id="nutrition-components-panel-header"
         >
-          <Typography component="span">Nutrition</Typography>
+          <Typography component="span">Nutrition {nutritionBasis}</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Grid container spacing={2}>

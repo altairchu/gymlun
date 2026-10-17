@@ -9,7 +9,8 @@
     "fats": 1.2,
     "carbs": 49.7,
     "sugar": 3.1,
-    "salt": 1.2
+    "salt": 1.2,
+    "isFavorite": true
   },
   {
     "id": 2,
@@ -21,7 +22,8 @@
     "fats": 15.2,
     "carbs": 0,
     "sugar": null,
-    "salt": 0.2
+    "salt": 0.2,
+    "isFavorite": false
   },
   {
     "id": 3,
@@ -33,7 +35,8 @@
     "fats": 0.2,
     "carbs": 3.9,
     "sugar": 2.6,
-    "salt": 0.01
+    "salt": 0.01,
+    "isFavorite": true
   },
   {
     "id": 4,
@@ -45,7 +48,8 @@
     "fats": null,
     "carbs": null,
     "sugar": null,
-    "salt": null
+    "salt": null,
+    "isFavorite": false
   },
   {
     "id": 5,
@@ -57,7 +61,8 @@
     "fats": 0.2,
     "carbs": 14,
     "sugar": 10.4,
-    "salt": 0
+    "salt": 0,
+    "isFavorite": false
   },
   {
     "id": 6,
@@ -69,7 +74,8 @@
     "fats": 6.9,
     "carbs": 66.3,
     "sugar": 0.8,
-    "salt": 0
+    "salt": 0,
+    "isFavorite": false
   },
   {
     "id": 7,
@@ -81,7 +87,8 @@
     "fats": 14,
     "carbs": 0,
     "sugar": 0,
-    "salt": 0.3
+    "salt": 0.3,
+    "isFavorite": false
   },
   {
     "id": 8,
@@ -93,27 +100,31 @@
     "fats": null,
     "carbs": null,
     "sugar": null,
-    "salt": null
+    "salt": null,
+    "isFavorite": false
   },
   {
     "id": 9,
     "name": "Cheese",
     "caloriesCost": 402,
     "defaultQuantity": 100,
-    "categoryId": 4
+    "categoryId": 4,
+    "isFavorite": false
   },
   {
     "id": 10,
     "name": "Banana",
     "caloriesCost": 96,
     "defaultQuantity": 100,
-    "categoryId": 5
+    "categoryId": 5,
+    "isFavorite": false
   },
   {
     "id": 11,
     "name": "Chocolate cake",
     "caloriesCost": 450,
     "defaultQuantity": 100,
-    "categoryId": 6
+    "categoryId": 6,
+    "isFavorite": false
   }
 ]

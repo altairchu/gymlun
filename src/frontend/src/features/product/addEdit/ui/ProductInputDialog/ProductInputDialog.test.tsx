@@ -102,6 +102,7 @@ test('I can add new product', async () => {
     carbs: null,
     sugar: null,
     salt: null,
+    isFavorite: false,
   });
 });
 
@@ -147,6 +148,7 @@ test('I can edit product', async () => {
     carbs: 25.8,
     sugar: 0.7,
     salt: 0.05,
+    isFavorite: false,
   });
 });
 
@@ -157,7 +159,7 @@ test('I cannot add product with invalid name, calories cost or default quantity'
   render(givenProductInputDialog().withCategoriesForSelect(categories).please());
 
   await whenDialogOpened(user);
-  await whenProductNameChanged(user, 'A');
+  await whenProductNameChanged(user, '   ');
   await whenCaloriesChanged(user, '0');
   await whenDefaultQuantityChanged(user, '0');
   await whenProductSaved(user);
@@ -348,7 +350,7 @@ describe('nutrition suggestions', () => {
   });
 
   test.each([
-    ['shorter than 3 characters once trimmed', '  ab  '],
+    ['empty once trimmed', '    '],
     ['longer than 100 characters', 'a'.repeat(101)],
   ])('suggest buttons are disabled when the name is %s', async (_, name) => {
     const user = userEvent.setup();
