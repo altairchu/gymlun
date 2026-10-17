@@ -9,8 +9,9 @@ public record ListProductsToolResponse(IReadOnlyList<ListProductsToolResponse.Pr
     public record Product(
         int Id,
         string Name,
-        ProductCategory Category,
+        IReadOnlyList<ProductCategory> Categories,
         int DefaultQuantity,
+        string CountBy,
         bool IsFavorite,
         // ReSharper disable once InconsistentNaming
         ProductNutrition Per100g);

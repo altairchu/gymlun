@@ -5,5 +5,5 @@ namespace FoodDiary.Domain.Repositories;
 
 public interface IProductRepository : IRepository<Product>
 {
-    IQueryable<Product> LoadCategory(IQueryable<Product> query);
+    IQueryable<Product> LoadCategories(IQueryable<Product> query);
 }

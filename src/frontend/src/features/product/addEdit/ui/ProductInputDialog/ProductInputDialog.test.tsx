@@ -1,9 +1,11 @@
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { type OnSubmitProductFn, type productModel } from '@/entities/product';
+import { type OnSubmitProductFn, productModel } from '@/entities/product';
 import {
   expectCategory,
   givenCategories,
+  givenCategoryCreatedWithId,
+  givenCategoryCreationFails,
   givenNutritionSuggestion,
   givenNutritionSuggestionFails,
   givenPendingNutritionSuggestion,
@@ -13,14 +15,21 @@ import {
   thenCaloriesHasValue,
   thenCaloriesIsInvalid,
   thenCarbsEventuallyHasValue,
-  thenCategoryHasValue,
-  thenCategoryIsInvalid,
+  thenCategoryEventuallySelected,
+  thenCategoryIsNotSelected,
+  thenCategoryIsOffered,
+  thenCategoryIsSelected,
+  thenCategoryLimitIsShown,
+  thenCategoryOptionIsDisabled,
+  thenCountingUnitIs,
   thenDefaultQuantityHasValue,
   thenDefaultQuantityIsInvalid,
+  thenDefaultQuantityIsLabelled,
   thenDialogShouldBeHidden,
   thenFatsEventuallyHasValue,
   thenFormValueContains,
   thenNameInputIsDisabled,
+  thenNewCategoryIsNotOffered,
   thenNutritionPanelIsExpanded,
   thenProductFormIsVisible,
   thenProductNameHasValue,
@@ -33,14 +42,20 @@ import {
   thenSuggestButtonIsEnabled,
   whenCaloriesChanged,
   whenCarbsChanged,
-  whenCategoryCleared,
+  whenCategoriesOpened,
+  whenCategoryNameTyped,
+  whenCategoryRemoved,
   whenCategorySelected,
   whenCloseIconClicked,
+  whenCountedInGrams,
+  whenCountedInServings,
   whenDefaultQuantityChanged,
   whenDialogClosed,
   whenDialogOpened,
   whenFatsChanged,
+  whenNewCategoryOptionClicked,
   whenNutritionPanelExpanded,
+  whenPerServingNutritionEnabled,
   whenProductNameChanged,
   whenProductSaved,
   whenProteinChanged,
@@ -49,6 +64,8 @@ import {
   whenSugarChanged,
   whenSuggestClicked,
 } from './ProductInputDialog.fixture';
+
+const { QuantityUnit } = productModel;
 
 test('the product name is submitted trimmed', async () => {
   const user = userEvent.setup();
@@ -59,7 +76,7 @@ test('the product name is submitted trimmed', async () => {
     givenProductInputDialog()
       .withOnSubmitMock(onSubmitMock)
       .withCategoriesForSelect(categories)
-      .withProduct({ name: '  Potato  ', category: categories[0], calories: 150 })
+      .withProduct({ name: '  Potato  ', categories: [categories[0]], calories: 150 })
       .please(),
   );
 
@@ -74,7 +91,7 @@ test('the product name is submitted trimmed', async () => {
 
 test('I can add new product', async () => {
   const user = userEvent.setup();
-  const onSubmitMock = vi.fn();
+  const onSubmitMock = vi.fn<OnSubmitProductFn>();
   const categories = givenCategories('Fruits', 'Vegetables');
 
   render(
@@ -96,7 +113,8 @@ test('I can add new product', async () => {
     name: 'Potato',
     calories: 150,
     defaultQuantity: 120,
-    category: expectCategory('Vegetables'),
+    quantityUnit: QuantityUnit.Grams,
+    categories: [expectCategory('Vegetables')],
     protein: null,
     fats: null,
     carbs: null,
@@ -108,7 +126,7 @@ test('I can add new product', async () => {
 
 test('I can edit product', async () => {
   const user = userEvent.setup();
-  const onSubmitMock = vi.fn();
+  const onSubmitMock = vi.fn<OnSubmitProductFn>();
   const categories = givenCategories('Vegetables', 'Vegetables new');
 
   render(
@@ -118,7 +136,7 @@ test('I can edit product', async () => {
         name: 'Potato',
         calories: 150,
         defaultQuantity: 120,
-        category: categories[1],
+        categories: [categories[0]],
       })
       .withOnSubmitMock(onSubmitMock)
       .please(),
@@ -142,7 +160,8 @@ test('I can edit product', async () => {
     name: 'Potato edited',
     calories: 140,
     defaultQuantity: 110,
-    category: expectCategory('Vegetables new'),
+    quantityUnit: QuantityUnit.Grams,
+    categories: [expectCategory('Vegetables'), expectCategory('Vegetables new')],
     protein: 1.2,
     fats: 0.4,
     carbs: 25.8,
@@ -168,22 +187,37 @@ test('I cannot add product with invalid name, calories cost or default quantity'
   thenDefaultQuantityIsInvalid();
 });
 
-test('I cannot save product when category is empty', async () => {
+test('I cannot save a default quantity over 1000 g', async () => {
   const user = userEvent.setup();
-  const categories = givenCategories('Fruits', 'Vegetables');
+  const onSubmitMock = vi.fn<OnSubmitProductFn>();
 
   render(
-    givenProductInputDialog()
-      .withCategoriesForSelect(categories)
-      .withProduct({ name: 'Red apple', category: categories[0] })
-      .please(),
+    givenProductInputDialog().withOnSubmitMock(onSubmitMock).withProduct({ name: 'Rice' }).please(),
   );
 
   await whenDialogOpened(user);
-  await whenProductNameChanged(user, 'Green apple');
-  await whenCategoryCleared(user);
+  await whenDefaultQuantityChanged(user, '1001');
   await whenProductSaved(user);
-  thenCategoryIsInvalid();
+
+  thenDefaultQuantityIsInvalid();
+  expect(onSubmitMock).not.toHaveBeenCalled();
+});
+
+test('I can save a default quantity of 1 g', async () => {
+  const user = userEvent.setup();
+  const onSubmitMock = vi.fn<OnSubmitProductFn>();
+
+  render(
+    givenProductInputDialog().withOnSubmitMock(onSubmitMock).withProduct({ name: 'Salt' }).please(),
+  );
+
+  await whenDialogOpened(user);
+  await whenDefaultQuantityChanged(user, '1');
+  await whenProductSaved(user);
+
+  expect(onSubmitMock).toHaveBeenCalledWith(
+    expect.objectContaining<Partial<productModel.ProductFormValues>>({ defaultQuantity: 1 }),
+  );
 });
 
 test('Dialog input is cleared on close', async () => {
@@ -197,7 +231,7 @@ test('Dialog input is cleared on close', async () => {
         name: 'Red apple',
         calories: 60,
         defaultQuantity: 120,
-        category: categories[0],
+        categories: [categories[0]],
       })
       .please(),
   );
@@ -207,6 +241,7 @@ test('Dialog input is cleared on close', async () => {
   await whenCaloriesChanged(user, '70');
   await whenDefaultQuantityChanged(user, '110');
   await whenCategorySelected(user, /fruits new/i);
+  await whenCountedInServings(user);
   await whenDialogClosed(user);
   await thenDialogShouldBeHidden();
 
@@ -214,7 +249,9 @@ test('Dialog input is cleared on close', async () => {
   thenProductNameHasValue('Red apple');
   thenCaloriesHasValue(60);
   thenDefaultQuantityHasValue(120);
-  thenCategoryHasValue('Fruits');
+  thenCategoryIsSelected('Fruits');
+  thenCategoryIsNotSelected('Fruits new');
+  thenCountingUnitIs('按重量（克）');
 });
 
 test('New product name input is valid by default', async () => {
@@ -225,6 +262,331 @@ test('New product name input is valid by default', async () => {
 
   await whenDialogOpened(user);
   thenProductNameIsValid();
+});
+
+describe('categories', () => {
+  test('I can save a product without categories', async () => {
+    const user = userEvent.setup();
+    const onSubmitMock = vi.fn<OnSubmitProductFn>();
+    const categories = givenCategories('Fruits', 'Vegetables');
+
+    render(
+      givenProductInputDialog()
+        .withOnSubmitMock(onSubmitMock)
+        .withCategoriesForSelect(categories)
+        .withProduct({ name: 'Water' })
+        .please(),
+    );
+
+    await whenDialogOpened(user);
+    await whenProductSaved(user);
+
+    expect(onSubmitMock).toHaveBeenCalledWith(
+      expect.objectContaining<Partial<productModel.ProductFormValues>>({ categories: [] }),
+    );
+  });
+
+  test('I can select several categories', async () => {
+    const user = userEvent.setup();
+    const onSubmitMock = vi.fn<OnSubmitProductFn>();
+    const categories = givenCategories('肉類', '高蛋白', '飯麵');
+
+    render(
+      givenProductInputDialog()
+        .withOnSubmitMock(onSubmitMock)
+        .withCategoriesForSelect(categories)
+        .withProduct({ name: '雞胸肉' })
+        .please(),
+    );
+
+    await whenDialogOpened(user);
+    await whenCategorySelected(user, /肉類/);
+    await whenCategorySelected(user, /高蛋白/);
+    await whenProductSaved(user);
+
+    thenCategoryIsSelected('肉類');
+    thenCategoryIsSelected('高蛋白');
+    expect(onSubmitMock).toHaveBeenCalledWith(
+      expect.objectContaining<Partial<productModel.ProductFormValues>>({
+        categories: [expectCategory('肉類'), expectCategory('高蛋白')],
+      }),
+    );
+  });
+
+  test('a selected category is no longer offered', async () => {
+    const user = userEvent.setup();
+    const categories = givenCategories('肉類', '高蛋白');
+
+    render(
+      givenProductInputDialog()
+        .withCategoriesForSelect(categories)
+        .withProduct({ name: '雞胸肉', categories: [categories[0]] })
+        .please(),
+    );
+
+    await whenDialogOpened(user);
+    await whenCategoriesOpened(user);
+
+    thenCategoryIsOffered('高蛋白');
+    expect(screen.queryByRole('option', { name: '肉類' })).not.toBeInTheDocument();
+  });
+
+  test('I can remove a selected category', async () => {
+    const user = userEvent.setup();
+    const onSubmitMock = vi.fn<OnSubmitProductFn>();
+    const categories = givenCategories('肉類', '高蛋白');
+
+    render(
+      givenProductInputDialog()
+        .withOnSubmitMock(onSubmitMock)
+        .withCategoriesForSelect(categories)
+        .withProduct({ name: '雞胸肉', categories })
+        .please(),
+    );
+
+    await whenDialogOpened(user);
+    await whenCategoryRemoved(user, '肉類');
+    await whenProductSaved(user);
+
+    thenCategoryIsNotSelected('肉類');
+    expect(onSubmitMock).toHaveBeenCalledWith(
+      expect.objectContaining<Partial<productModel.ProductFormValues>>({
+        categories: [expectCategory('高蛋白')],
+      }),
+    );
+  });
+
+  test('I can create a category inline by typing its name', async () => {
+    const user = userEvent.setup();
+    const onSubmitMock = vi.fn<OnSubmitProductFn>();
+    const categories = givenCategories('肉類', '飯麵');
+    const requests = givenCategoryCreatedWithId(42);
+
+    render(
+      givenProductInputDialog()
+        .withOnSubmitMock(onSubmitMock)
+        .withCategoriesForSelect(categories)
+        .withProduct({ name: '白飯', categories: [categories[1]] })
+        .please(),
+    );
+
+    await whenDialogOpened(user);
+    await whenCategoryNameTyped(user, '  飯 ');
+    await whenNewCategoryOptionClicked(user, '飯');
+    await thenCategoryEventuallySelected('飯');
+    await whenProductSaved(user);
+
+    expect(requests.names).toStrictEqual<string[]>(['飯']);
+    expect(onSubmitMock).toHaveBeenCalledWith(
+      expect.objectContaining<Partial<productModel.ProductFormValues>>({
+        categories: [expectCategory('飯麵'), { id: 42, name: '飯' }],
+      }),
+    );
+  });
+
+  test('creating a category is not offered for a name that exists in another letter case', async () => {
+    const user = userEvent.setup();
+    const categories = givenCategories('Fruits');
+
+    render(
+      givenProductInputDialog()
+        .withCategoriesForSelect(categories)
+        .withProduct({ name: 'Apple' })
+        .please(),
+    );
+
+    await whenDialogOpened(user);
+    await whenCategoryNameTyped(user, 'fruits');
+
+    thenCategoryIsOffered('Fruits');
+    thenNewCategoryIsNotOffered();
+  });
+
+  test('creating a category is not offered for an already selected name', async () => {
+    const user = userEvent.setup();
+    const categories = givenCategories('肉類');
+
+    render(
+      givenProductInputDialog()
+        .withCategoriesForSelect(categories)
+        .withProduct({ name: '雞胸肉', categories })
+        .please(),
+    );
+
+    await whenDialogOpened(user);
+    await whenCategoryNameTyped(user, '肉類');
+
+    thenNewCategoryIsNotOffered();
+  });
+
+  test('creating a category is not offered for a name longer than 64 characters', async () => {
+    const user = userEvent.setup();
+
+    render(givenProductInputDialog().withProduct({ name: 'Apple' }).please());
+
+    await whenDialogOpened(user);
+    await whenCategoryNameTyped(user, 'a'.repeat(65));
+
+    thenNewCategoryIsNotOffered();
+  });
+
+  test('an error is shown when creating a category fails', async () => {
+    const user = userEvent.setup();
+    givenCategoryCreationFails();
+
+    render(givenProductInputDialog().withProduct({ name: '白飯' }).please());
+
+    await whenDialogOpened(user);
+    await whenCategoryNameTyped(user, '飯');
+    await whenNewCategoryOptionClicked(user, '飯');
+
+    await thenAlertShown(/category name is already taken/i);
+    thenCategoryIsNotSelected('飯');
+  });
+
+  test('no more categories can be added after 10 are selected', async () => {
+    const user = userEvent.setup();
+    const categories = givenCategories(...Array.from({ length: 11 }, (_, i) => `分類${i + 1}`));
+
+    render(
+      givenProductInputDialog()
+        .withCategoriesForSelect(categories)
+        .withProduct({ name: '雜錦飯', categories: categories.slice(0, 10) })
+        .please(),
+    );
+
+    await whenDialogOpened(user);
+    await whenCategoriesOpened(user);
+
+    thenCategoryOptionIsDisabled('分類11');
+    thenCategoryLimitIsShown();
+  });
+});
+
+describe('counting unit', () => {
+  test('a new product is counted in grams by default', async () => {
+    const user = userEvent.setup();
+
+    render(givenProductInputDialog().please());
+
+    await whenDialogOpened(user);
+
+    thenCountingUnitIs('按重量（克）');
+    thenDefaultQuantityIsLabelled('預設份量 (g)');
+  });
+
+  test('the default quantity is the weight of one piece when counted in servings', async () => {
+    const user = userEvent.setup();
+    const onSubmitMock = vi.fn<OnSubmitProductFn>();
+
+    render(
+      givenProductInputDialog()
+        .withOnSubmitMock(onSubmitMock)
+        .withProduct({ name: '豬肉韭菜餃' })
+        .please(),
+    );
+
+    await whenDialogOpened(user);
+    await whenCountedInServings(user);
+    thenCountingUnitIs('按件／份');
+    thenDefaultQuantityIsLabelled('每份重量 (g)');
+
+    await whenDefaultQuantityChanged(user, '25');
+    await whenProductSaved(user);
+
+    expect(onSubmitMock).toHaveBeenCalledWith(
+      expect.objectContaining<Partial<productModel.ProductFormValues>>({
+        quantityUnit: QuantityUnit.Servings,
+        defaultQuantity: 25,
+      }),
+    );
+  });
+
+  test('I can switch a product counted in servings back to grams', async () => {
+    const user = userEvent.setup();
+    const onSubmitMock = vi.fn<OnSubmitProductFn>();
+
+    render(
+      givenProductInputDialog()
+        .withOnSubmitMock(onSubmitMock)
+        .withProduct({ name: '白飯', quantityUnit: QuantityUnit.Servings, defaultQuantity: 200 })
+        .please(),
+    );
+
+    await whenDialogOpened(user);
+    thenCountingUnitIs('按件／份');
+    thenDefaultQuantityIsLabelled('每份重量 (g)');
+
+    await whenCountedInGrams(user);
+    thenDefaultQuantityIsLabelled('預設份量 (g)');
+    await whenProductSaved(user);
+
+    expect(onSubmitMock).toHaveBeenCalledWith(
+      expect.objectContaining<Partial<productModel.ProductFormValues>>({
+        quantityUnit: QuantityUnit.Grams,
+        defaultQuantity: 200,
+      }),
+    );
+  });
+
+  test('nutrition entered per serving is converted with the weight of one piece', async () => {
+    const user = userEvent.setup();
+    const onSubmitMock = vi.fn<OnSubmitProductFn>();
+
+    render(
+      givenProductInputDialog()
+        .withOnSubmitMock(onSubmitMock)
+        .withProduct({
+          name: '雞蛋',
+          quantityUnit: QuantityUnit.Servings,
+          defaultQuantity: 50,
+          calories: 140,
+        })
+        .please(),
+    );
+
+    await whenDialogOpened(user);
+    await whenPerServingNutritionEnabled(user);
+    thenCaloriesHasValue(70);
+
+    await whenCaloriesChanged(user, '75');
+    await whenProductSaved(user);
+
+    expect(onSubmitMock).toHaveBeenCalledWith(
+      expect.objectContaining<Partial<productModel.ProductFormValues>>({
+        quantityUnit: QuantityUnit.Servings,
+        defaultQuantity: 50,
+        calories: 150,
+      }),
+    );
+  });
+
+  test('nutrition entered per serving is converted with the usual portion in grams', async () => {
+    const user = userEvent.setup();
+    const onSubmitMock = vi.fn<OnSubmitProductFn>();
+
+    render(
+      givenProductInputDialog()
+        .withOnSubmitMock(onSubmitMock)
+        .withProduct({ name: '白飯', defaultQuantity: 200, calories: 130 })
+        .please(),
+    );
+
+    await whenDialogOpened(user);
+    await whenPerServingNutritionEnabled(user);
+    thenDefaultQuantityIsLabelled('每份份量 (g)');
+    thenCaloriesHasValue(260);
+
+    await whenProductSaved(user);
+
+    expect(onSubmitMock).toHaveBeenCalledWith(
+      expect.objectContaining<Partial<productModel.ProductFormValues>>({
+        quantityUnit: QuantityUnit.Grams,
+        defaultQuantity: 200,
+        calories: 130,
+      }),
+    );
+  });
 });
 
 describe('nutrition suggestions', () => {
@@ -243,7 +605,7 @@ describe('nutrition suggestions', () => {
     render(
       givenProductInputDialog()
         .withCategoriesForSelect(categories)
-        .withProduct({ name: 'Cheddar cheese', category: categories[0] })
+        .withProduct({ name: 'Cheddar cheese' })
         .please(),
     );
 
@@ -264,7 +626,7 @@ describe('nutrition suggestions', () => {
     render(
       givenProductInputDialog()
         .withCategoriesForSelect(categories)
-        .withProduct({ name: 'Cheddar cheese', category: categories[0] })
+        .withProduct({ name: 'Cheddar cheese' })
         .please(),
     );
 
@@ -282,7 +644,7 @@ describe('nutrition suggestions', () => {
     render(
       givenProductInputDialog()
         .withCategoriesForSelect(categories)
-        .withProduct({ name: 'Cheddar cheese', category: categories[0], protein: 1.2, carbs: 5 })
+        .withProduct({ name: 'Cheddar cheese', protein: 1.2, carbs: 5 })
         .please(),
     );
 
@@ -301,7 +663,7 @@ describe('nutrition suggestions', () => {
     render(
       givenProductInputDialog()
         .withCategoriesForSelect(categories)
-        .withProduct({ name: 'Cheddar cheese', category: categories[0] })
+        .withProduct({ name: 'Cheddar cheese' })
         .please(),
     );
 
@@ -323,7 +685,7 @@ describe('nutrition suggestions', () => {
     render(
       givenProductInputDialog()
         .withCategoriesForSelect(categories)
-        .withProduct({ name: 'Cheddar cheese', category: categories[0] })
+        .withProduct({ name: 'Cheddar cheese' })
         .please(),
     );
 
@@ -372,7 +734,7 @@ describe('nutrition suggestions', () => {
     render(
       givenProductInputDialog()
         .withCategoriesForSelect(categories)
-        .withProduct({ name: '  Cheddar cheese  ', category: categories[0] })
+        .withProduct({ name: '  Cheddar cheese  ' })
         .please(),
     );
 
@@ -391,7 +753,7 @@ describe('nutrition suggestions', () => {
     render(
       givenProductInputDialog()
         .withCategoriesForSelect(categories)
-        .withProduct({ name: 'Cheddar cheese', category: categories[0] })
+        .withProduct({ name: 'Cheddar cheese' })
         .please(),
     );
 
@@ -414,7 +776,7 @@ describe('nutrition suggestions', () => {
     render(
       givenProductInputDialog()
         .withCategoriesForSelect(categories)
-        .withProduct({ name: 'Cheddar cheese', category: categories[0] })
+        .withProduct({ name: 'Cheddar cheese' })
         .please(),
     );
 
@@ -432,7 +794,7 @@ describe('nutrition suggestions', () => {
     render(
       givenProductInputDialog()
         .withCategoriesForSelect(categories)
-        .withProduct({ name: 'Cheddar cheese', category: categories[0] })
+        .withProduct({ name: 'Cheddar cheese' })
         .please(),
     );
 
@@ -457,7 +819,7 @@ describe('nutrition suggestions', () => {
     render(
       givenProductInputDialog()
         .withCategoriesForSelect(categories)
-        .withProduct({ name: 'Cheddar cheese', category: categories[0] })
+        .withProduct({ name: 'Cheddar cheese' })
         .please(),
     );
 
@@ -475,7 +837,7 @@ describe('nutrition suggestions', () => {
     render(
       givenProductInputDialog()
         .withCategoriesForSelect(categories)
-        .withProduct({ name: 'Cheddar cheese', category: categories[0] })
+        .withProduct({ name: 'Cheddar cheese' })
         .please(),
     );
 

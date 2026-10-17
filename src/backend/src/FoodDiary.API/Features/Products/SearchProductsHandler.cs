@@ -11,23 +11,12 @@ public class SearchProductsHandler(FoodDiaryContext context)
     public async Task<SearchProductsResult> Handle(CancellationToken cancellationToken)
     {
         var products = await context.Products
-            .GroupJoin(context.Notes,
-                p => p.Id,
-                n => n.ProductId,
-                (p, notes) => new { Product = p, Notes = notes })
-            .SelectMany(
-                // Turns inner join to left join: we need all products even if they have no notes
-                g => g.Notes.DefaultIfEmpty(),
-                (g, note) => new { g.Product, Note = note })
-            .GroupBy(g => g.Product)
-            .Select(g => new
-            {
-                Product = g.Key,
-                LastUsedOn = g.Max(x => x.Note == null ? default : x.Note.Date)
-            })
-            .OrderByDescending(p => p.LastUsedOn)
-            .ThenBy(g => g.Product.Name)
-            .Select(g => g.Product)
+            .AsNoTracking()
+            .Include(p => p.Categories)
+            // Postgres sorts nulls first in descending order: never logged products have to go last
+            .OrderByDescending(p => p.Notes.Max(n => (DateOnly?)n.Date).HasValue)
+            .ThenByDescending(p => p.Notes.Max(n => (DateOnly?)n.Date))
+            .ThenBy(p => p.Name)
             .ToListAsync(cancellationToken);
 
         return new SearchProductsResult(products);

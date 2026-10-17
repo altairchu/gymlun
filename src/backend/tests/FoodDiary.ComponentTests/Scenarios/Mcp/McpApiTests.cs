@@ -99,6 +99,19 @@ public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApi
     }
 
     [Scenario]
+    public Task The_client_can_log_food_by_time_and_servings()
+    {
+        var dumplings = Create.Product("餃子").CountedInServingsOf(25).Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_products(dumplings),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_log_food_by_time_and_servings("2026-09-01", "12:45", 10, dumplings),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_food_log_is_logged_at("2026-09-01", "12:45", "Lunch", dumplings, 250));
+    }
+
+    [Scenario]
     public Task The_client_can_delete_food_log()
     {
         var note = Create.Note().WithDate("2026-09-01").WithProduct("Oatmeal", quantity: 60).Please();
@@ -119,6 +132,18 @@ public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApi
             c => c.When_mcp_client_calls_create_product("豬肉韭菜餃", "Dumplings", servingGrams: 250, calories: 550, protein: 22.5m),
             c => c.Then_mcp_client_lists_tools(AllTools),
             c => c.Then_created_product_is_favorite_with_nutrition_per_100g("豬肉韭菜餃", "Dumplings", 250, 220, 9m));
+    }
+
+    [Scenario]
+    public Task The_client_can_create_product_counted_in_servings_with_many_categories()
+    {
+        string[] categories = ["餃子", "Frozen"];
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_create_product_counted_in_servings("豬肉韭菜餃", categories, 25, 55),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_created_product_is_counted_in_servings("豬肉韭菜餃", categories, 25));
     }
 
     [Scenario]

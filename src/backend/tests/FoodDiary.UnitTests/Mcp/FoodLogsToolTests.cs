@@ -61,12 +61,19 @@ public class FoodLogsToolTests
         Salt = null
     };
 
-    private void GivenNote(DateOnly date, MealType mealType, Product product, int quantity, int displayOrder = 0)
+    private void GivenNote(
+        DateOnly date,
+        MealType mealType,
+        Product product,
+        int quantity,
+        int displayOrder = 0,
+        TimeOnly? time = null)
     {
         _notes.Add(new Note
         {
             Id = _notes.Count + 1,
             Date = date,
+            Time = time ?? mealType.DefaultTime,
             MealType = mealType,
             ProductId = product.Id,
             Product = product,
@@ -95,6 +102,7 @@ public class FoodLogsToolTests
             """
             {
               "id": 1,
+              "time": "08:00",
               "product": { "id": 42, "name": "Oatmeal" },
               "quantity": 60,
               "calories": 219,
@@ -153,6 +161,23 @@ public class FoodLogsToolTests
                 }
             ],
             options => options.WithStrictOrdering());
+    }
+
+    [Fact]
+    public async Task ItemsOfMeal_RunInOrderOfTime()
+    {
+        var bread = ProductWithoutNutrition(1, "Bread");
+        var cheese = ProductWithoutNutrition(2, "Cheese");
+        var coffee = ProductWithoutNutrition(3, "Coffee");
+        GivenNote(September1, MealType.Breakfast, coffee, quantity: 200, displayOrder: 0, time: new TimeOnly(9, 15));
+        GivenNote(September1, MealType.Breakfast, cheese, quantity: 30, displayOrder: 1, time: new TimeOnly(7, 45));
+        GivenNote(September1, MealType.Breakfast, bread, quantity: 50, displayOrder: 0, time: new TimeOnly(7, 45));
+
+        var json = await GetFoodLogs(September1, September1);
+
+        json["days"]![0]!["meals"]![0]!["items"]!.AsArray()
+            .Select(item => $"{item!["time"]!.GetValue<string>()} {item["product"]!["name"]!.GetValue<string>()}")
+            .Should().Equal("07:45 Bread", "07:45 Cheese", "09:15 Coffee");
     }
 
     [Fact]

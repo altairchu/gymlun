@@ -14,9 +14,23 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.HasKey(p => p.Id);
 
-        builder.HasOne(p => p.Category)
+        builder.HasMany(p => p.Categories)
             .WithMany(c => c.Products)
-            .HasForeignKey(p => p.CategoryId);
+            .UsingEntity(
+                "ProductCategories",
+                category => category.HasOne(typeof(Category))
+                    .WithMany()
+                    .HasForeignKey("CategoryId")
+                    .OnDelete(DeleteBehavior.Cascade),
+                product => product.HasOne(typeof(Product))
+                    .WithMany()
+                    .HasForeignKey("ProductId")
+                    .OnDelete(DeleteBehavior.Cascade),
+                join =>
+                {
+                    join.ToTable("ProductCategories");
+                    join.HasKey("ProductId", "CategoryId");
+                });
 
         builder.HasIndex(p => p.Name).IsUnique();
 

@@ -32,6 +32,47 @@ public class CategoriesApiTests(InfrastructureFixture infrastructure) : BaseTest
     }
 
     [Scenario]
+    [InlineData("飯")]
+    [InlineData("肉類")]
+    public Task I_can_create_category_with_short_chinese_name(string name)
+    {
+        var category = Create.Category(name).Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_authenticated_user(),
+            c => c.When_user_creates_category(name),
+            c => c.Then_category_is_successfully_created(),
+            c => c.When_user_retrieves_categories_list(),
+            c => c.Then_categories_list_contains_items(category));
+    }
+
+    [Scenario]
+    public Task I_can_rename_category_to_single_chinese_character()
+    {
+        var rice = Create.Category("Rice").Please();
+        var renamedRice = Create.Category().From(rice).WithName("飯").Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_authenticated_user(),
+            c => c.Given_categories(rice),
+            c => c.When_user_renames_category(rice, "飯"),
+            c => c.Then_category_is_successfully_updated(),
+            c => c.When_user_retrieves_categories_list(),
+            c => c.Then_categories_list_contains_items(renamedRice));
+    }
+
+    [Scenario]
+    public Task I_cannot_create_category_with_empty_name()
+    {
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_authenticated_user(),
+            c => c.When_user_creates_category(""),
+            c => c.Then_category_is_not_created(),
+            c => c.When_user_retrieves_categories_list(),
+            c => c.Then_categories_list_is_empty());
+    }
+
+    [Scenario]
     public Task I_can_update_category()
     {
         var frozenFoods = Create.Category("Frozen foods").Please();

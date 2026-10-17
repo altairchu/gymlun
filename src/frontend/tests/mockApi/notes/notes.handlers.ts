@@ -6,7 +6,10 @@ import {
   type GetNotesHistoryResponse,
   type NoteHistoryItem,
   type NoteRequestBody,
+  type CreateNotesRequest,
+  type CreateNotesResponse,
 } from '@/entities/note';
+import { productModel } from '@/entities/product';
 import { API_URL } from '@/shared/config';
 import { DelayedHttpResponse } from '../DelayedHttpResponse';
 import * as notesService from './notes.service';
@@ -23,12 +26,13 @@ export const handlers: HttpHandler[] = [
     const dbNotes = notesService.getByDate(date);
     const productsMap = notesService.getProducts(dbNotes);
 
-    const notes = dbNotes.map(({ id, date, mealType, displayOrder, productId, quantity }) => {
+    const notes = dbNotes.map(({ id, date, time, mealType, displayOrder, productId, quantity }) => {
       const product = productsMap.get(productId);
 
       return {
         id,
         date,
+        time,
         mealType,
         displayOrder,
         productQuantity: quantity,
@@ -36,6 +40,7 @@ export const handlers: HttpHandler[] = [
           id: product?.id ?? 0,
           name: product?.name ?? '',
           defaultQuantity: product?.defaultQuantity ?? 0,
+          quantityUnit: product?.quantityUnit ?? productModel.QuantityUnit.Grams,
           calories: product?.caloriesCost ?? 0,
           protein: product?.protein ?? null,
           fats: product?.fats ?? null,
@@ -76,12 +81,26 @@ export const handlers: HttpHandler[] = [
     const body = await request.json();
     const result = notesService.create(body);
 
-    if (result === 'ProductNotFound') {
+    if (result !== 'Success') {
       return await DelayedHttpResponse.badRequest();
     }
 
     return await DelayedHttpResponse.ok();
   }),
+
+  http.post<PathParams, CreateNotesRequest>(
+    `${API_URL}/api/v1/notes/batch`,
+    async ({ request }) => {
+      const body = await request.json();
+      const ids = notesService.createMany(body);
+
+      if (!ids) {
+        return await DelayedHttpResponse.badRequest();
+      }
+
+      return await DelayedHttpResponse.json<CreateNotesResponse>({ ids });
+    },
+  ),
 
   http.put<{ id: string }, NoteRequestBody>(
     `${API_URL}/api/v1/notes/:id`,
@@ -90,7 +109,7 @@ export const handlers: HttpHandler[] = [
       const note = await request.json();
       const result = notesService.update({ id, note });
 
-      if (result === 'ProductNotFound') {
+      if (result !== 'Success') {
         return await DelayedHttpResponse.badRequest();
       }
 

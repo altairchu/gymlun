@@ -1,6 +1,4 @@
 import { type NoteItem, noteApi } from '../api';
-import { type MealType } from '../model';
-import { type GetNotesByMealsResponse } from './mealsHelpers';
 
 interface Result {
   data: NoteItem[];
@@ -8,19 +6,16 @@ interface Result {
   isChanged: boolean;
 }
 
-const selectNotes = (
-  response: GetNotesByMealsResponse,
-  mealType: MealType | null = null,
-): NoteItem[] => (mealType != null ? response[mealType] : Object.values(response).flat());
+const EMPTY_NOTES: NoteItem[] = [];
 
-export const useNotes = (date: string, mealType: MealType | null = null): Result =>
+export const useNotes = (date: string): Result =>
   noteApi.useNotesQuery(
     {
       date,
     },
     {
       selectFromResult: ({ data, isFetching, isSuccess }) => ({
-        data: data ? selectNotes(data, mealType) : [],
+        data: data ?? EMPTY_NOTES,
         isFetching,
         isChanged: !isFetching && isSuccess,
       }),

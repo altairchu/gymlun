@@ -5,22 +5,21 @@ import {
   type GetNotesHistoryRequest,
   type GetNotesResponse,
   type GetNotesHistoryResponse,
+  type NoteItem,
   type NoteRequestBody,
+  type CreateNotesRequest,
+  type CreateNotesResponse,
 } from '@/entities/note';
 import { api } from '@/shared/api';
 import { createUrl } from '@/shared/lib';
-import { type GetNotesByMealsResponse, createEmptyGetNotesByMealsResponse } from '../lib';
+import { compareByTime, sortByTime } from '../model/time';
 
 export const noteApi = api.injectEndpoints({
   endpoints: builder => ({
-    notes: builder.query<GetNotesByMealsResponse, GetNotesRequest>({
+    notes: builder.query<NoteItem[], GetNotesRequest>({
       query: ({ date }) => `/api/v1/notes?date=${date}`,
       providesTags: ['note'],
-      transformResponse: ({ notes }: GetNotesResponse) =>
-        notes.reduce((groups, note) => {
-          groups[note.mealType].push(note);
-          return groups;
-        }, createEmptyGetNotesByMealsResponse()),
+      transformResponse: ({ notes }: GetNotesResponse) => sortByTime(notes),
     }),
 
     notesHistory: builder.query<GetNotesHistoryResponse, GetNotesHistoryRequest>({
@@ -37,6 +36,15 @@ export const noteApi = api.injectEndpoints({
       invalidatesTags: ['note'],
     }),
 
+    createNotes: builder.mutation<CreateNotesResponse, CreateNotesRequest>({
+      query: request => ({
+        method: 'POST',
+        url: '/api/v1/notes/batch',
+        body: request,
+      }),
+      invalidatesTags: ['note'],
+    }),
+
     updateNote: builder.mutation<void, UpdateNoteRequest>({
       query: ({ id, note }) => ({
         method: 'PUT',
@@ -44,6 +52,26 @@ export const noteApi = api.injectEndpoints({
         body: note,
       }),
       invalidatesTags: ['note'],
+      onQueryStarted: async ({ id, note }, { dispatch, queryFulfilled }) => {
+        const patch = dispatch(
+          noteApi.util.updateQueryData('notes', { date: note.date }, notes => {
+            const cached = notes.find(n => n.id === id);
+
+            if (cached) {
+              cached.time = note.time ?? cached.time;
+              cached.productQuantity = note.productQuantity;
+            }
+
+            notes.sort(compareByTime);
+          }),
+        );
+
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
+      },
     }),
 
     deleteNote: builder.mutation<void, number>({

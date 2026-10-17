@@ -5,6 +5,6 @@ namespace FoodDiary.API.Requests;
 public class CategoryCreateEditRequest
 {
     [Required(ErrorMessage = "Category name is required")]
-    [StringLength(64, MinimumLength = 4, ErrorMessage = "Category name must be between 4 and 64 characters")]
+    [StringLength(64, MinimumLength = 1, ErrorMessage = "Category name must be between 1 and 64 characters")]
     public required string Name { get; set; }
 }

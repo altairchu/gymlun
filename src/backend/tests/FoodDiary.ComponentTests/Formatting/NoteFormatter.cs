@@ -16,6 +16,6 @@ internal class NoteFormatter(ICaloriesCalculator caloriesCalculator) : IValueFor
         var productName = note.Product!.Name;
         var calories = caloriesCalculator.Calculate(note);
 
-        return $"{note.MealType.ToString()}: {productName}, {note.ProductQuantity} g, {calories} cal";
+        return $"{note.Time:HH:mm} {note.MealType.ToString()}: {productName}, {note.ProductQuantity} g, {calories} cal";
     }
 }

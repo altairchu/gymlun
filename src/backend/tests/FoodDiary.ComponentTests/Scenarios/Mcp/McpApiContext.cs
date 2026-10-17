@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -136,6 +137,17 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         });
     }
 
+    public Task When_mcp_client_calls_log_food_by_time_and_servings(string date, string time, decimal servings, Product product)
+    {
+        return When_mcp_client_calls_listed_tool("log_food", new Dictionary<string, object?>
+        {
+            ["date"] = date,
+            ["time"] = time,
+            ["servings"] = servings,
+            ["productId"] = product.Id
+        });
+    }
+
     public Task When_mcp_client_calls_delete_food_log(Note note)
     {
         return When_mcp_client_calls_listed_tool("delete_food_log", new Dictionary<string, object?>
@@ -149,10 +161,26 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         return When_mcp_client_calls_listed_tool("create_product", new Dictionary<string, object?>
         {
             ["name"] = name,
-            ["category"] = category,
+            ["categories"] = new[] { category },
             ["servingGrams"] = servingGrams,
             ["calories"] = calories,
             ["protein"] = protein
+        });
+    }
+
+    public Task When_mcp_client_calls_create_product_counted_in_servings(
+        string name,
+        string[] categories,
+        int servingGrams,
+        decimal calories)
+    {
+        return When_mcp_client_calls_listed_tool("create_product", new Dictionary<string, object?>
+        {
+            ["name"] = name,
+            ["categories"] = categories,
+            ["countBy"] = "servings",
+            ["servingGrams"] = servingGrams,
+            ["calories"] = calories
         });
     }
 
@@ -443,6 +471,7 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         day.GetProperty("date").GetString().Should().Be(note.Date.ToString("yyyy-MM-dd"));
 
         var item = day.GetProperty("meals").EnumerateArray().Single().GetProperty("items").EnumerateArray().Single();
+        item.GetProperty("time").GetString().Should().Be(note.Time.ToString("HH:mm", CultureInfo.InvariantCulture));
         item.GetProperty("product").GetProperty("name").GetString().Should().Be(note.Product!.Name);
         item.GetProperty("quantity").GetInt32().Should().Be(note.ProductQuantity);
 
@@ -458,7 +487,10 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
 
         var listedProduct = products.RootElement.GetProperty("products").EnumerateArray().Single();
         listedProduct.GetProperty("name").GetString().Should().Be(product.Name);
-        listedProduct.GetProperty("category").GetProperty("name").GetString().Should().Be(product.Category!.Name);
+        listedProduct.GetProperty("categories").EnumerateArray()
+            .Select(category => category.GetProperty("name").GetString())
+            .Should().Equal(product.Categories.Select(category => category.Name));
+        listedProduct.GetProperty("countBy").GetString().Should().Be("grams");
 
         return Task.CompletedTask;
     }
@@ -475,6 +507,22 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         foodLog.GetProperty("id").GetInt32().Should().BePositive();
         foodLog.GetProperty("product").GetProperty("name").GetString().Should().Be(product.Name);
         foodLog.GetProperty("quantity").GetInt32().Should().Be(product.DefaultQuantity);
+
+        return Task.CompletedTask;
+    }
+
+    public Task Then_food_log_is_logged_at(string date, string time, string mealType, Product product, int quantity)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        using var response = JsonDocument.Parse(ToolResultText());
+        response.RootElement.GetProperty("date").GetString().Should().Be(date);
+        response.RootElement.GetProperty("mealType").GetString().Should().Be(mealType);
+
+        var foodLog = response.RootElement.GetProperty("foodLog");
+        foodLog.GetProperty("time").GetString().Should().Be(time);
+        foodLog.GetProperty("product").GetProperty("name").GetString().Should().Be(product.Name);
+        foodLog.GetProperty("quantity").GetInt32().Should().Be(quantity);
 
         return Task.CompletedTask;
     }
@@ -501,11 +549,30 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         using var response = JsonDocument.Parse(ToolResultText());
         var product = response.RootElement.GetProperty("product");
         product.GetProperty("name").GetString().Should().Be(name);
-        product.GetProperty("category").GetProperty("name").GetString().Should().Be(category);
+        product.GetProperty("categories").EnumerateArray()
+            .Select(c => c.GetProperty("name").GetString())
+            .Should().Equal(category);
+        product.GetProperty("countBy").GetString().Should().Be("grams");
         product.GetProperty("defaultQuantity").GetInt32().Should().Be(defaultQuantity);
         product.GetProperty("isFavorite").GetBoolean().Should().BeTrue();
         product.GetProperty("per100g").GetProperty("calories").GetInt32().Should().Be(caloriesPer100g);
         product.GetProperty("per100g").GetProperty("protein").GetDecimal().Should().Be(proteinPer100g);
+
+        return Task.CompletedTask;
+    }
+
+    public Task Then_created_product_is_counted_in_servings(string name, string[] categories, int servingGrams)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        using var response = JsonDocument.Parse(ToolResultText());
+        var product = response.RootElement.GetProperty("product");
+        product.GetProperty("name").GetString().Should().Be(name);
+        product.GetProperty("categories").EnumerateArray()
+            .Select(c => c.GetProperty("name").GetString())
+            .Should().BeEquivalentTo(categories);
+        product.GetProperty("countBy").GetString().Should().Be("servings");
+        product.GetProperty("defaultQuantity").GetInt32().Should().Be(servingGrams);
 
         return Task.CompletedTask;
     }

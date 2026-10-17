@@ -6,6 +6,7 @@ namespace FoodDiary.Application.Notes.Create;
 
 public record CreateNoteCommand(
     DateOnly Date,
+    TimeOnly Time,
     MealType MealType,
     int ProductId,
     int ProductQuantity,
@@ -35,6 +36,7 @@ public class CreateNoteCommandHandler(IProductsRepository productsRepository, IN
         var note = new Note
         {
             Date = command.Date,
+            Time = command.Time,
             MealType = command.MealType,
             ProductId = command.ProductId,
             ProductQuantity = command.ProductQuantity,

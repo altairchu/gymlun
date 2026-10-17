@@ -19,7 +19,7 @@ export const categoryApi = api.injectEndpoints({
       providesTags: ['category'],
     }),
 
-    createCategory: builder.mutation<void, CreateCategoryRequest>({
+    createCategory: builder.mutation<number, CreateCategoryRequest>({
       query: category => ({
         method: 'POST',
         url: '/api/v1/categories',

@@ -80,7 +80,8 @@ public class ProductsController : ControllerBase
             productData.Name,
             productData.CaloriesCost,
             productData.DefaultQuantity,
-            productData.CategoryId,
+            productData.QuantityUnit,
+            productData.GetCategoryIds(),
             productData.Protein,
             productData.Fats,
             productData.Carbs,
@@ -94,6 +95,8 @@ public class ProductsController : ControllerBase
         {
             case CreateProductResult.ProductAlreadyExists:
                 return ProductAlreadyExists(productData);
+            case CreateProductResult.CategoriesNotFound notFound:
+                return CategoriesNotFound(notFound.CategoryIds);
             case CreateProductResult.Success success:
                 return Ok(success.Product.ToCreateProductResponse());
             default:
@@ -122,7 +125,8 @@ public class ProductsController : ControllerBase
             updatedProductData.Name,
             updatedProductData.CaloriesCost,
             updatedProductData.DefaultQuantity,
-            updatedProductData.CategoryId,
+            updatedProductData.QuantityUnit,
+            updatedProductData.GetCategoryIds(),
             updatedProductData.Protein,
             updatedProductData.Fats,
             updatedProductData.Carbs,
@@ -139,6 +143,8 @@ public class ProductsController : ControllerBase
             case UpdateProductResult.NameAlreadyExists:
                 ModelState.AddModelError(nameof(updatedProductData.Name), $"Product with the name '{updatedProductData.Name}' already exists");
                 return BadRequest(ModelState);
+            case UpdateProductResult.CategoriesNotFound notFound:
+                return CategoriesNotFound(notFound.CategoryIds);
             case UpdateProductResult.Success:
                 return Ok();
             default:
@@ -212,6 +218,14 @@ public class ProductsController : ControllerBase
     private IActionResult ProductAlreadyExists(ProductCreateEditRequest product)
     {
         ModelState.AddModelError(nameof(product.Name), $"Product with the name '{product.Name}' already exists");
+        return BadRequest(ModelState);
+    }
+
+    private IActionResult CategoriesNotFound(IReadOnlyCollection<int> categoryIds)
+    {
+        ModelState.AddModelError(
+            nameof(ProductCreateEditRequest.CategoryIds),
+            $"Categories with ids {string.Join(", ", categoryIds)} not found");
         return BadRequest(ModelState);
     }
 }

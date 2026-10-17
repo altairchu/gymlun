@@ -1,3 +1,4 @@
+using System.Globalization;
 using FoodDiary.Application.Notes.GetHistory;
 using FoodDiary.Domain.Entities;
 using FoodDiary.Domain.Utils;
@@ -6,6 +7,8 @@ namespace FoodDiary.API.Mcp.Tools.FoodLogs;
 
 public static class FoodLogsToolMapper
 {
+    internal const string FoodLogTimeFormat = "HH:mm";
+
     public static GetFoodLogsResponse ToGetFoodLogsResponse(
         this GetNotesHistoryQueryResult result,
         DateOnly from,
@@ -39,7 +42,9 @@ public static class FoodLogsToolMapper
             .OrderBy(meal => meal.Key)
             .Select(meal => new FoodLogsMeal(
                 meal.Key.ToString(),
-                meal.OrderBy(note => note.DisplayOrder)
+                meal.OrderBy(note => note.Time)
+                    .ThenBy(note => note.DisplayOrder)
+                    .ThenBy(note => note.Id)
                     .Select(note => ToFoodLog(note, caloriesCalculator))
                     .ToList()))
             .ToList();
@@ -84,6 +89,7 @@ public static class FoodLogsToolMapper
 
         return new FoodLog(
             note.Id,
+            note.Time.ToFoodLogTime(),
             new FoodLogProduct(product.Id, product.Name),
             note.ProductQuantity,
             caloriesCalculator.Calculate(note),
@@ -93,6 +99,9 @@ public static class FoodLogsToolMapper
             Scale(product.Sugar, note.ProductQuantity),
             Scale(product.Salt, note.ProductQuantity));
     }
+
+    internal static string ToFoodLogTime(this TimeOnly time) =>
+        time.ToString(FoodLogTimeFormat, CultureInfo.InvariantCulture);
 
     private static decimal? Scale(decimal? per100Grams, int quantity) =>
         per100Grams is { } value ? RoundToHundredths(value * quantity / 100) : null;

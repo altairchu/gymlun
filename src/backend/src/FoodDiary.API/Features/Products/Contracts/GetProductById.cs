@@ -1,3 +1,4 @@
+using FoodDiary.Domain.Enums;
 using JetBrains.Annotations;
 
 namespace FoodDiary.API.Features.Products.Contracts;
@@ -9,7 +10,8 @@ public class GetProductByIdResponse
     public required string Name { get; init; }
     public required int CaloriesCost { get; init; }
     public required int DefaultQuantity { get; init; }
-    public required Category Category { get; init; }
+    public required QuantityUnit QuantityUnit { get; init; }
+    public required IReadOnlyList<Category> Categories { get; init; }
     public required decimal? Protein { get; init; }
     public required decimal? Fats { get; init; }
     public required decimal? Carbs { get; init; }

@@ -6,6 +6,7 @@ using FoodDiary.API.Dtos;
 using FoodDiary.API.Features.Products.Contracts;
 using FoodDiary.API.Features.Products.Extensions;
 using FoodDiary.API.Mapping;
+using FoodDiary.API.Requests;
 using FoodDiary.Application.Products.SuggestNutrition;
 using FoodDiary.ComponentTests.Dsl;
 using FoodDiary.ComponentTests.Infrastructure;
@@ -33,7 +34,9 @@ public class ProductsApiContext(
     private ProductsSearchResultDto? _productsResponse;
     private SearchProductsResponse.Product[]? _productsForAutocompleteResponse;
     private HttpResponseMessage _getProductByIdResponse = null!;
+    private HttpResponseMessage _createProductHttpResponse = null!;
     private CreateProductResponse? _createProductResponse;
+    private HttpResponseMessage _deleteCategoryResponse = null!;
     private HttpResponseMessage _updateProductResponse = null!;
     private HttpResponseMessage _deleteProductResponse = null!;
     private HttpResponseMessage _deleteMultipleProductsResponse = null!;
@@ -99,6 +102,12 @@ public class ProductsApiContext(
         _productsResponse = await ApiClient
             .GetFromJsonAsync<ProductsSearchResultDto>($"/api/v1/products?productSearchName={name}");
     }
+
+    public async Task When_user_filters_products_by_category(Domain.Entities.Category category)
+    {
+        _productsResponse = await ApiClient
+            .GetFromJsonAsync<ProductsSearchResultDto>($"/api/v1/products?categoryId={category.Id}");
+    }
     
     public async Task When_user_searches_products_for_autocomplete()
     {
@@ -112,8 +121,42 @@ public class ProductsApiContext(
             .From(product)
             .Please();
         
-        var response = await ApiClient.PostAsJsonAsync("/api/v1/products", request);
-        _createProductResponse = await response.Content.ReadFromJsonAsync<CreateProductResponse>();
+        await PostProduct(request);
+    }
+
+    public async Task When_user_creates_product_with_categories(Product product, params int[] categoryIds)
+    {
+        var request = Create.ProductCreateEditRequest()
+            .From(product)
+            .WithCategoryIds(categoryIds)
+            .Please();
+
+        await PostProduct(request);
+    }
+
+    public Task When_old_client_creates_product_with_single_category(Product product, Domain.Entities.Category category)
+    {
+        return PostProduct(new
+        {
+            name = product.Name,
+            caloriesCost = product.CaloriesCost,
+            defaultQuantity = product.DefaultQuantity,
+            categoryId = category.Id,
+            protein = product.Protein,
+            fats = product.Fats,
+            carbs = product.Carbs,
+            sugar = product.Sugar,
+            salt = product.Salt
+        });
+    }
+
+    private async Task PostProduct<TRequest>(TRequest request)
+    {
+        _createProductHttpResponse = await ApiClient.PostAsJsonAsync("/api/v1/products", request);
+
+        _createProductResponse = _createProductHttpResponse.IsSuccessStatusCode
+            ? await _createProductHttpResponse.Content.ReadFromJsonAsync<CreateProductResponse>()
+            : null;
     }
 
     public async Task When_user_renames_product(Product product, string newName)
@@ -124,6 +167,21 @@ public class ProductsApiContext(
             .Please();
         
         _updateProductResponse = await ApiClient.PutAsJsonAsync($"/api/v1/products/{product.Id}", request);
+    }
+
+    public async Task When_user_changes_product_categories(Product product, params Domain.Entities.Category[] categories)
+    {
+        var request = Create.ProductCreateEditRequest()
+            .From(product)
+            .WithCategoryIds(categories.Select(c => c.Id).ToArray())
+            .Please();
+
+        _updateProductResponse = await ApiClient.PutAsJsonAsync($"/api/v1/products/{product.Id}", request);
+    }
+
+    public async Task When_user_deletes_category(Domain.Entities.Category category)
+    {
+        _deleteCategoryResponse = await ApiClient.DeleteAsync($"/api/v1/categories/{category.Id}");
     }
 
     public async Task When_user_deletes_product(Product product)
@@ -164,8 +222,7 @@ public class ProductsApiContext(
         
         _productsResponse?.ProductItems.Should()
             .BeEquivalentTo(expectedProductsList, options => options
-                .Excluding(p => p.Id)
-                .Excluding(p => p.CategoryId))
+                .Excluding(p => p.Id))
             .And.BeInAscendingOrder(p => p.Name);
         
         return Task.CompletedTask;
@@ -186,13 +243,38 @@ public class ProductsApiContext(
         return Task.CompletedTask;
     }
 
+    public Task Then_products_list_for_autocomplete_contains(Product product)
+    {
+        var item = _productsForAutocompleteResponse?.Single(p => p.Name == product.Name);
+
+        item.Should().NotBeNull();
+        item!.QuantityUnit.Should().Be(product.QuantityUnit);
+        item.DefaultQuantity.Should().Be(product.DefaultQuantity);
+        item.CategoryIds.Should().Equal(product.Categories.Select(c => c.Id).Order());
+        return Task.CompletedTask;
+    }
+
     public Task Then_product_is_successfully_created()
     {
+        _createProductHttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         _createProductResponse.Should().NotBeNull();
         _createProductResponse?.Id.Should().BePositive();
         return Task.CompletedTask;
     }
     
+    public async Task Then_product_is_not_created_because_categories_are_not_found()
+    {
+        _createProductHttpResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var errors = await _createProductHttpResponse.Content.ReadFromJsonAsync<Dictionary<string, string[]>>();
+        errors.Should().ContainKey(nameof(ProductCreateEditRequest.CategoryIds));
+    }
+
+    public Task Then_category_is_successfully_deleted()
+    {
+        _deleteCategoryResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        return Task.CompletedTask;
+    }
+
     public Task Then_product_is_successfully_updated()
     {
         _updateProductResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -220,7 +302,7 @@ public class ProductsApiContext(
         response.Should()
             .BeEquivalentTo(product.ToGetProductByIdResponse(), options => options
                 .Excluding(p => p.Id)
-                .Excluding(p => p.Category.Id));
+                .WithStrictOrdering());
     }
 
     public async Task Then_nutrition_suggestion_is(

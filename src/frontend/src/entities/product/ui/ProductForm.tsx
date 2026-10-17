@@ -5,8 +5,6 @@ import {
   AccordionDetails,
   AccordionSummary,
   Alert,
-  Autocomplete,
-  CircularProgress,
   FormControlLabel,
   Grid,
   InputAdornment,
@@ -14,10 +12,13 @@ import {
   Stack,
   Switch,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import { type FC, useState } from 'react';
+import { type FC, useId, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
+import { parseClientError } from '@/shared/api';
 import { type SelectOption } from '@/shared/types';
 import { useNutritionSuggestions } from '../lib/useNutritionSuggestions';
 import {
@@ -25,10 +26,12 @@ import {
   productNameSchema,
   productSchema,
   nutritionValuesConfig,
+  QuantityUnit,
   toPer100g,
   toPerServing,
 } from '../model';
 import { NutritionValueSchema } from '../model/NutritionValueSchema';
+import { CategoriesInput } from './CategoriesInput';
 import { NutritionSuggestButton } from './NutritionSuggestButton';
 import { NutritionValueIcon } from './NutritionValueIcon';
 import { NutritionValueInput } from './NutritionValueInput';
@@ -38,12 +41,16 @@ interface Props {
   defaultValues: ProductFormValues;
   categories: SelectOption[];
   categoriesLoading: boolean;
+  categoryCreating: boolean;
   autoFocus: boolean;
   onSubmit: OnSubmitProductFn;
+  onCreateCategory: CreateCategoryFn;
   onNutritionSuggestingChange?: (nutritionSuggesting: boolean) => void;
 }
 
 export type OnSubmitProductFn = (product: ProductFormValues) => Promise<void>;
+
+export type CreateCategoryFn = (name: string) => Promise<SelectOption>;
 
 interface SnackbarState {
   severity: 'error' | 'info';
@@ -52,13 +59,23 @@ interface SnackbarState {
 
 const OPTIONAL_NUTRITION_FIELDS = ['protein', 'fats', 'carbs', 'sugar', 'salt'] as const;
 
+const getDefaultQuantityLabel = (quantityUnit: QuantityUnit, perServing: boolean): string => {
+  if (quantityUnit === QuantityUnit.Servings) {
+    return '每份重量 (g)';
+  }
+
+  return perServing ? '每份份量 (g)' : '預設份量 (g)';
+};
+
 export const ProductForm: FC<Props> = ({
   formId,
   defaultValues,
   categories,
   categoriesLoading,
+  categoryCreating,
   autoFocus,
   onSubmit,
+  onCreateCategory,
   onNutritionSuggestingChange,
 }) => {
   const { control, handleSubmit, getValues, setValue } = useForm({
@@ -69,6 +86,7 @@ export const ProductForm: FC<Props> = ({
 
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
   const [perServing, setPerServing] = useState(false);
+  const quantityUnitLabelId = useId();
 
   const scaledFieldNames = ['calories', ...OPTIONAL_NUTRITION_FIELDS] as const;
 
@@ -96,6 +114,18 @@ export const ProductForm: FC<Props> = ({
   const submit = (data: ProductFormValues): Promise<void> =>
     onSubmit(perServing ? { ...data, ...toPer100g(data, data.defaultQuantity) } : data);
 
+  const handleCreateCategory = async (name: string): Promise<void> => {
+    try {
+      const category = await onCreateCategory(name);
+      setValue('categories', [...getValues('categories'), category], {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    } catch (error) {
+      setSnackbar({ severity: 'error', message: parseClientError(error).message });
+    }
+  };
+
   const nutritionBasis = perServing ? '每份' : '每 100 g';
 
   const atLeastOneNutritionFieldHasValue = getValues([
@@ -120,6 +150,7 @@ export const ProductForm: FC<Props> = ({
   });
 
   const name = useWatch({ control, name: 'name' });
+  const quantityUnit = useWatch({ control, name: 'quantityUnit' });
   const suggestDisabled = !productNameSchema.safeParse(name).success || isSuggesting;
 
   return (
@@ -142,41 +173,52 @@ export const ProductForm: FC<Props> = ({
         )}
       />
       <Controller
-        name="category"
+        name="categories"
         control={control}
         render={({ field, fieldState }) => (
-          <Autocomplete
-            {...field}
-            onChange={(_, value) => field.onChange(value)}
-            disabled={isSuggesting}
-            blurOnSelect="touch"
+          <CategoriesInput
+            ref={field.ref}
+            value={field.value}
             options={categories}
-            getOptionLabel={option => option.name}
-            isOptionEqualToValue={(first, second) => first.name === second.name}
-            renderInput={params => (
-              <TextField
-                {...params}
-                label="分類"
-                placeholder="選擇分類"
-                error={!!fieldState.error}
-                helperText={fieldState.error?.message ?? ' '}
-                margin="normal"
-                slotProps={{
-                  ...params.slotProps,
-                  input: {
-                    ...params.slotProps.input,
-                    endAdornment: categoriesLoading ? (
-                      <CircularProgress color="inherit" size={20} />
-                    ) : (
-                      params.slotProps.input.endAdornment
-                    ),
-                  },
-                }}
-              />
-            )}
+            loading={categoriesLoading}
+            creating={categoryCreating}
+            disabled={isSuggesting}
+            error={!!fieldState.error}
+            helperText={fieldState.error?.message ?? ' '}
+            onChange={field.onChange}
+            onCreate={categoryName => void handleCreateCategory(categoryName)}
+            onBlur={field.onBlur}
           />
         )}
       />
+      <Stack spacing={1} sx={{ mb: 1 }}>
+        <Typography id={quantityUnitLabelId} variant="body2" sx={{ color: 'text.secondary' }}>
+          計法
+        </Typography>
+        <Controller
+          name="quantityUnit"
+          control={control}
+          render={({ field }) => (
+            <ToggleButtonGroup
+              exclusive
+              fullWidth
+              size="small"
+              color="primary"
+              aria-labelledby={quantityUnitLabelId}
+              value={field.value}
+              disabled={isSuggesting}
+              onChange={(_, unit: QuantityUnit | null) => {
+                if (unit !== null) {
+                  field.onChange(unit);
+                }
+              }}
+            >
+              <ToggleButton value={QuantityUnit.Grams}>按重量（克）</ToggleButton>
+              <ToggleButton value={QuantityUnit.Servings}>按件／份</ToggleButton>
+            </ToggleButtonGroup>
+          )}
+        />
+      </Stack>
       <Grid container spacing={2}>
         <Grid size={6}>
           <Controller
@@ -229,8 +271,8 @@ export const ProductForm: FC<Props> = ({
                 {...field}
                 fullWidth
                 disabled={isSuggesting}
-                label={perServing ? '每份份量 (g)' : '預設份量 (g)'}
-                placeholder="預設份量"
+                label={getDefaultQuantityLabel(quantityUnit, perServing)}
+                placeholder="克數"
                 margin="normal"
                 error={!!fieldState.error}
                 helperText={fieldState.error?.message ?? ' '}
@@ -269,7 +311,7 @@ export const ProductForm: FC<Props> = ({
                   onChange={(_, checked) => field.onChange(checked)}
                 />
               }
-              label="常食：顯示於快速加入"
+              label="常食：首頁「常食」篩選會顯示"
             />
           )}
         />

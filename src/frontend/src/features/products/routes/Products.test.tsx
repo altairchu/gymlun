@@ -10,7 +10,26 @@ test('products are loaded into table', async () => {
 
   expect(bread).toBeVisible();
   expect(screen.getByLabelText(/「bread」的卡路里為 250/i)).toBeVisible();
-  expect(screen.getByLabelText(/「bread」屬於「cereals」分類/i)).toBeVisible();
+  expect(within(screen.getByRole('list', { name: '「Bread」的分類' })).getByText('Cereals'));
+});
+
+test('every category of a product is shown', async () => {
+  await render(<Products />);
+
+  const beefCategories = await screen.findByRole('list', { name: '「Beef」的分類' });
+
+  expect(within(beefCategories).getAllByRole('listitem')).toHaveLength(2);
+  expect(within(beefCategories).getByText('Meat'));
+  expect(within(beefCategories).getByText('高蛋白'));
+});
+
+test('the default quantity shows the counting unit', async () => {
+  await render(<Products />);
+
+  expect(await screen.findByLabelText('「Bread」的份量為 每份 50 g')).toHaveTextContent(
+    '每份 50 g',
+  );
+  expect(screen.getByLabelText('「Beef」的份量為 100 g')).toHaveTextContent('100 g');
 });
 
 test('product can be selected', async () => {
@@ -29,7 +48,7 @@ test('all products can be selected', async () => {
   await waitFor(() => expect(selectAll).toBeEnabled());
   await userEvent.click(selectAll);
 
-  expect(screen.getByText(/已選取 (\d)+ 項/));
+  expect(screen.getByText(/已選取 10 項/));
 });
 
 test('products can be deleted', async () => {
@@ -60,6 +79,19 @@ test('products can be filtered by category', async () => {
   await waitFor(() => expect(screen.queryByText(/milk/i)).not.toBeInTheDocument());
 });
 
+test('products can be filtered by one of their several categories', async () => {
+  const user = userEvent.setup();
+  await render(<Products />);
+
+  await user.click(await screen.findByLabelText(/^分類$/));
+  const categorySelect = await screen.findByRole('listbox', { name: /^分類$/ });
+  await user.click(within(categorySelect).getByRole('option', { name: '高蛋白' }));
+
+  expect(await screen.findByText('雞胸肉'));
+  expect(screen.getByText('Beef'));
+  expect(screen.queryByText('Bread')).not.toBeInTheDocument();
+});
+
 test('products can be filtered by name', async () => {
   const user = userEvent.setup();
 
@@ -67,17 +99,68 @@ test('products can be filtered by name', async () => {
   const searchField = await screen.findByPlaceholderText(/按名稱搜尋/);
   await user.type(searchField, 'bre');
 
+  await waitFor(() => expect(screen.queryByText(/beef/i)).not.toBeInTheDocument());
   expect(screen.getByText(/bread/i));
-  expect(screen.queryByText(/rice/i)).not.toBeInTheDocument();
+});
+
+test('products can be filtered by a single Chinese character', async () => {
+  const user = userEvent.setup();
+
+  await render(<Products />);
+  await screen.findByText('Beef');
+  await user.type(screen.getByPlaceholderText(/按名稱搜尋/), '雞');
+
+  expect(await screen.findByText('雞蛋', undefined, { timeout: 3000 })).toBeVisible();
+  expect(screen.getByText('雞胸肉')).toBeVisible();
+  expect(screen.queryByText('Beef')).not.toBeInTheDocument();
 });
 
 test('products in table are split by pages', async () => {
   await render(<Products />, { pageSizeOverride: 2 });
 
-  const paginationForTheFirstPage = await screen.findByText(/第 1 項至第 .* 項/);
-  expect(paginationForTheFirstPage).toBeVisible();
+  expect(await screen.findByText('第 1 項至第 2 項，共 15 項')).toBeVisible();
 
   await userEvent.click(screen.getByLabelText(/下一頁/));
-  const paginationForTheSecondPage = await screen.findByText(/第 .* 項至第 .* 項/);
-  expect(paginationForTheSecondPage).not.toHaveTextContent(/第 1 項至第 .* 項/);
+
+  expect(await screen.findByText('第 3 項至第 4 項，共 15 項')).toBeVisible();
+});
+
+test('a product can be added with several categories and counted in servings', async () => {
+  const user = userEvent.setup();
+  await render(<Products />);
+
+  await user.click(await screen.findByRole('button', { name: '加入新食物' }));
+  const dialog = within(await screen.findByRole('dialog', { name: '新食物' }));
+  await user.type(dialog.getByRole('textbox', { name: '名稱' }), 'Apricot');
+  await user.click(dialog.getByRole('button', { name: '按件／份' }));
+  await user.clear(dialog.getByRole('textbox', { name: '每份重量 (g)' }));
+  await user.type(dialog.getByRole('textbox', { name: '每份重量 (g)' }), '35');
+  await user.click(dialog.getByRole('combobox', { name: /分類/ }));
+  await user.click(await screen.findByRole('option', { name: 'Fruits' }));
+  await user.click(dialog.getByRole('combobox', { name: /分類/ }));
+  await user.click(await screen.findByRole('option', { name: '高蛋白' }));
+  await user.click(dialog.getByRole('button', { name: '加入' }));
+  await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+  const apricotCategories = await screen.findByRole('list', { name: '「Apricot」的分類' });
+  expect(within(apricotCategories).getByText('Fruits'));
+  expect(within(apricotCategories).getByText('高蛋白'));
+  expect(screen.getByLabelText('「Apricot」的份量為 每份 35 g')).toBeVisible();
+});
+
+test('a product can be edited to remove all its categories', async () => {
+  const user = userEvent.setup();
+  await render(<Products />);
+
+  await user.click(await screen.findByRole('button', { name: '編輯食物「Beef」' }));
+  const dialog = within(await screen.findByRole('dialog', { name: '編輯食物' }));
+  await user.click(within(dialog.getByRole('button', { name: 'Meat' })).getByTestId('CancelIcon'));
+  await user.click(
+    within(dialog.getByRole('button', { name: '高蛋白' })).getByTestId('CancelIcon'),
+  );
+  await user.click(dialog.getByRole('button', { name: '儲存' }));
+  await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+  expect(screen.getByText('Beef'));
+  expect(screen.queryByRole('list', { name: '「Beef」的分類' })).not.toBeInTheDocument();
 });

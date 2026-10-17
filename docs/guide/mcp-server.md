@@ -6,11 +6,11 @@ Food Diary can share your food logs and products with Claude, or any other compa
 
 | Tool | Scope | What it does |
 |------|-------|--------------|
-| `get_food_logs` | `food:read` | Food logs over a date range, with daily and range totals |
+| `get_food_logs` | `food:read` | Food logs over a date range in order of the time eaten, with daily and range totals |
 | `list_products` | `food:read` | Products in your catalogue; `favoritesOnly` lists the ones you eat often |
-| `log_food` | `food:write` | Logs a product in a meal on a date, in its default quantity unless told otherwise |
+| `log_food` | `food:write` | Logs a product on a date at a time of day or in a meal, in grams or servings; one serving unless told otherwise |
 | `delete_food_log` | `food:write` | Deletes a food log, to undo a mistake |
-| `create_product` | `food:write` | Adds a product from nutrition values for one serving, marked as a favorite by default |
+| `create_product` | `food:write` | Adds a product from nutrition values for one serving, in any number of categories, counted in grams or servings, marked as a favorite by default |
 
 A client that asks for no scope is granted both. To keep a client read-only, have it request only `food:read`: it then never sees the write tools.
 

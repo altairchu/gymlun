@@ -2,6 +2,7 @@
 using FoodDiary.API.Mapping;
 using Microsoft.AspNetCore.Mvc;
 using FoodDiary.Application.Notes.Create;
+using FoodDiary.Application.Notes.CreateMany;
 using FoodDiary.Application.Notes.Delete;
 using FoodDiary.Application.Notes.Get;
 using FoodDiary.Application.Notes.GetHistory;
@@ -57,6 +58,28 @@ public class NotesController : ControllerBase
         {
             CreateNoteResult.Success => Ok(),
             CreateNoteResult.Failure f => f.Error.ToActionResult(),
+            _ => StatusCode(StatusCodes.Status501NotImplemented)
+        };
+    }
+
+    /// <summary>
+    /// Logs several products eaten at the same time in one go: either all of them are logged or none
+    /// </summary>
+    [HttpPost("batch")]
+    [ProducesResponseType(typeof(CreateNotesResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+    public async Task<IActionResult> CreateNotes(
+        [FromBody] CreateNotesRequest request,
+        [FromServices] CreateNotesCommandHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var command = request.ToCreateNotesCommand();
+        var result = await handler.Handle(command, cancellationToken);
+
+        return result switch
+        {
+            CreateNotesResult.Success success => Ok(success.ToCreateNotesResponse()),
+            CreateNotesResult.Failure f => f.Error.ToActionResult(),
             _ => StatusCode(StatusCodes.Status501NotImplemented)
         };
     }

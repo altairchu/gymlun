@@ -29,37 +29,22 @@ export const handlers: HttpHandler[] = [
     });
 
     const totalProductsCount = productsService.count();
-    const categoryNamesMap = productsService.getCategoryNames(products);
 
     const response: GetProductsResponse = {
-      productItems: products.map(
-        ({
-          id,
-          name,
-          caloriesCost,
-          defaultQuantity,
-          categoryId,
-          protein,
-          fats,
-          carbs,
-          sugar,
-          salt,
-          isFavorite,
-        }) => ({
-          id,
-          name,
-          caloriesCost,
-          defaultQuantity,
-          protein,
-          fats,
-          carbs,
-          sugar,
-          salt,
-          isFavorite,
-          categoryId,
-          categoryName: categoryNamesMap.get(categoryId) ?? 'NULL',
-        }),
-      ),
+      productItems: products.map(product => ({
+        id: product.id,
+        name: product.name,
+        caloriesCost: product.caloriesCost,
+        defaultQuantity: product.defaultQuantity,
+        quantityUnit: product.quantityUnit,
+        categories: productsService.getCategories(product),
+        protein: product.protein,
+        fats: product.fats,
+        carbs: product.carbs,
+        sugar: product.sugar,
+        salt: product.salt,
+        isFavorite: product.isFavorite,
+      })),
       totalProductsCount,
     };
 
@@ -74,6 +59,8 @@ export const handlers: HttpHandler[] = [
           id,
           name,
           defaultQuantity,
+          quantityUnit,
+          categoryIds,
           caloriesCost,
           protein,
           fats,
@@ -85,6 +72,8 @@ export const handlers: HttpHandler[] = [
           id,
           name,
           defaultQuantity,
+          quantityUnit,
+          categoryIds,
           calories: caloriesCost,
           protein,
           fats,
@@ -111,16 +100,14 @@ export const handlers: HttpHandler[] = [
       name: product.name,
       caloriesCost: product.caloriesCost,
       defaultQuantity: product.defaultQuantity,
+      quantityUnit: product.quantityUnit,
+      categories: productsService.getCategories(product),
       protein: product.protein,
       fats: product.fats,
       carbs: product.carbs,
       sugar: product.sugar,
       salt: product.salt,
       isFavorite: product.isFavorite,
-      category: {
-        id: product.categoryId,
-        name: productsService.getCategoryNames([product]).get(product.categoryId) ?? 'NULL',
-      },
     });
   }),
 

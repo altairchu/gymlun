@@ -8,7 +8,7 @@ import {
 } from 'react';
 import { type categoryModel } from '@/entities/category';
 import { useInput } from '@/shared/hooks';
-import { mapToTextInputProps, validateCategoryName } from '@/shared/lib';
+import { CATEGORY_NAME_MAX_LENGTH, mapToTextInputProps, validateCategoryName } from '@/shared/lib';
 import { Button, AppDialog } from '@/shared/ui';
 import { type CategoryFormData } from '../types';
 
@@ -39,7 +39,7 @@ const CategoryInputDialog: FC<CreateEditCategoryDialogProps> = ({
     isTouched: isCategoryNameTouched,
   } = useInput({
     initialValue: category?.name ?? '',
-    errorHelperText: '分類名稱無效',
+    errorHelperText: `分類名稱須為 1 至 ${CATEGORY_NAME_MAX_LENGTH} 個字元`,
     validate: validateCategoryName,
     mapToInputProps: mapToTextInputProps,
   });
@@ -58,7 +58,7 @@ const CategoryInputDialog: FC<CreateEditCategoryDialogProps> = ({
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = event => {
     event.preventDefault();
-    onSubmit({ name: categoryName });
+    onSubmit({ name: categoryName.trim() });
   };
 
   return (
@@ -86,7 +86,7 @@ const CategoryInputDialog: FC<CreateEditCategoryDialogProps> = ({
           color="primary"
           disabled={isSubmitDisabled}
           loading={loading}
-          aria-label={`${category ? '儲存' : '新增'}「${categoryName}」並關閉對話框`}
+          aria-label={`${category ? '儲存' : '新增'}「${categoryName.trim()}」並關閉對話框`}
         >
           {submitText}
         </Button>

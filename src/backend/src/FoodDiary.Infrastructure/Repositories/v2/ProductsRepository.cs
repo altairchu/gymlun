@@ -11,6 +11,13 @@ internal class ProductsRepository(FoodDiaryContext context) : IProductsRepositor
         return await context.Products.FindAsync([id], cancellationToken);
     }
 
+    public Task<Product[]> FindByIds(IReadOnlyCollection<int> ids, CancellationToken cancellationToken)
+    {
+        return context.Products
+            .Where(p => ids.Contains(p.Id))
+            .ToArrayAsync(cancellationToken);
+    }
+
     public Task<Product?> FindByExactName(string name, CancellationToken cancellationToken)
     {
         return context.Products.FirstOrDefaultAsync(p => p.Name == name, cancellationToken);

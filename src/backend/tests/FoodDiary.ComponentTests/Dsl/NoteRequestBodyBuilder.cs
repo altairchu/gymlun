@@ -7,7 +7,8 @@ namespace FoodDiary.ComponentTests.Dsl;
 public class NoteRequestBodyBuilder
 {
     private DateOnly _date;
-    private MealType _mealType;
+    private TimeOnly? _time;
+    private MealType? _mealType;
     private int _productQuantity;
     private int _displayOrder;
     private int _productId;
@@ -15,6 +16,7 @@ public class NoteRequestBodyBuilder
     public NoteRequestBody Please() => new()
     {
         Date = _date,
+        Time = _time,
         MealType = _mealType,
         ProductQuantity = _productQuantity,
         DisplayOrder = _displayOrder,
@@ -24,6 +26,7 @@ public class NoteRequestBodyBuilder
     public NoteRequestBodyBuilder From(Note note)
     {
         _date = note.Date;
+        _time = note.Time;
         _mealType = note.MealType;
         _productQuantity = note.ProductQuantity;
         _displayOrder = note.DisplayOrder;
@@ -40,6 +43,18 @@ public class NoteRequestBodyBuilder
     public NoteRequestBodyBuilder WithProductQuantity(int productQuantity)
     {
         _productQuantity = productQuantity;
+        return this;
+    }
+
+    public NoteRequestBodyBuilder WithoutMealType()
+    {
+        _mealType = null;
+        return this;
+    }
+
+    public NoteRequestBodyBuilder WithoutTime()
+    {
+        _time = null;
         return this;
     }
 }

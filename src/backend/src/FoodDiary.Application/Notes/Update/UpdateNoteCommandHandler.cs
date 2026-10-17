@@ -6,6 +6,7 @@ namespace FoodDiary.Application.Notes.Update;
 public record UpdateNoteCommand(
     int Id,
     DateOnly Date,
+    TimeOnly Time,
     MealType MealType,
     int ProductId,
     int ProductQuantity,
@@ -43,6 +44,7 @@ public class UpdateNoteCommandHandler(IProductsRepository productsRepository, IN
         }
         
         note.Date = command.Date;
+        note.Time = command.Time;
         note.MealType = command.MealType;
         note.ProductId = command.ProductId;
         note.ProductQuantity = command.ProductQuantity;

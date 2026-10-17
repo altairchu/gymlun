@@ -2,15 +2,16 @@ import { render, screen } from '@testing-library/react';
 import { RootProvider } from '@/app/RootProvider';
 import { configureStore } from '@/app/store';
 import { type SelectOption } from '@/shared/types';
-import { type ProductFormValues } from '../model';
-import { ProductForm } from './ProductForm';
+import { type ProductFormValues, QuantityUnit } from '../model';
+import { type CreateCategoryFn, type OnSubmitProductFn, ProductForm } from './ProductForm';
 
 const category: SelectOption = { id: 1, name: 'Cereals' };
 
 const defaultValues: ProductFormValues = {
   name: 'Oat granola',
   defaultQuantity: 100,
-  category,
+  quantityUnit: QuantityUnit.Grams,
+  categories: [category],
   calories: 412,
   protein: null,
   fats: null,
@@ -29,7 +30,9 @@ const renderForm = (autoFocus: boolean): void => {
         defaultValues={defaultValues}
         categories={[category]}
         categoriesLoading={false}
-        onSubmit={vi.fn()}
+        categoryCreating={false}
+        onSubmit={vi.fn<OnSubmitProductFn>()}
+        onCreateCategory={vi.fn<CreateCategoryFn>()}
       />
     </RootProvider>,
   );

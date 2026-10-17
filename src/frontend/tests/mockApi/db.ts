@@ -10,6 +10,7 @@ export const db = factory({
   note: {
     id: primaryKey(Number),
     date: Date,
+    time: String,
     mealType: Number,
     displayOrder: Number,
     quantity: Number,
@@ -26,7 +27,8 @@ export const db = factory({
     name: String,
     caloriesCost: Number,
     defaultQuantity: Number,
-    categoryId: Number,
+    quantityUnit: Number,
+    categoryIds: (): number[] => [],
     protein: nullable(Number),
     fats: nullable(Number),
     carbs: nullable(Number),

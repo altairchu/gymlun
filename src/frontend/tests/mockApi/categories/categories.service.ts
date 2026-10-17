@@ -7,13 +7,9 @@ export const getAll = (): DbCategory[] =>
   });
 
 export const getProductsCount = (categoryId: number): number =>
-  db.product.count({
-    where: {
-      categoryId: { equals: categoryId },
-    },
-  });
+  db.product.getAll().filter(product => product.categoryIds.includes(categoryId)).length;
 
-export const create = ({ name }: CategoryFormData): void => {
+export const create = ({ name }: CategoryFormData): number => {
   const maxId =
     db.category
       .findMany({
@@ -24,10 +20,14 @@ export const create = ({ name }: CategoryFormData): void => {
       })
       ?.at(0)?.id ?? 0;
 
+  const id = maxId + 1;
+
   db.category.create({
-    id: maxId + 1,
+    id,
     name,
   });
+
+  return id;
 };
 
 export const update = (id: number, body: CategoryFormData): void => {
@@ -40,23 +40,19 @@ export const update = (id: number, body: CategoryFormData): void => {
 };
 
 export const deleteOne = (id: number): void => {
-  const products = db.product.findMany({
-    where: {
-      categoryId: { equals: id },
-    },
-  });
-
-  db.note.deleteMany({
-    where: {
-      productId: { in: products.map(p => p.id) },
-    },
-  });
-
-  db.product.deleteMany({
-    where: {
-      categoryId: { equals: id },
-    },
-  });
+  db.product
+    .getAll()
+    .filter(product => product.categoryIds.includes(id))
+    .forEach(product => {
+      db.product.update({
+        where: {
+          id: { equals: product.id },
+        },
+        data: {
+          categoryIds: product.categoryIds.filter(categoryId => categoryId !== id),
+        },
+      });
+    });
 
   db.category.delete({
     where: {

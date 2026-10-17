@@ -28,6 +28,26 @@ public class NotesApiTests(InfrastructureFixture infrastructure) : BaseTest<Note
     }
     
     [Scenario]
+    public Task I_can_retrieve_notes_list_ordered_by_time()
+    {
+        var notes = new
+        {
+            Soup = Create.Note().WithDate("2024-01-04").WithTime("19:30").WithProduct("Soup", 300).WithDisplayOrder(0).Please(),
+            Coffee = Create.Note().WithDate("2024-01-04").WithTime("07:15").WithProduct("Coffee", 200).WithDisplayOrder(5).Please(),
+            Noodles = Create.Note().WithDate("2024-01-04").WithTime("12:10").WithProduct("Noodles", 250).WithDisplayOrder(1).Please(),
+            Tea = Create.Note().WithDate("2024-01-04").WithTime("12:10").WithProduct("Tea", 150).WithDisplayOrder(0).Please(),
+            LateLunch = Create.Note().WithDate("2024-01-04").WithTime("15:30").WithMealType(MealType.Lunch)
+                .WithProduct("Rice", 200).WithDisplayOrder(0).Please()
+        };
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_authenticated_user(),
+            c => c.Given_notes(notes.Soup, notes.Coffee, notes.Noodles, notes.Tea, notes.LateLunch),
+            c => c.When_user_retrieves_notes_list_for_date("2024-01-04"),
+            c => c.Then_notes_list_contains_items(notes.Coffee, notes.Tea, notes.Noodles, notes.LateLunch, notes.Soup));
+    }
+
+    [Scenario]
     public Task I_can_retrieve_notes_history_list()
     {
         var notes = new
@@ -68,6 +88,119 @@ public class NotesApiTests(InfrastructureFixture infrastructure) : BaseTest<Note
             c => c.Then_notes_list_contains_items(note));
     }
     
+    [Scenario]
+    public Task I_can_create_note_by_time_only_and_get_meal_from_it()
+    {
+        var product = Create.Product("Cake").Please();
+        var note = Create.Note()
+            .WithDate("2024-01-04")
+            .WithTime("15:45")
+            .WithProduct(product, 80)
+            .WithDisplayOrder(0)
+            .Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_authenticated_user(),
+            c => c.Given_product(product),
+            c => c.When_user_creates_note_with_time_only(note),
+            c => c.Then_note_is_successfully_created(),
+            c => c.When_user_retrieves_notes_list_for_date("2024-01-04"),
+            c => c.Then_notes_list_contains_items(note));
+    }
+
+    [Scenario]
+    public Task I_can_create_note_by_meal_only_and_get_its_usual_time()
+    {
+        var product = Create.Product("Soup").Please();
+        var note = Create.Note()
+            .WithDate("2024-01-04")
+            .WithMealType(MealType.Lunch)
+            .WithProduct(product, 300)
+            .Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_authenticated_user(),
+            c => c.Given_product(product),
+            c => c.When_user_creates_note_with_meal_type_only(note),
+            c => c.Then_note_is_successfully_created(),
+            c => c.When_user_retrieves_notes_list_json_for_date("2024-01-04"),
+            c => c.Then_note_json_has_time_and_meal_type("12:30:00", (int)MealType.Lunch));
+    }
+
+    [Scenario]
+    public Task I_cannot_create_note_without_time_and_meal()
+    {
+        var product = Create.Product("Soup").Please();
+        var note = Create.Note().WithDate("2024-01-04").WithProduct(product, 300).Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_authenticated_user(),
+            c => c.Given_product(product),
+            c => c.When_user_creates_note_without_time_and_meal_type(note),
+            c => c.Then_note_is_not_created_because_time_and_meal_type_are_missing(),
+            c => c.When_user_retrieves_notes_list_for_date("2024-01-04"),
+            c => c.Then_notes_list_contains_no_items());
+    }
+
+    [Scenario]
+    [InlineData("18:05:00", "18:05:00")]
+    [InlineData("18:05", "18:05:00")]
+    [InlineData("18:05:30.25", "18:05:30")]
+    public Task Note_time_is_written_as_hours_minutes_and_seconds(string sentTime, string returnedTime)
+    {
+        var product = Create.Product("Toast").Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_authenticated_user(),
+            c => c.Given_product(product),
+            c => c.When_user_creates_note_from_json(
+                $$"""{ "date": "2024-01-04", "time": "{{sentTime}}", "productId": {{product.Id}}, "productQuantity": 60 }"""),
+            c => c.Then_note_is_successfully_created(),
+            c => c.When_user_retrieves_notes_list_json_for_date("2024-01-04"),
+            c => c.Then_note_json_has_time_and_meal_type(returnedTime, (int)MealType.Dinner));
+    }
+
+    [Scenario]
+    public Task I_can_log_products_eaten_together()
+    {
+        var rice = Create.Product("Rice").Please();
+        var dumplings = Create.Product("餃子").CountedInServingsOf(25).Please();
+        var lunch = Create.Note().WithDate("2024-01-04").WithTime("12:45");
+        var notes = new
+        {
+            Rice = lunch.WithProduct(rice, 200).WithDisplayOrder(0).Please(),
+            Dumplings = lunch.WithProduct(dumplings, 250).WithDisplayOrder(1).Please()
+        };
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_authenticated_user(),
+            c => c.Given_products(rice, dumplings),
+            c => c.When_user_logs_products_eaten_together("2024-01-04", "12:45:00", notes.Rice, notes.Dumplings),
+            c => c.Then_products_eaten_together_are_logged(2),
+            c => c.When_user_retrieves_notes_list_for_date("2024-01-04"),
+            c => c.Then_notes_list_contains_items(notes.Rice, notes.Dumplings));
+    }
+
+    [Scenario]
+    public Task I_cannot_log_products_eaten_together_when_one_is_unknown()
+    {
+        var rice = Create.Product("Rice").Please();
+        var unknown = Create.Product("Unknown").Please();
+        var lunch = Create.Note().WithDate("2024-01-04").WithTime("12:45");
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_authenticated_user(),
+            c => c.Given_product(rice),
+            c => c.When_user_logs_products_eaten_together(
+                "2024-01-04",
+                "12:45:00",
+                lunch.WithProduct(rice, 200).Please(),
+                lunch.WithProduct(unknown, 100).Please()),
+            c => c.Then_products_eaten_together_are_not_logged(),
+            c => c.When_user_retrieves_notes_list_for_date("2024-01-04"),
+            c => c.Then_notes_list_contains_no_items());
+    }
+
     [Scenario]
     public Task I_can_update_note()
     {

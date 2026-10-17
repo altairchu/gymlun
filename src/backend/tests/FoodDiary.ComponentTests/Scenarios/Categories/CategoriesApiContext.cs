@@ -76,6 +76,12 @@ public class CategoriesApiContext(FoodDiaryWebApplicationFactory factory) : Base
         return Task.CompletedTask;
     }
     
+    public Task Then_category_is_not_created()
+    {
+        _createCategoryResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        return Task.CompletedTask;
+    }
+
     public Task Then_category_is_successfully_updated()
     {
         _updateCategoryResponse.StatusCode.Should().Be(HttpStatusCode.OK);

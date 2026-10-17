@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using FoodDiary.API.Mcp.Tools.Products;
 using FoodDiary.Application.Products.Get;
 using FoodDiary.Domain.Entities;
+using FoodDiary.Domain.Enums;
 using FoodDiary.Domain.Repositories;
 using ModelContextProtocol;
 using Moq;
@@ -20,7 +21,7 @@ public class ProductsToolTests
     {
         _productRepository.Setup(r => r.GetQueryWithoutTracking()).Returns(() => _products.AsQueryable());
         _productRepository
-            .Setup(r => r.LoadCategory(It.IsAny<IQueryable<Product>>()))
+            .Setup(r => r.LoadCategories(It.IsAny<IQueryable<Product>>()))
             .Returns((IQueryable<Product> query) => query);
         _productRepository
             .Setup(r => r.CountByQueryAsync(It.IsAny<IQueryable<Product>>(), It.IsAny<CancellationToken>()))
@@ -41,8 +42,7 @@ public class ProductsToolTests
         Name = "Oatmeal",
         CaloriesCost = 366,
         DefaultQuantity = 60,
-        CategoryId = Cereals.Id,
-        Category = Cereals,
+        Categories = [Cereals],
         Protein = 13.0m,
         Fats = 7.0m,
         Carbs = 62.0m,
@@ -60,7 +60,7 @@ public class ProductsToolTests
     }
 
     [Fact]
-    public async Task Product_CarriesCategoryDefaultQuantityAndNutritionPer100Grams()
+    public async Task Product_CarriesCategoriesDefaultQuantityCountByAndNutritionPer100Grams()
     {
         GivenProducts(Oatmeal());
 
@@ -71,8 +71,9 @@ public class ProductsToolTests
             {
               "id": 42,
               "name": "Oatmeal",
-              "category": { "name": "Cereals" },
+              "categories": [{ "name": "Cereals" }],
               "defaultQuantity": 60,
+              "countBy": "grams",
               "isFavorite": false,
               "per100g": {
                 "calories": 366,
@@ -84,6 +85,35 @@ public class ProductsToolTests
               }
             }
             """);
+    }
+
+    [Fact]
+    public async Task ProductCountedInServings_CarriesEveryCategoryByName()
+    {
+        var dumplings = ProductNamed("豬肉韭菜餃");
+        dumplings.QuantityUnit = QuantityUnit.Servings;
+        dumplings.DefaultQuantity = 25;
+        dumplings.Categories = [new Category { Id = 5, Name = "飯" }, new Category { Id = 4, Name = "Frozen" }];
+        GivenProducts(dumplings);
+
+        var json = await ListProducts(pageNumber: 1, pageSize: 10);
+
+        var product = json["products"]![0]!;
+        product["countBy"]!.GetValue<string>().Should().Be("servings");
+        product["defaultQuantity"]!.GetValue<int>().Should().Be(25);
+        ShouldBeJson(product["categories"], """[{ "name": "Frozen" }, { "name": "飯" }]""");
+    }
+
+    [Fact]
+    public async Task ProductWithoutCategories_HasEmptyCategories()
+    {
+        var water = ProductNamed("Water");
+        water.Categories = [];
+        GivenProducts(water);
+
+        var json = await ListProducts(pageNumber: 1, pageSize: 10);
+
+        ShouldBeJson(json["products"]![0]!["categories"], "[]");
     }
 
     [Fact]
@@ -133,7 +163,7 @@ public class ProductsToolTests
     private static Product ProductNamed(string name) => new()
     {
         Name = name,
-        Category = Cereals,
+        Categories = [Cereals],
         Protein = null,
         Fats = null,
         Carbs = null,

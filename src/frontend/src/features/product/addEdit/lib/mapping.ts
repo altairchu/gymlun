@@ -4,24 +4,24 @@ import {
   type productModel,
 } from '@/entities/product';
 
-export const mapToCreateProductRequest = (
-  categoryId: number,
-  {
-    name,
-    calories: caloriesCost,
-    defaultQuantity,
-    protein,
-    fats,
-    carbs,
-    sugar,
-    salt,
-    isFavorite,
-  }: productModel.ProductFormValues,
-): CreateProductRequest => ({
+export const mapToCreateProductRequest = ({
+  name,
+  calories: caloriesCost,
+  defaultQuantity,
+  quantityUnit,
+  categories,
+  protein,
+  fats,
+  carbs,
+  sugar,
+  salt,
+  isFavorite,
+}: productModel.ProductFormValues): CreateProductRequest => ({
   name,
   caloriesCost,
   defaultQuantity,
-  categoryId,
+  quantityUnit,
+  categoryIds: categories.map(category => category.id),
   protein,
   fats,
   carbs,
@@ -32,28 +32,8 @@ export const mapToCreateProductRequest = (
 
 export const mapToEditProductRequest = (
   id: number,
-  categoryId: number,
-  {
-    name,
-    calories: caloriesCost,
-    defaultQuantity,
-    protein,
-    fats,
-    carbs,
-    sugar,
-    salt,
-    isFavorite,
-  }: productModel.ProductFormValues,
+  product: productModel.ProductFormValues,
 ): EditProductRequest => ({
   id,
-  name,
-  caloriesCost,
-  defaultQuantity,
-  categoryId,
-  protein,
-  fats,
-  carbs,
-  sugar,
-  salt,
-  isFavorite,
+  ...mapToCreateProductRequest(product),
 });

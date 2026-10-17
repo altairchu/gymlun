@@ -32,6 +32,8 @@ public class NotesApiContext(
     private HttpResponseMessage _deleteNoteResponse = null!;
     private HttpResponseMessage _deleteMultipleNotesResponse = null!;
     private HttpResponseMessage _recognizeNoteResponse = null!;
+    private HttpResponseMessage _createNotesResponse = null!;
+    private JsonDocument? _rawNotesResponse;
 
     public Task Given_notes(params Note[] notes)
     {
@@ -41,6 +43,11 @@ public class NotesApiContext(
     public Task Given_product(Product product)
     {
         return Factory.SeedDataAsync([product]);
+    }
+
+    public Task Given_products(params Product[] products)
+    {
+        return Factory.SeedDataAsync(products);
     }
 
     public Task Given_OpenAI_api_is_ready()
@@ -69,6 +76,12 @@ public class NotesApiContext(
         _getNotesResponse = await ApiClient.GetFromJsonAsync<GetNotesResponse>($"/api/v1/notes?date={date}");
     }
     
+    public async Task When_user_retrieves_notes_list_json_for_date(string date)
+    {
+        var json = await ApiClient.GetStringAsync($"/api/v1/notes?date={date}");
+        _rawNotesResponse = JsonDocument.Parse(json);
+    }
+
     public async Task When_user_retrieves_notes_history(string from, string to)
     {
         _getNotesHistoryResponse = await ApiClient
@@ -82,6 +95,62 @@ public class NotesApiContext(
             .Please();
         
         _createNoteResponse = await ApiClient.PostAsJsonAsync("/api/v1/notes", body);
+    }
+
+    public async Task When_user_creates_note_with_time_only(Note note)
+    {
+        var body = Create.NoteRequestBody()
+            .From(note)
+            .WithoutMealType()
+            .Please();
+
+        _createNoteResponse = await ApiClient.PostAsJsonAsync("/api/v1/notes", body);
+    }
+
+    public async Task When_user_creates_note_with_meal_type_only(Note note)
+    {
+        var body = Create.NoteRequestBody()
+            .From(note)
+            .WithoutTime()
+            .Please();
+
+        _createNoteResponse = await ApiClient.PostAsJsonAsync("/api/v1/notes", body);
+    }
+
+    public async Task When_user_creates_note_without_time_and_meal_type(Note note)
+    {
+        var body = Create.NoteRequestBody()
+            .From(note)
+            .WithoutTime()
+            .WithoutMealType()
+            .Please();
+
+        _createNoteResponse = await ApiClient.PostAsJsonAsync("/api/v1/notes", body);
+    }
+
+    public async Task When_user_creates_note_from_json(string json)
+    {
+        _createNoteResponse = await ApiClient.PostAsync(
+            "/api/v1/notes",
+            new StringContent(json, Encoding.UTF8, "application/json"));
+    }
+
+    public async Task When_user_logs_products_eaten_together(string date, string time, params Note[] notes)
+    {
+        var request = new CreateNotesRequest
+        {
+            Date = DateOnly.Parse(date),
+            Time = TimeOnly.Parse(time),
+            Items = notes
+                .Select(note => new CreateNotesRequestItem
+                {
+                    ProductId = note.Product!.Id,
+                    ProductQuantity = note.ProductQuantity
+                })
+                .ToList()
+        };
+
+        _createNotesResponse = await ApiClient.PostAsJsonAsync("/api/v1/notes/batch", request);
     }
     
     public async Task When_user_updates_product_with_quantity_for_note(Note note, Product product, int quantity)
@@ -133,12 +202,12 @@ public class NotesApiContext(
     {
         var expectedNotesList = items.Select(n => n.ToGetNotesResponse());
 
-        _getNotesResponse?.Notes.Should()
+        _getNotesResponse.Should().NotBeNull();
+        _getNotesResponse!.Notes.Should()
             .BeEquivalentTo(expectedNotesList, options => options
-                .Excluding(note => note.Id))
-            .And.AllSatisfy(note => { note.Product.Calories.Should().BePositive(); })
-            .And.BeInAscendingOrder(note => note.MealType)
-            .And.ThenBeInAscendingOrder(note => note.DisplayOrder);
+                .Excluding(note => note.Id)
+                .WithStrictOrdering())
+            .And.AllSatisfy(note => { note.Product.Calories.Should().BePositive(); });
         
         return Task.CompletedTask;
     }
@@ -161,6 +230,34 @@ public class NotesApiContext(
         return Task.CompletedTask;
     }
     
+    public async Task Then_note_is_not_created_because_time_and_meal_type_are_missing()
+    {
+        _createNoteResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await _createNoteResponse.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+        problem!.Errors.Should().ContainKey(nameof(NoteRequestBody.Time));
+    }
+
+    public Task Then_note_json_has_time_and_meal_type(string time, int mealType)
+    {
+        var note = _rawNotesResponse!.RootElement.GetProperty("notes").EnumerateArray().Single();
+        note.GetProperty("time").GetString().Should().Be(time);
+        note.GetProperty("mealType").GetInt32().Should().Be(mealType);
+        return Task.CompletedTask;
+    }
+
+    public async Task Then_products_eaten_together_are_logged(int count)
+    {
+        _createNotesResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var response = await _createNotesResponse.Content.ReadFromJsonAsync<CreateNotesResponse>();
+        response!.Ids.Should().HaveCount(count).And.OnlyHaveUniqueItems().And.AllSatisfy(id => id.Should().BePositive());
+    }
+
+    public Task Then_products_eaten_together_are_not_logged()
+    {
+        _createNotesResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        return Task.CompletedTask;
+    }
+
     public Task Then_note_is_successfully_updated()
     {
         _updateNoteResponse.StatusCode.Should().Be(HttpStatusCode.OK);

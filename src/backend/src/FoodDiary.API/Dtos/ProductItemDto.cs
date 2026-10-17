@@ -1,4 +1,7 @@
-﻿namespace FoodDiary.API.Dtos;
+﻿using FoodDiary.API.Features.Products.Contracts;
+using FoodDiary.Domain.Enums;
+
+namespace FoodDiary.API.Dtos;
 
 public class ProductItemDto
 {
@@ -10,9 +13,9 @@ public class ProductItemDto
 
     public int DefaultQuantity { get; init; }
 
-    public int CategoryId { get; init; }
+    public QuantityUnit QuantityUnit { get; init; }
 
-    public required string CategoryName { get; init; }
+    public required IReadOnlyList<Category> Categories { get; init; }
     
     public required decimal? Protein { get; init; }
     public required decimal? Fats { get; init; }

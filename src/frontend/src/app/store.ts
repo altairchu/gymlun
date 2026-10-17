@@ -1,7 +1,6 @@
 import { configureStore as configureStoreRtk } from '@reduxjs/toolkit';
 import { useDispatch, useSelector } from 'react-redux';
 import { productModel } from '@/entities/product';
-import { manageNoteModel } from '@/features/manageNote';
 import { api } from '../shared/api';
 
 export const configureStore = () =>
@@ -9,13 +8,9 @@ export const configureStore = () =>
     reducer: {
       [api.reducerPath]: api.reducer,
       products: productModel.reducer,
-      manageNote: manageNoteModel.reducer,
     },
 
-    middleware: getDefaultMiddleware =>
-      getDefaultMiddleware()
-        .prepend(manageNoteModel.imageUrlsListener.middleware)
-        .concat(api.middleware),
+    middleware: getDefaultMiddleware => getDefaultMiddleware().concat(api.middleware),
   });
 
 export type AppStore = ReturnType<typeof configureStore>;
