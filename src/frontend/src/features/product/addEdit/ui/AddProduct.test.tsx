@@ -118,10 +118,10 @@ test('a picked photo is saved for the new product', async () => {
     http.put<{ id: string }>(
       `${API_URL}/api/v1/products/:id/photo`,
       async ({ params, request }) => {
-        // jsdom's File does not survive Node's fetch, so its bytes cannot be checked here
+        // jsdom's File does not survive Node's fetch, so the body cannot be parsed as form data here
         photoRequests.push({
           productId: params.id,
-          hasPhoto: (await request.formData()).has('photo'),
+          hasPhoto: (await request.text()).includes('name="photo"'),
         });
         return HttpResponse.json<SetProductPhotoResponse>({
           photoUrl: '/api/v1/products/99/photo?v=1',
