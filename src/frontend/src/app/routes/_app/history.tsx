@@ -29,7 +29,7 @@ export const Route = createFileRoute('/_app/history')({
     month: search.month ?? getDefaultMonth(),
     year: search.year ?? getDefaultYear(),
   }),
-  loader: async ({ context, deps }) => {
+  loader: async ({ context, deps, preload }) => {
     const date = new Date(deps.year, deps.month - 1);
 
     const notesHistoryRequest: GetNotesHistoryRequest = {
@@ -38,7 +38,7 @@ export const Route = createFileRoute('/_app/history')({
     };
 
     const notesHistoryQueryPromise = context.store.dispatch(
-      noteApi.endpoints.notesHistory.initiate(notesHistoryRequest),
+      noteApi.endpoints.notesHistory.initiate(notesHistoryRequest, { forceRefetch: !preload }),
     );
 
     try {

@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Category names of one or two characters, such as Chinese names, are accepted
 - Deleting a category no longer deletes its foods and their food logs
+- Food logs, foods, categories and weight changed elsewhere, such as through an AI app, show when you open a page or come back to the app, not only after a reload
 
 ## [0.9.2] - Router & Zod upgrades, AI suggestion fixes
 

@@ -6,9 +6,9 @@ export const Route = createFileRoute('/_app/categories')({
   staticData: {
     appBar: { variant: 'menu', title: '分類' },
   },
-  loader: async ({ context }) => {
+  loader: async ({ context, preload }) => {
     const categoriesQueryPromise = context.store.dispatch(
-      categoryApi.endpoints.getCategories.initiate({}),
+      categoryApi.endpoints.getCategories.initiate({}, { forceRefetch: !preload }),
     );
 
     try {

@@ -24,9 +24,9 @@ export const Route = createFileRoute('/_app/')({
     },
   },
   loaderDeps: ({ search }) => ({ date: search.date ?? getDefaultDate() }),
-  loader: async ({ context, deps }) => {
+  loader: async ({ context, deps, preload }) => {
     const notesQueryPromise = context.store.dispatch(
-      noteApi.endpoints.notes.initiate({ date: deps.date }),
+      noteApi.endpoints.notes.initiate({ date: deps.date }, { forceRefetch: !preload }),
     );
 
     try {

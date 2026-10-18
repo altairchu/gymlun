@@ -117,6 +117,41 @@ test('opening a diary date by URL shows the Food Logs of that date', async () =>
   expect(within(breakfast).getByText('Milk')).toBeVisible();
 });
 
+const logLunchInAnotherApp = (date: string): void => {
+  notesService.create({
+    date,
+    time: '12:30:00',
+    productId: 1,
+    productQuantity: 100,
+    displayOrder: 0,
+  });
+};
+
+test('a day opened from History shows the Food Logs another app added since it was open', async () => {
+  const user = userEvent.setup();
+  await renderApp('/?date=2023-10-22', { signedIn: true });
+  expect(await screen.findByRole('tab', { name: '時間線（0）' })).toBeVisible();
+  logLunchInAnotherApp('2023-10-22');
+
+  await user.click(screen.getByRole('button', { name: /開啟選單/ }));
+  await user.click(screen.getByRole('link', { name: '歷史記錄' }));
+  await user.click(await screen.findByRole('link', { name: /2023年10月22日/ }));
+
+  expect(await screen.findByRole('tab', { name: '時間線（1）' })).toBeVisible();
+});
+
+test('the open diary shows the Food Logs another app added once the window is back in focus', async () => {
+  await renderApp('/?date=2023-10-22', { signedIn: true });
+  expect(await screen.findByRole('tab', { name: '時間線（0）' })).toBeVisible();
+  logLunchInAnotherApp('2023-10-22');
+
+  act(() => {
+    window.dispatchEvent(new Event('focus'));
+  });
+
+  expect(await screen.findByRole('tab', { name: '時間線（1）' })).toBeVisible();
+});
+
 test('opening a History month by URL shows that month', async () => {
   seedSeptemberFoodLog();
 

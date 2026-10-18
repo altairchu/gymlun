@@ -6,10 +6,10 @@ export const Route = createFileRoute('/_app/products')({
   staticData: {
     appBar: { variant: 'menu', title: '食物' },
   },
-  loader: async ({ context }) => {
+  loader: async ({ context, preload }) => {
     const request = productLib.mapToGetProductsRequest(context.store.getState().products.filter);
     const productsQueryPromise = context.store.dispatch(
-      productApi.endpoints.getProducts.initiate(request),
+      productApi.endpoints.getProducts.initiate(request, { forceRefetch: !preload }),
     );
 
     try {

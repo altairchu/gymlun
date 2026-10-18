@@ -7,7 +7,7 @@ export const Route = createFileRoute('/_app/weight')({
   staticData: {
     appBar: { variant: 'menu', title: '體重' },
   },
-  loader: async ({ context }) => {
+  loader: async ({ context, preload }) => {
     const today = dateLib.getCurrentDate();
     const endOfCurrentMonth = dateLib.getEndOfMonth(today);
     const startOfThreeMonthsAgo = dateLib.subMonths(endOfCurrentMonth, 3);
@@ -18,7 +18,7 @@ export const Route = createFileRoute('/_app/weight')({
     };
 
     const weightLogsQueryPromise = context.store.dispatch(
-      weightLogsApi.endpoints.weightLogs.initiate(weightLogsRequest),
+      weightLogsApi.endpoints.weightLogs.initiate(weightLogsRequest, { forceRefetch: !preload }),
     );
 
     try {
