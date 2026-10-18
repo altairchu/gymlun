@@ -1,3 +1,4 @@
+using FoodDiary.API.Features.ProductPhotos;
 using FoodDiary.Application.Notes.Create;
 using FoodDiary.Application.Notes.CreateMany;
 using FoodDiary.Application.Notes.Get;
@@ -31,7 +32,8 @@ public static class NotesMapper
         Fats: product.Fats,
         Carbs: product.Carbs,
         Sugar: product.Sugar,
-        Salt: product.Salt);
+        Salt: product.Salt,
+        PhotoUrl: product.PhotoUrl());
 
     public static GetNotesQuery ToGetNotesQuery(this GetNotesRequest request) => new(
         request.Date.GetValueOrDefault()

@@ -7,13 +7,14 @@ namespace FoodDiary.ComponentTests.Scenarios.Mcp;
 
 public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApiContext>(infrastructure)
 {
-    private static readonly string[] ReadTools = ["get_food_logs", "list_products", "list_categories", "get_weight_logs"];
+    private static readonly string[] ReadTools = ["get_food_logs", "list_products", "get_product_photo", "list_categories", "get_weight_logs"];
 
     private static readonly string[] AllTools =
     [
         ..ReadTools,
         "log_food", "log_foods", "update_food_log", "delete_food_logs",
         "create_product", "update_product", "delete_products",
+        "set_product_photo", "remove_product_photo",
         "create_category", "rename_category", "delete_category",
         "log_weight", "update_weight", "delete_weight"
     ];
@@ -218,6 +219,95 @@ public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApi
             c => c.When_mcp_client_calls_delete_products(oatmeal.Product!, apple.Product!),
             c => c.Then_mcp_client_lists_tools(AllTools),
             c => c.Then_products_and_their_food_logs_are_deleted(oatmeal.Product!, apple.Product!));
+    }
+
+    [Scenario]
+    public Task The_client_can_set_product_photo_attached_in_chat()
+    {
+        const string downloadUrl = "https://files.oaiusercontent.com/file-0001?sig=abc";
+        var apple = Create.Product("Apple").Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_products(apple),
+            c => c.Given_png_photo_can_be_downloaded_from(downloadUrl, 1600, 1200),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_set_product_photo_with_photo_attached_in_chat(apple, downloadUrl),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_product_photo_is_saved_scaled_down(apple, 640, 480));
+    }
+
+    [Scenario]
+    public Task The_client_sees_set_product_photo_takes_photo_attached_in_chat()
+    {
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_lists_set_product_photo_tool(),
+            c => c.Then_set_product_photo_tool_takes_photo_attached_in_chat());
+    }
+
+    [Scenario]
+    public Task The_client_can_set_product_photo_from_url()
+    {
+        const string photoUrl = "https://images.example.com/apple.png";
+        var apple = Create.Product("Apple").Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_products(apple),
+            c => c.Given_png_photo_can_be_downloaded_from(photoUrl, 300, 200),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_set_product_photo_with_photo_url(apple, photoUrl),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_product_photo_is_saved_scaled_down(apple, 300, 200));
+    }
+
+    [Scenario]
+    public Task The_client_cannot_set_product_photo_from_the_server_own_network()
+    {
+        var apple = Create.Product("Apple").Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_products(apple),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_set_product_photo_with_photo_url(apple, "https://localhost/photo.png"),
+            c => c.Then_tool_call_is_error("The photo could not be downloaded."));
+    }
+
+    [Scenario]
+    public Task The_client_can_see_product_photo()
+    {
+        var apple = Create.Product("Apple").WithPhoto(TestImages.Jpeg(64, 64)).Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_products(apple),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_get_product_photo(apple),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_product_photo_is_returned_as_jpeg());
+    }
+
+    [Scenario]
+    public Task The_client_can_tell_which_products_have_photo()
+    {
+        var apple = Create.Product("Apple").WithPhoto(TestImages.Jpeg(64, 64)).Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_products(apple),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_list_products("Apple"),
+            c => c.Then_products_show_photo());
+    }
+
+    [Scenario]
+    public Task The_client_can_remove_product_photo()
+    {
+        var apple = Create.Product("Apple").WithPhoto(TestImages.Jpeg(64, 64)).Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_products(apple),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_remove_product_photo(apple),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_product_has_no_photo(apple));
     }
 
     [Scenario]

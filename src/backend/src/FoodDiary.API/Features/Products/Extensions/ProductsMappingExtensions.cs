@@ -1,3 +1,4 @@
+using FoodDiary.API.Features.ProductPhotos;
 using FoodDiary.API.Features.Products.Contracts;
 using FoodDiary.Domain.Entities;
 
@@ -20,6 +21,7 @@ public static class ProductsMappingExtensions
             Sugar = p.Sugar,
             Salt = p.Salt,
             IsFavorite = p.IsFavorite,
+            PhotoUrl = p.PhotoUrl(),
             Categories = p.Categories.ToResponseCategories()
         };
     }
@@ -53,6 +55,7 @@ public static class ProductsMappingExtensions
             Carbs: product.Carbs,
             Sugar: product.Sugar,
             Salt: product.Salt,
-            IsFavorite: product.IsFavorite);
+            IsFavorite: product.IsFavorite,
+            PhotoUrl: product.PhotoUrl());
     }
 }

@@ -26,7 +26,7 @@ using ModelContextProtocol.Protocol;
 namespace FoodDiary.ComponentTests.Scenarios.Mcp;
 
 [UsedImplicitly]
-public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext(factory)
+public partial class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext(factory)
 {
     // PKCE example values from RFC 7636, Appendix B
     private const string CodeVerifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";

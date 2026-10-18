@@ -13,6 +13,7 @@ public record ListProductsToolResponse(IReadOnlyList<ListProductsToolResponse.Pr
         int DefaultQuantity,
         string CountBy,
         bool IsFavorite,
+        bool HasPhoto,
         // ReSharper disable once InconsistentNaming
         ProductNutrition Per100g);
 

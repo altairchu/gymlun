@@ -33,5 +33,6 @@ public record GetNotesResponse(IReadOnlyCollection<GetNotesResponse.Note> Notes)
         decimal? Fats,
         decimal? Carbs,
         decimal? Sugar,
-        decimal? Salt);
+        decimal? Salt,
+        string? PhotoUrl);
 }

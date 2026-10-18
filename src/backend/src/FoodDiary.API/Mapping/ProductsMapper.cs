@@ -1,4 +1,5 @@
 using FoodDiary.API.Dtos;
+using FoodDiary.API.Features.ProductPhotos;
 using FoodDiary.API.Features.Products.Extensions;
 using FoodDiary.Contracts.Products;
 using FoodDiary.Domain.Entities;
@@ -20,7 +21,8 @@ public static class ProductsMapper
         Carbs = product.Carbs,
         Sugar = product.Sugar,
         Salt = product.Salt,
-        IsFavorite = product.IsFavorite
+        IsFavorite = product.IsFavorite,
+        PhotoUrl = product.PhotoUrl()
     };
 
     public static CreateProductResponse ToCreateProductResponse(this Product product) => new(product.Id);

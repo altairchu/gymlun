@@ -1,4 +1,5 @@
 using FoodDiary.API.Mcp.Authorization;
+using FoodDiary.API.Mcp.Tools.Products;
 using FoodDiary.Configuration;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -58,6 +59,9 @@ public static class McpExtensions
 
     private static void AddMcpResourceServer(this IServiceCollection services)
     {
+        services.AddScoped<PhotoDownloader>();
+        PhotoDownloader.AddHttpClient(services);
+
         services.AddMcpServer()
             .WithHttpTransport(options => options.SessionMode = HttpServerSessionMode.Stateless)
             .AddAuthorizationFilters()

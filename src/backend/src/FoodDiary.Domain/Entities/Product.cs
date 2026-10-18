@@ -37,6 +37,14 @@ public class Product
     public required decimal? Sugar { get; set; }
     public required decimal? Salt { get; set; }
 
+    /// <summary>
+    /// When the photo was last set, or null when the product has none. Versions the photo URL, so a browser
+    /// can cache a photo for good and still pick up a new one
+    /// </summary>
+    public DateTimeOffset? PhotoUpdatedAt { get; set; }
+
+    public virtual ProductPhoto? Photo { get; set; }
+
     public virtual ICollection<Category> Categories { get; set; } = [];
 
     public virtual ICollection<Note> Notes { get; set; } = [];

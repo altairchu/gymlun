@@ -17,6 +17,7 @@ public class ProductBuilder(string? name)
     private decimal? _sugar = 8;
     private decimal? _salt = 2;
     private bool _isFavorite;
+    private byte[]? _photo;
 
     public Product Please() => new()
     {
@@ -31,7 +32,9 @@ public class ProductBuilder(string? name)
         Carbs = _carbs,
         Sugar = _sugar,
         Salt = _salt,
-        IsFavorite = _isFavorite
+        IsFavorite = _isFavorite,
+        Photo = _photo is null ? null : new ProductPhoto { Content = _photo },
+        PhotoUpdatedAt = _photo is null ? null : new DateTimeOffset(2026, 9, 1, 12, 0, 0, TimeSpan.Zero)
     };
 
     public ProductBuilder From(Product product)
@@ -48,6 +51,12 @@ public class ProductBuilder(string? name)
         _sugar = product.Sugar;
         _salt = product.Salt;
         _isFavorite = product.IsFavorite;
+        return this;
+    }
+
+    public ProductBuilder WithPhoto(byte[] jpeg)
+    {
+        _photo = jpeg;
         return this;
     }
 
