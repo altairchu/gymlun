@@ -1,7 +1,4 @@
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.Processing;
+using SkiaSharp;
 
 namespace FoodDiary.API.Features.ProductPhotos;
 
@@ -13,13 +10,9 @@ public class ProductPhotoProcessor
     // A small file can still decode into a huge bitmap
     private const long MaxSourcePixels = 50_000_000;
 
-    private static readonly DecoderOptions DecoderOptions = new()
-    {
-        MaxFrames = 1,
-        ColorProfileHandling = ColorProfileHandling.Convert
-    };
+    private const int JpegQuality = 80;
 
-    private static readonly JpegEncoder Encoder = new() { Quality = 80 };
+    private static readonly SKSamplingOptions Sampling = new(SKCubicResampler.Mitchell);
 
     /// <summary>
     /// Turns any common image format into an upright JPEG no larger than <see cref="MaxSide"/> on either side,
@@ -31,45 +24,71 @@ public class ProductPhotoProcessor
         using var buffer = new MemoryStream();
         await source.CopyToAsync(buffer, cancellationToken);
 
-        try
-        {
-            buffer.Position = 0;
-            var info = await Image.IdentifyAsync(DecoderOptions, buffer, cancellationToken);
+        using var data = SKData.CreateCopy(buffer.GetBuffer().AsSpan(0, (int)buffer.Length));
+        using var codec = SKCodec.Create(data);
 
-            if ((long)info.Width * info.Height > MaxSourcePixels)
-            {
-                return null;
-            }
-
-            buffer.Position = 0;
-            using var image = await Image.LoadAsync(DecoderOptions, buffer, cancellationToken);
-
-            image.Mutate(context =>
-            {
-                context.AutoOrient();
-
-                if (image.Width > MaxSide || image.Height > MaxSide)
-                {
-                    context.Resize(new ResizeOptions
-                    {
-                        Mode = ResizeMode.Max,
-                        Size = new Size(MaxSide, MaxSide)
-                    });
-                }
-            });
-
-            image.Metadata.ExifProfile = null;
-            image.Metadata.XmpProfile = null;
-            image.Metadata.IptcProfile = null;
-            image.Metadata.IccProfile = null;
-
-            using var output = new MemoryStream();
-            await image.SaveAsJpegAsync(output, Encoder, cancellationToken);
-            return output.ToArray();
-        }
-        catch (ImageFormatException)
+        if (codec is null || (long)codec.Info.Width * codec.Info.Height > MaxSourcePixels)
         {
             return null;
         }
+
+        var origin = codec.EncodedOrigin;
+        var turnsSideways = origin is SKEncodedOrigin.LeftTop or SKEncodedOrigin.RightTop
+            or SKEncodedOrigin.RightBottom or SKEncodedOrigin.LeftBottom;
+
+        var stored = codec.Info.Size;
+        var scale = Math.Min(1f, (float)MaxSide / Math.Max(stored.Width, stored.Height));
+        var target = new SKSizeI(
+            Math.Max(1, (int)Math.Round(stored.Width * scale)),
+            Math.Max(1, (int)Math.Round(stored.Height * scale)));
+
+        // JPEGs can be decoded straight at a fraction of their size, which keeps big phone photos small in memory
+        var decodedSize = codec.GetScaledDimensions(scale);
+        var decodedInfo = new SKImageInfo(
+            decodedSize.Width,
+            decodedSize.Height,
+            SKColorType.Rgba8888,
+            SKAlphaType.Premul,
+            SKColorSpace.CreateSrgb());
+
+        using var decoded = SKBitmap.Decode(codec, decodedInfo);
+
+        if (decoded is null)
+        {
+            return null;
+        }
+
+        var outputInfo = turnsSideways
+            ? new SKImageInfo(target.Height, target.Width)
+            : new SKImageInfo(target.Width, target.Height);
+
+        using var surface = SKSurface.Create(outputInfo);
+        var canvas = surface.Canvas;
+        canvas.Clear(SKColors.White);
+        canvas.Concat(ToUpright(origin, target.Width, target.Height));
+        canvas.Scale((float)target.Width / decoded.Width, (float)target.Height / decoded.Height);
+
+        using var image = SKImage.FromBitmap(decoded);
+        canvas.DrawImage(image, 0, 0, Sampling);
+
+        using var snapshot = surface.Snapshot();
+        using var jpeg = snapshot.Encode(SKEncodedImageFormat.Jpeg, JpegQuality);
+        return jpeg.ToArray();
     }
+
+    /// <summary>
+    /// Maps a <paramref name="width"/> x <paramref name="height"/> image, as stored, onto how its EXIF
+    /// orientation says it is meant to be seen
+    /// </summary>
+    private static SKMatrix ToUpright(SKEncodedOrigin origin, float width, float height) => origin switch
+    {
+        SKEncodedOrigin.TopRight => new SKMatrix(-1, 0, width, 0, 1, 0, 0, 0, 1),
+        SKEncodedOrigin.BottomRight => new SKMatrix(-1, 0, width, 0, -1, height, 0, 0, 1),
+        SKEncodedOrigin.BottomLeft => new SKMatrix(1, 0, 0, 0, -1, height, 0, 0, 1),
+        SKEncodedOrigin.LeftTop => new SKMatrix(0, 1, 0, 1, 0, 0, 0, 0, 1),
+        SKEncodedOrigin.RightTop => new SKMatrix(0, -1, height, 1, 0, 0, 0, 0, 1),
+        SKEncodedOrigin.RightBottom => new SKMatrix(0, -1, height, -1, 0, width, 0, 0, 1),
+        SKEncodedOrigin.LeftBottom => new SKMatrix(0, 1, 0, -1, 0, width, 0, 0, 1),
+        _ => SKMatrix.Identity
+    };
 }
