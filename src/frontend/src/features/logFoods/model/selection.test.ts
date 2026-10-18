@@ -13,6 +13,7 @@ const dumplings: ProductSelectOption = {
   carbs: null,
   sugar: null,
   salt: null,
+  photoUrl: null,
   isFavorite: true,
 };
 

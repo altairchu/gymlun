@@ -1,6 +1,7 @@
 import { screen, render as rtlRender } from '@testing-library/react';
 import { type ComponentProps } from 'react';
 import { type Product, productModel } from '@/entities/product';
+import { API_URL } from '@/shared/config';
 import { render } from '@tests/render';
 import ProductsTable from './ProductsTable';
 
@@ -18,6 +19,7 @@ const givenProduct = (product: Partial<Product>): Product => ({
   carbs: null,
   sugar: null,
   salt: null,
+  photoUrl: null,
   isFavorite: false,
   ...product,
 });
@@ -63,6 +65,25 @@ test('should not show a category list for a product without categories', async (
 
   expect(await screen.findByText('雞蛋'));
   expect(screen.queryByRole('list', { name: '「雞蛋」的分類' })).not.toBeInTheDocument();
+});
+
+test('should show the photo of a product that has one next to its name', async () => {
+  await render(
+    <ProductsTable
+      products={[
+        givenProduct({ id: 1, name: '雞蛋', photoUrl: '/api/v1/products/1/photo?v=3' }),
+        givenProduct({ id: 2, name: '白飯' }),
+      ]}
+      checkedIds={[]}
+      onCheckedChange={vi.fn<OnCheckedChangeFn>()}
+    />,
+  );
+
+  expect(await screen.findByRole('img', { name: '「雞蛋」的相片' })).toHaveAttribute(
+    'src',
+    `${API_URL}/api/v1/products/1/photo?v=3`,
+  );
+  expect(screen.queryByRole('img', { name: '「白飯」的相片' })).not.toBeInTheDocument();
 });
 
 test.each([

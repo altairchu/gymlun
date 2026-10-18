@@ -20,6 +20,7 @@ const create = {
     carbs: null,
     sugar: null,
     salt: null,
+    photoUrl: null,
     isFavorite: false,
   }),
 } as const;

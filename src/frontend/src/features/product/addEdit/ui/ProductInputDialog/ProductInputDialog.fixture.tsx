@@ -18,6 +18,7 @@ import { API_URL } from '@/shared/config';
 import { type SelectOption } from '@/shared/types';
 import { server } from '@tests/mockApi/server';
 import { WithTriggerButton } from '@tests/sideEffects';
+import { type PhotoChange, PHOTO_UNCHANGED } from '../../model';
 import { ProductInputDialog } from './ProductInputDialog';
 
 const NUTRITION_SUGGESTIONS_URL = `${API_URL}/api/v1/products/nutrition/suggestions`;
@@ -38,6 +39,7 @@ class ProductInputDialogBuilder {
   private _onSubmitMock: Mock<OnSubmitProductFn> = vi.fn<OnSubmitProductFn>();
   private _product: productModel.ProductFormValues = productModel.EMPTY_FORM_VALUES;
   private readonly _categories: SelectOption[] = [];
+  private _savedPhotoUrl: string | null = null;
 
   please(): ReactElement {
     return (
@@ -53,7 +55,11 @@ class ProductInputDialogBuilder {
                 categories={this._categories}
                 categoriesLoading={false}
                 productFormValues={this._product}
+                savedPhotoUrl={this._savedPhotoUrl}
+                photo={PHOTO_UNCHANGED}
+                photoSaveFailed={false}
                 onSubmit={this._onSubmitMock}
+                onPhotoChange={vi.fn<(photo: PhotoChange) => void>()}
                 onClose={onTriggerClick}
               />
             )}
@@ -65,6 +71,11 @@ class ProductInputDialogBuilder {
 
   withOnSubmitMock(onSubmitMock: Mock<OnSubmitProductFn>): this {
     this._onSubmitMock = onSubmitMock;
+    return this;
+  }
+
+  withSavedPhoto(photoUrl: string): this {
+    this._savedPhotoUrl = photoUrl;
     return this;
   }
 

@@ -11,6 +11,8 @@ import {
   type GetProductByIdResponse,
   type SuggestProductNutritionRequest,
   type SuggestProductNutritionResponse,
+  type SetProductPhotoRequest,
+  type SetProductPhotoResponse,
 } from './contracts';
 
 export const productApi = api.injectEndpoints({
@@ -53,6 +55,28 @@ export const productApi = api.injectEndpoints({
         method: 'DELETE',
         url: '/api/v1/products/batch',
         body: ids,
+      }),
+      invalidatesTags: ['product', 'note'],
+    }),
+
+    setProductPhoto: builder.mutation<SetProductPhotoResponse, SetProductPhotoRequest>({
+      query: ({ productId, photo }) => {
+        const body = new FormData();
+        body.append('photo', photo);
+
+        return {
+          method: 'PUT',
+          url: `/api/v1/products/${productId}/photo`,
+          body,
+        };
+      },
+      invalidatesTags: ['product', 'note'],
+    }),
+
+    deleteProductPhoto: builder.mutation<void, number>({
+      query: productId => ({
+        method: 'DELETE',
+        url: `/api/v1/products/${productId}/photo`,
       }),
       invalidatesTags: ['product', 'note'],
     }),

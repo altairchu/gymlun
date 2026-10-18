@@ -2,7 +2,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import { Checkbox, Chip, IconButton, Stack, TableCell, TableRow, Tooltip } from '@mui/material';
 import { type FC } from 'react';
 import { useAppDispatch } from '@/app/store';
-import { type Product, productLib, productModel } from '@/entities/product';
+import { type Product, ProductPhoto, productLib, productModel } from '@/entities/product';
 import { EditProduct } from '@/features/product/addEdit';
 
 interface ProductsTableRowProps {
@@ -43,20 +43,27 @@ const ProductsTableRow: FC<ProductsTableRowProps> = ({ product }: ProductsTableR
         />
       </TableCell>
       <TableCell sx={{ overflowWrap: 'anywhere' }}>
-        {product.name}
-        {product.categories.length > 0 && (
-          <Stack
-            component="ul"
-            direction="row"
-            useFlexGap
-            aria-label={`「${product.name}」的分類`}
-            sx={{ flexWrap: 'wrap', gap: 0.5, listStyle: 'none', m: 0, mt: 0.5, p: 0 }}
-          >
-            {product.categories.map(category => (
-              <Chip key={category.id} component="li" size="small" label={category.name} />
-            ))}
-          </Stack>
-        )}
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+          {product.photoUrl !== null && (
+            <ProductPhoto productName={product.name} photoUrl={product.photoUrl} size={40} />
+          )}
+          <div>
+            {product.name}
+            {product.categories.length > 0 && (
+              <Stack
+                component="ul"
+                direction="row"
+                useFlexGap
+                aria-label={`「${product.name}」的分類`}
+                sx={{ flexWrap: 'wrap', gap: 0.5, listStyle: 'none', m: 0, mt: 0.5, p: 0 }}
+              >
+                {product.categories.map(category => (
+                  <Chip key={category.id} component="li" size="small" label={category.name} />
+                ))}
+              </Stack>
+            )}
+          </div>
+        </Stack>
       </TableCell>
       <TableCell align="right" aria-label={`「${product.name}」的卡路里為 ${product.caloriesCost}`}>
         {product.caloriesCost}

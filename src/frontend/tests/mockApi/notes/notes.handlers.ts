@@ -12,6 +12,7 @@ import {
 import { productModel } from '@/entities/product';
 import { API_URL } from '@/shared/config';
 import { DelayedHttpResponse } from '../DelayedHttpResponse';
+import * as productsService from '../products/products.service';
 import * as notesService from './notes.service';
 
 export const handlers: HttpHandler[] = [
@@ -47,6 +48,7 @@ export const handlers: HttpHandler[] = [
           carbs: product?.carbs ?? null,
           sugar: product?.sugar ?? null,
           salt: product?.salt ?? null,
+          photoUrl: product ? productsService.photoUrlOf(product.id) : null,
         },
       } satisfies NoteItem;
     });

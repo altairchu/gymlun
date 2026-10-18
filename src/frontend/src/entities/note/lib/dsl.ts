@@ -13,6 +13,7 @@ const defaultProduct: Product = {
   carbs: null,
   sugar: null,
   salt: null,
+  photoUrl: null,
 };
 
 export const create = {

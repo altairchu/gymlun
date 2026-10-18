@@ -1,4 +1,4 @@
-import { http, type HttpHandler, type PathParams } from 'msw';
+import { http, HttpResponse, type HttpHandler, type PathParams } from 'msw';
 import {
   type ProductSelectOption,
   type CreateProductRequest,
@@ -7,6 +7,7 @@ import {
   type GetProductsResponse,
   type GetProductByIdResponse,
   type SuggestProductNutritionResponse,
+  type SetProductPhotoResponse,
 } from '@/entities/product';
 import { API_URL } from '@/shared/config';
 import { type SelectOption } from '@/shared/types';
@@ -44,6 +45,7 @@ export const handlers: HttpHandler[] = [
         sugar: product.sugar,
         salt: product.salt,
         isFavorite: product.isFavorite,
+        photoUrl: productsService.photoUrlOf(product.id),
       })),
       totalProductsCount,
     };
@@ -81,6 +83,7 @@ export const handlers: HttpHandler[] = [
           sugar,
           salt,
           isFavorite,
+          photoUrl: productsService.photoUrlOf(id),
         }),
       );
 
@@ -108,7 +111,43 @@ export const handlers: HttpHandler[] = [
       sugar: product.sugar,
       salt: product.salt,
       isFavorite: product.isFavorite,
+      photoUrl: productsService.photoUrlOf(product.id),
     });
+  }),
+
+  http.get<{ id: string }>(`${API_URL}/api/v1/products/:id/photo`, async ({ params }) => {
+    const photo = productsService.getPhoto(parseInt(params.id));
+    return photo ? await DelayedHttpResponse.file(photo) : await DelayedHttpResponse.notFound();
+  }),
+
+  http.put<{ id: string }>(`${API_URL}/api/v1/products/:id/photo`, async ({ params, request }) => {
+    const id = parseInt(params.id);
+    const photo = (await request.formData()).get('photo');
+
+    if (!productsService.getById(id)) {
+      return await DelayedHttpResponse.notFound();
+    }
+
+    if (!(photo instanceof Blob)) {
+      return await DelayedHttpResponse.badRequest();
+    }
+
+    productsService.setPhoto(id, photo);
+
+    return await DelayedHttpResponse.json<SetProductPhotoResponse>({
+      photoUrl: productsService.photoUrlOf(id) ?? '',
+    });
+  }),
+
+  http.delete<{ id: string }>(`${API_URL}/api/v1/products/:id/photo`, async ({ params }) => {
+    const id = parseInt(params.id);
+
+    if (!productsService.getById(id)) {
+      return await DelayedHttpResponse.notFound();
+    }
+
+    productsService.deletePhoto(id);
+    return new HttpResponse(null, { status: 204 });
   }),
 
   http.post<PathParams, CreateProductRequest>(`${API_URL}/api/v1/products`, async ({ request }) => {
