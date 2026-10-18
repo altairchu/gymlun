@@ -76,6 +76,8 @@ export interface CreateNotesResponse {
 export interface UpdateNoteRequest {
   id: number;
   note: NoteRequestBody;
+  /** Not sent: the food `note.productId` names, shown before the server confirms the change */
+  product?: Product;
 }
 
 export interface RecognizeProductItem {

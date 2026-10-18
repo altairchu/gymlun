@@ -52,7 +52,7 @@ export const noteApi = api.injectEndpoints({
         body: note,
       }),
       invalidatesTags: ['note'],
-      onQueryStarted: async ({ id, note }, { dispatch, queryFulfilled }) => {
+      onQueryStarted: async ({ id, note, product }, { dispatch, queryFulfilled }) => {
         const patch = dispatch(
           noteApi.util.updateQueryData('notes', { date: note.date }, notes => {
             const cached = notes.find(n => n.id === id);
@@ -60,6 +60,7 @@ export const noteApi = api.injectEndpoints({
             if (cached) {
               cached.time = note.time ?? cached.time;
               cached.productQuantity = note.productQuantity;
+              cached.product = product ?? cached.product;
             }
 
             notes.sort(compareByTime);
