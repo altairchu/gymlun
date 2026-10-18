@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The MCP `log_food` tool takes a time of day and a number of servings; `create_product` takes several categories and how the food is counted
 - AI apps such as Claude or ChatGPT connect to the MCP server with just a name and its URL: they register themselves (OAuth Dynamic Client Registration), and you allow each one on an approval page before it gets access
 - MCP tools for everything else the app does: change a food log (`update_food_log`), change or delete a product (`update_product`, `delete_product`), list, add, rename and delete categories (`list_categories`, `create_category`, `rename_category`, `delete_category`), and read and log your weight (`get_weight_logs`, `log_weight`); `list_products` lists one category's products with `categoryId`
+- A logged food can be swapped for another food when you change the log; the amount stays as entered, in grams or servings
 
 ### Changed
 

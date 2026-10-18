@@ -243,6 +243,41 @@ test('a logged food can be changed to another amount and time', async () => {
   expect(within(snack).getByText('2 份 · 300 g')).toBeVisible();
 });
 
+test('a logged food can be swapped for another food, keeping its grams', async () => {
+  const user = userEvent.setup();
+  await render(<IndexPage date={DAY_WITH_FOOD_LOGS} />);
+  await openTimeline(user);
+  await user.click(await screen.findByRole('button', { name: '修改Milk' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Milk' });
+
+  await user.click(within(dialog).getByRole('combobox', { name: '食物' }));
+  await user.click(await screen.findByRole('option', { name: 'Beef' }));
+  expect(within(dialog).getByText('180 g · 900 kcal')).toBeVisible();
+  await user.click(within(dialog).getByRole('button', { name: '儲存' }));
+
+  const breakfast = await screen.findByRole('listitem', { name: /^08:00，2 樣，978 kcal/ });
+  expect(within(breakfast).getByText('Beef')).toBeVisible();
+  expect(within(breakfast).queryByText('Milk')).not.toBeInTheDocument();
+});
+
+test('a food logged in servings is swapped for as many servings of the other food', async () => {
+  const user = userEvent.setup();
+  await render(<IndexPage date={DAY_WITH_FOOD_LOGS} />);
+  await openTimeline(user);
+  await user.click(await screen.findByRole('button', { name: '修改Apple' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Apple' });
+
+  await user.click(within(dialog).getByRole('combobox', { name: '食物' }));
+  await user.click(await screen.findByRole('option', { name: 'Banana' }));
+  expect(within(dialog).getByRole('textbox', { name: 'Banana數量' })).toHaveValue('1');
+  expect(within(dialog).getByText('100 g · 96 kcal')).toBeVisible();
+  await user.click(within(dialog).getByRole('button', { name: '儲存' }));
+
+  const breakfast = await screen.findByRole('listitem', { name: /^08:00，2 樣，204 kcal/ });
+  expect(within(breakfast).getByText('Banana')).toBeVisible();
+  expect(within(breakfast).getByText('1 份 · 100 g')).toBeVisible();
+});
+
 test('deleting a logged food takes a second tap to confirm', async () => {
   const user = userEvent.setup();
   await render(<IndexPage date={DAY_WITH_FOOD_LOGS} />);
