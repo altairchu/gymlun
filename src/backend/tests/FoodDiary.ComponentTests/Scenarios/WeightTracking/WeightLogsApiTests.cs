@@ -34,7 +34,7 @@ public class WeightLogsApiTests(InfrastructureFixture infrastructure)
         
         return CtxRunner.RunScenarioAsync(
             c => c.Given_authenticated_user(),
-            c => c.Given_existing_weightLogs(),
+            c => c.Given_existing_weightLogs(weightLogs),
             c => c.When_user_adds_weightLog(newWeightLog),
             c => c.Then_weight_is_successfully_saved(),
             c => c.When_user_gets_weightLogs("2024-10-03", "2024-10-05"),

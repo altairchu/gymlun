@@ -21,6 +21,8 @@ public static class ProductsToolMapper
     extension(Product product)
     {
         public CreateProductToolResponse ToCreateProductToolResponse() => new(ToResponseProduct(product));
+
+        public UpdateProductToolResponse ToUpdateProductToolResponse() => new(ToResponseProduct(product));
     }
 
     extension(QuantityUnit quantityUnit)

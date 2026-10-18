@@ -1,18 +1,27 @@
 # MCP server
 
-Food Diary can share your food logs and products with Claude, or any other compatible [MCP](https://modelcontextprotocol.io) client, so you can ask things like "what did I eat last week?", "plan my meals for next week" or "I had a plate of dumplings for lunch, log it".
+Food Diary can share your food logs, products and weight with Claude, or any other compatible [MCP](https://modelcontextprotocol.io) client, so you can ask things like "what did I eat last week?", "plan my meals for next week" or "I had a plate of dumplings for lunch, log it". The tools cover what the app itself does, apart from photo recognition and nutrition suggestions, which an AI app does by itself.
 
 ## Tools
 
 | Tool | Scope | What it does |
 |------|-------|--------------|
 | `get_food_logs` | `food:read` | Food logs over a date range in order of the time eaten, with daily and range totals |
-| `list_products` | `food:read` | Products in your catalogue; `favoritesOnly` lists the ones you eat often |
+| `list_products` | `food:read` | Products in your catalogue; `favoritesOnly` lists the ones you eat often, `categoryId` the ones in a category |
+| `list_categories` | `food:read` | Categories, with how many products each one has |
+| `get_weight_logs` | `food:read` | Your weight over a date range |
 | `log_food` | `food:write` | Logs a product on a date at a time of day or in a meal, in grams or servings; one serving unless told otherwise |
+| `update_food_log` | `food:write` | Changes a food log's date, time, meal, amount or product, keeping whatever is not passed |
 | `delete_food_log` | `food:write` | Deletes a food log, to undo a mistake |
 | `create_product` | `food:write` | Adds a product from nutrition values for one serving, in any number of categories, counted in grams or servings, marked as a favorite by default |
+| `update_product` | `food:write` | Changes a product's name, serving, nutrition values per 100 g, categories or favorite mark, keeping whatever is not passed |
+| `delete_product` | `food:write` | Deletes a product together with all its food logs |
+| `create_category` | `food:write` | Adds a category |
+| `rename_category` | `food:write` | Renames a category |
+| `delete_category` | `food:write` | Deletes a category; its products stay |
+| `log_weight` | `food:write` | Logs your weight on a date; a date holds one weight |
 
-A client that asks for no scope is granted both. To keep a client read-only, have it request only `food:read`: it then never sees the write tools.
+Both scopes also cover categories and weight. A client that asks for no scope is granted both. To keep a client read-only, have it request only `food:read`: it then never sees the write tools.
 
 The server is off by default. It lives at `/mcp` on your Food Diary domain, and you turn it on with the [MCP settings in the configuration reference](deployment.md#mcp-server).
 

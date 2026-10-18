@@ -20,7 +20,7 @@ public class ProductsTool(GetProductsQueryHandler getProductsQueryHandler)
 
         A `null` nutrition value means the product has no value recorded for it: unknown, not zero.
 
-        `isFavorite` marks a product the person eats often. Set `favoritesOnly` to list just those: check them first when the person says what they ate.
+        `isFavorite` marks a product the person eats often. Set `favoritesOnly` to list just those: check them first when the person says what they ate. Pass `categoryId`, from `list_categories`, to list just the products in one category.
 
         `totalCount` is the number of products matching the filters across all pages; request the next page while `pageNumber` × `pageSize` is below it. A page holds at most 100 products.
         """;
@@ -32,6 +32,7 @@ public class ProductsTool(GetProductsQueryHandler getProductsQueryHandler)
         [Description("Products per page, from 1 to 100.")] int pageSize,
         [Description("Case-insensitive part of the product name. Omit to list every product.")] string? productName = null,
         [Description("List only the products the person eats often.")] bool favoritesOnly = false,
+        [Description("Id of a category, from `list_categories`, to list only its products.")] int? categoryId = null,
         CancellationToken cancellationToken = default)
     {
         if (pageNumber < 1)
@@ -50,7 +51,7 @@ public class ProductsTool(GetProductsQueryHandler getProductsQueryHandler)
         }
 
         var result = await getProductsQueryHandler.Handle(
-            new GetProductsQuery(pageNumber, pageSize, productName, CategoryId: null, favoritesOnly),
+            new GetProductsQuery(pageNumber, pageSize, productName, categoryId, favoritesOnly),
             cancellationToken);
 
         return result.ToListProductsToolResponse(pageNumber, pageSize);

@@ -2,8 +2,11 @@ using System.ComponentModel;
 using FoodDiary.Application.Categories.Create;
 using FoodDiary.Application.Categories.Get;
 using FoodDiary.Application.Products.Create;
+using FoodDiary.Application.Products.Delete;
+using FoodDiary.Application.Products.Update;
 using FoodDiary.Domain.Entities;
 using FoodDiary.Domain.Enums;
+using FoodDiary.Domain.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
@@ -15,13 +18,17 @@ namespace FoodDiary.API.Mcp.Tools.Products;
 public class ProductsWriteTool(
     GetCategoriesQueryHandler getCategoriesQueryHandler,
     CreateCategoryCommandHandler createCategoryCommandHandler,
-    CreateProductCommandHandler createProductCommandHandler)
+    CreateProductCommandHandler createProductCommandHandler,
+    IProductRepository productRepository,
+    UpdateProductCommandHandler updateProductCommandHandler,
+    DeleteProductCommandHandler deleteProductCommandHandler)
 {
     internal const int MinServingGrams = 1;
     internal const int MaxServingGrams = 1000;
     internal const int MaxCaloriesPer100g = 1000;
     internal const int MaxCategories = 10;
     internal const int MaxCategoryNameLength = 64;
+    internal const int MaxNutrientGramsPer100g = 100;
 
     private const string CreateProductToolDescription =
         """
@@ -34,6 +41,22 @@ public class ProductsWriteTool(
         `categories` group products, e.g. ["Dumplings", "Frozen"], in any language; omit them when none fits. An existing category with the same name, ignoring case, is reused, otherwise one is created.
 
         `isFavorite` defaults to true: a product added through a conversation is usually one the person eats often.
+        """;
+
+    private const string UpdateProductToolDescription =
+        """
+        Changes one product by its `id`, as returned by `list_products`, and returns it as it is now. Pass only what changes: everything else stays as it was.
+
+        Unlike `create_product`, nutrition values here are per 100 g, as `list_products` shows them under `per100g`: `caloriesPer100g` in kilocalories, the rest in grams (salt is sodium chloride). `defaultQuantity` is the usual portion in grams, or the grams in one piece or serving when `countBy` is `servings`; changing it keeps the values per 100 g.
+
+        `categories` replaces all of the product's categories: pass the whole list, or an empty list to remove them all. As in `create_product`, an existing category with the same name, ignoring case, is reused, otherwise one is created.
+
+        Food logs of the product keep their grams, so their nutrition follows the new values.
+        """;
+
+    private const string DeleteProductToolDescription =
+        """
+        Deletes one product by its `id`, as returned by `list_products`. Every food log of the product is deleted with it, so make sure the person means it; to fix a wrong value, use `update_product` instead.
         """;
 
     [McpServerTool(Name = "create_product", ReadOnly = false, Destructive = false, Idempotent = false, OpenWorld = false)]
@@ -112,6 +135,120 @@ public class ProductsWriteTool(
             CreateProductResult.Success success => success.Product.ToCreateProductToolResponse(),
             CreateProductResult.ProductAlreadyExists => throw new McpException($"A product named '{name}' already exists. Find it with `list_products`."),
             _ => throw new McpException($"Product '{name}' could not be created.")
+        };
+    }
+
+    [McpServerTool(Name = "update_product", ReadOnly = false, Destructive = true, Idempotent = true, OpenWorld = false)]
+    [Description(UpdateProductToolDescription)]
+    public async Task<UpdateProductToolResponse> UpdateProduct(
+        [Description("Id of the product to change.")] int id,
+        [Description("New name, 1 to 100 characters.")] string? name = null,
+        [Description("New usual portion, or grams in one piece or serving, from 1 to 1000.")] int? defaultQuantity = null,
+        [Description("`grams` or `servings`.")] string? countBy = null,
+        [Description("Kilocalories in 100 g, from 1 to 1000.")] int? caloriesPer100g = null,
+        [Description("Grams of protein in 100 g.")] decimal? proteinPer100g = null,
+        [Description("Grams of fats in 100 g.")] decimal? fatsPer100g = null,
+        [Description("Grams of carbs in 100 g.")] decimal? carbsPer100g = null,
+        [Description("Grams of sugar in 100 g.")] decimal? sugarPer100g = null,
+        [Description("Grams of salt in 100 g.")] decimal? saltPer100g = null,
+        [Description("Whether the person eats it often.")] bool? isFavorite = null,
+        [Description("All of the product's category names, at most 10, each 1 to 64 characters.")] string[]? categories = null,
+        CancellationToken cancellationToken = default)
+    {
+        name = name?.Trim();
+
+        if (name?.Length is < 1 or > 100)
+        {
+            throw new McpException("`name` must be 1 to 100 characters.");
+        }
+
+        if (defaultQuantity is < MinServingGrams or > MaxServingGrams)
+        {
+            throw new McpException($"Requested defaultQuantity {defaultQuantity}; it must be from {MinServingGrams} to {MaxServingGrams}.");
+        }
+
+        if (caloriesPer100g is < 1 or > MaxCaloriesPer100g)
+        {
+            throw new McpException($"Requested caloriesPer100g {caloriesPer100g}; it must be from 1 to {MaxCaloriesPer100g}.");
+        }
+
+        decimal? Nutrient(decimal? per100g, decimal? current, string parameter) => per100g switch
+        {
+            null => current,
+            < 0 or > MaxNutrientGramsPer100g => throw new McpException(
+                $"`{parameter}` must be from 0 to {MaxNutrientGramsPer100g} grams per 100 g."),
+            { } value => value
+        };
+
+        var quantityUnit = string.IsNullOrWhiteSpace(countBy)
+            ? (QuantityUnit?)null
+            : CountBy.ToQuantityUnit(countBy)
+              ?? throw new McpException($"Unknown countBy '{countBy}'. Use {CountBy.Grams} or {CountBy.Servings}.");
+
+        var categoryNames = categories is null ? null : ToCategoryNames(categories);
+
+        var productQuery = productRepository.LoadCategories(productRepository.GetQueryWithoutTracking().Where(p => p.Id == id));
+        var product = (await productRepository.GetByQueryAsync(productQuery, cancellationToken)).FirstOrDefault()
+                      ?? throw new McpException($"Product {id} not found. Look it up with `list_products`.");
+
+        var productCategories = categoryNames is null
+            ? product.Categories.ToList()
+            : await FindOrCreateCategories(categoryNames, cancellationToken);
+
+        var updatedProduct = new Product
+        {
+            Id = id,
+            Name = name ?? product.Name,
+            CaloriesCost = caloriesPer100g ?? product.CaloriesCost,
+            DefaultQuantity = defaultQuantity ?? product.DefaultQuantity,
+            QuantityUnit = quantityUnit ?? product.QuantityUnit,
+            IsFavorite = isFavorite ?? product.IsFavorite,
+            Protein = Nutrient(proteinPer100g, product.Protein, nameof(proteinPer100g)),
+            Fats = Nutrient(fatsPer100g, product.Fats, nameof(fatsPer100g)),
+            Carbs = Nutrient(carbsPer100g, product.Carbs, nameof(carbsPer100g)),
+            Sugar = Nutrient(sugarPer100g, product.Sugar, nameof(sugarPer100g)),
+            Salt = Nutrient(saltPer100g, product.Salt, nameof(saltPer100g)),
+            Categories = productCategories
+        };
+
+        var result = await updateProductCommandHandler.Handle(
+            new UpdateProductCommand(
+                id,
+                updatedProduct.Name,
+                updatedProduct.CaloriesCost,
+                updatedProduct.DefaultQuantity,
+                updatedProduct.QuantityUnit,
+                productCategories.Select(c => c.Id).ToList(),
+                updatedProduct.Protein,
+                updatedProduct.Fats,
+                updatedProduct.Carbs,
+                updatedProduct.Sugar,
+                updatedProduct.Salt,
+                updatedProduct.IsFavorite),
+            cancellationToken);
+
+        return result switch
+        {
+            UpdateProductResult.Success => updatedProduct.ToUpdateProductToolResponse(),
+            UpdateProductResult.NameAlreadyExists => throw new McpException($"Another product is already named '{updatedProduct.Name}'. Find it with `list_products`."),
+            UpdateProductResult.NotFound => throw new McpException($"Product {id} not found. Look it up with `list_products`."),
+            _ => throw new McpException($"Product {id} could not be changed.")
+        };
+    }
+
+    [McpServerTool(Name = "delete_product", ReadOnly = false, Destructive = true, Idempotent = true, OpenWorld = false)]
+    [Description(DeleteProductToolDescription)]
+    public async Task<DeleteProductToolResponse> DeleteProduct(
+        [Description("Id of the product to delete.")] int id,
+        CancellationToken cancellationToken)
+    {
+        var result = await deleteProductCommandHandler.Handle(new DeleteProductCommand(id), cancellationToken);
+
+        return result switch
+        {
+            DeleteProductResult.Success => new DeleteProductToolResponse(id),
+            DeleteProductResult.NotFound => throw new McpException($"Product {id} not found."),
+            _ => throw new McpException($"Product {id} could not be deleted.")
         };
     }
 
