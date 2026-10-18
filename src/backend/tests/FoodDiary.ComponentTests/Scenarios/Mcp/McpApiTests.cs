@@ -1,12 +1,21 @@
 using FoodDiary.ComponentTests.Dsl;
 using FoodDiary.ComponentTests.Infrastructure;
+using FoodDiary.Domain.WeightTracking;
 
 namespace FoodDiary.ComponentTests.Scenarios.Mcp;
 
 public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApiContext>(infrastructure)
 {
-    private static readonly string[] ReadTools = ["get_food_logs", "list_products"];
-    private static readonly string[] AllTools = [..ReadTools, "log_food", "delete_food_log", "create_product"];
+    private static readonly string[] ReadTools = ["get_food_logs", "list_products", "list_categories", "get_weight_logs"];
+
+    private static readonly string[] AllTools =
+    [
+        ..ReadTools,
+        "log_food", "update_food_log", "delete_food_log",
+        "create_product", "update_product", "delete_product",
+        "create_category", "rename_category", "delete_category",
+        "log_weight"
+    ];
 
     [Scenario]
     public Task The_client_can_discover_authorization_server()
@@ -123,6 +132,144 @@ public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApi
             c => c.When_mcp_client_calls_delete_food_log(note),
             c => c.Then_mcp_client_lists_tools(AllTools),
             c => c.Then_food_log_is_deleted(note));
+    }
+
+    [Scenario]
+    public Task The_client_can_update_food_log()
+    {
+        var note = Create.Note().WithDate("2026-09-01").WithTime("12:30").WithProduct("Oatmeal", quantity: 60).Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_notes(note),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_update_food_log(note, time: "15:45", quantity: 80),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_food_log_is_changed_to(note, "15:45", "AfternoonSnack", 80));
+    }
+
+    [Scenario]
+    public Task The_client_can_list_products_in_category()
+    {
+        var meat = Create.Category("肉類").Please();
+        var chicken = Create.Product("雞胸肉").WithCategories(meat).Please();
+        var rice = Create.Product("白飯").Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_products(chicken, rice),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_list_products_in_category(meat),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_products_contain(chicken));
+    }
+
+    [Scenario]
+    public Task The_client_can_update_product()
+    {
+        var chicken = Create.Product("雞胸肉").Please();
+        string[] categories = ["肉類", "高蛋白"];
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_products(chicken),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_update_product(chicken, caloriesPer100g: 165, categories),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_product_is_changed_to(chicken, 165, categories));
+    }
+
+    [Scenario]
+    public Task The_client_can_delete_product_with_its_food_logs()
+    {
+        var note = Create.Note().WithDate("2026-09-01").WithProduct("Oatmeal", quantity: 60).Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_notes(note),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_delete_product(note.Product!),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_product_and_its_food_logs_are_deleted(note.Product!));
+    }
+
+    [Scenario]
+    public Task The_client_can_list_categories()
+    {
+        var meat = Create.Category("Meat").Please();
+        var frozen = Create.Category("Frozen").Please();
+        var dumplings = Create.Product("餃子").WithCategories(meat, frozen).Please();
+        var chicken = Create.Product("雞胸肉").WithCategories(meat).Please();
+        (string Name, int ProductCount)[] expectedCategories = [("Frozen", 1), ("Meat", 2)];
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_products(dumplings, chicken),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_list_categories(),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_categories_are_listed_with_product_counts(expectedCategories));
+    }
+
+    [Scenario]
+    public Task The_client_can_create_category()
+    {
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_create_category("飲品"),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_category_is_saved_as("飲品"));
+    }
+
+    [Scenario]
+    public Task The_client_can_rename_category()
+    {
+        var category = Create.Category("Meat").Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_categories(category),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_rename_category(category, "肉類"),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_category_is_saved_as("肉類"));
+    }
+
+    [Scenario]
+    public Task The_client_can_delete_category_and_its_products_stay()
+    {
+        var meat = Create.Category("肉類").Please();
+        var chicken = Create.Product("雞胸肉").WithCategories(meat).Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_products(chicken),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_delete_category(meat),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_category_is_deleted_and_its_products_stay(meat, chicken));
+    }
+
+    [Scenario]
+    public Task The_client_can_get_weight_logs()
+    {
+        WeightLog[] weightLogs =
+        [
+            new() { Date = DateOnly.Parse("2026-08-31"), Weight = 73.1m },
+            new() { Date = DateOnly.Parse("2026-09-01"), Weight = 72.8m },
+            new() { Date = DateOnly.Parse("2026-09-03"), Weight = 72.4m }
+        ];
+        (string Date, decimal Weight)[] expectedWeightLogs = [("2026-09-01", 72.8m), ("2026-09-03", 72.4m)];
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_weight_logs(weightLogs),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_get_weight_logs("2026-09-01", "2026-09-07"),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_weight_logs_are(expectedWeightLogs));
+    }
+
+    [Scenario]
+    public Task The_client_can_log_weight()
+    {
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_log_weight("2026-09-01", 72.4m),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_weight_is_logged("2026-09-01", 72.4m));
     }
 
     [Scenario]

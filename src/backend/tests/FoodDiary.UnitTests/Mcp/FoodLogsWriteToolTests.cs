@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using FoodDiary.API.Mcp.Tools.FoodLogs;
 using FoodDiary.Application.Notes.Create;
 using FoodDiary.Application.Notes.Delete;
+using FoodDiary.Application.Notes.Update;
 using FoodDiary.Domain.Entities;
 using FoodDiary.Domain.Enums;
 using FoodDiary.Domain.Repositories;
@@ -17,10 +18,12 @@ namespace FoodDiary.UnitTests.Mcp;
 public class FoodLogsWriteToolTests
 {
     private static readonly DateOnly September1 = new(2026, 9, 1);
+    private static readonly DateOnly September2 = new(2026, 9, 2);
 
     private readonly Mock<IProductsRepository> _productsRepository = new();
     private readonly Mock<INotesRepository> _notesRepository = new();
     private readonly List<Note> _addedNotes = [];
+    private Note? _updatedNote;
 
     private static readonly Product Dumpling = new()
     {
@@ -52,7 +55,19 @@ public class FoodLogsWriteToolTests
                 _addedNotes.Add(note);
             })
             .Returns(Task.CompletedTask);
+        _notesRepository
+            .Setup(r => r.Update(It.IsAny<Note>(), It.IsAny<CancellationToken>()))
+            .Callback((Note note, CancellationToken _) => _updatedNote = note)
+            .Returns(Task.CompletedTask);
     }
+
+    private FoodLogsWriteTool CreateTool() => new(
+        _productsRepository.Object,
+        _notesRepository.Object,
+        new CreateNoteCommandHandler(_productsRepository.Object, _notesRepository.Object),
+        new UpdateNoteCommandHandler(_productsRepository.Object, _notesRepository.Object),
+        new DeleteNoteCommandHandler(Mock.Of<INoteRepository>(), Mock.Of<INotesOrderCalculator>()),
+        new CaloriesCalculator());
 
     private async Task<JsonNode> LogFood(
         int? quantity = null,
@@ -60,14 +75,7 @@ public class FoodLogsWriteToolTests
         string? time = null,
         string? mealType = null)
     {
-        var tool = new FoodLogsWriteTool(
-            _productsRepository.Object,
-            _notesRepository.Object,
-            new CreateNoteCommandHandler(_productsRepository.Object, _notesRepository.Object),
-            new DeleteNoteCommandHandler(Mock.Of<INoteRepository>(), Mock.Of<INotesOrderCalculator>()),
-            new CaloriesCalculator());
-
-        var response = await tool.LogFood(September1, Dumpling.Id, quantity, servings, time, mealType, CancellationToken.None);
+        var response = await CreateTool().LogFood(September1, Dumpling.Id, quantity, servings, time, mealType, CancellationToken.None);
 
         return JsonSerializer.SerializeToNode(response, McpJsonUtilities.DefaultOptions)!;
     }
@@ -159,16 +167,94 @@ public class FoodLogsWriteToolTests
             Salt = null
         };
         _productsRepository.Setup(r => r.FindById(heavy.Id, It.IsAny<CancellationToken>())).ReturnsAsync(heavy);
-        var tool = new FoodLogsWriteTool(
-            _productsRepository.Object,
-            _notesRepository.Object,
-            new CreateNoteCommandHandler(_productsRepository.Object, _notesRepository.Object),
-            new DeleteNoteCommandHandler(Mock.Of<INoteRepository>(), Mock.Of<INotesOrderCalculator>()),
-            new CaloriesCalculator());
 
-        var act = () => tool.LogFood(September1, heavy.Id, servings: 6, time: "19:00", cancellationToken: CancellationToken.None);
+        var act = () => CreateTool().LogFood(September1, heavy.Id, servings: 6, time: "19:00", cancellationToken: CancellationToken.None);
 
         await act.Should().ThrowExactlyAsync<McpException>()
             .WithMessage("That is 6000 g; it must be from 1 to 5000 grams. Check `servings`.");
+    }
+
+    private Note GivenLoggedLunch()
+    {
+        var lunch = new Note
+        {
+            Id = 41,
+            Date = September1,
+            Time = new TimeOnly(12, 30),
+            MealType = MealType.Lunch,
+            ProductId = Dumpling.Id,
+            ProductQuantity = 50,
+            DisplayOrder = 2,
+            Product = Dumpling
+        };
+        _notesRepository.Setup(r => r.FindById(lunch.Id, It.IsAny<CancellationToken>())).ReturnsAsync(lunch);
+
+        return lunch;
+    }
+
+    private async Task<JsonNode> UpdateFoodLog(
+        int id,
+        DateOnly? date = null,
+        string? time = null,
+        string? mealType = null,
+        int? quantity = null,
+        decimal? servings = null)
+    {
+        var response = await CreateTool().UpdateFoodLog(id, date, time, mealType, quantity, servings, cancellationToken: CancellationToken.None);
+
+        return JsonSerializer.SerializeToNode(response, McpJsonUtilities.DefaultOptions)!;
+    }
+
+    [Fact]
+    public async Task UpdatingOnlyTime_MovesToTheMealOfThatTime_AndKeepsTheRest()
+    {
+        var lunch = GivenLoggedLunch();
+
+        var json = await UpdateFoodLog(lunch.Id, time: "15:45");
+
+        json["mealType"]!.GetValue<string>().Should().Be("AfternoonSnack");
+        json["foodLog"]!["time"]!.GetValue<string>().Should().Be("15:45");
+        json["foodLog"]!["quantity"]!.GetValue<int>().Should().Be(50);
+        _updatedNote.Should().BeEquivalentTo(new
+        {
+            Date = September1,
+            Time = new TimeOnly(15, 45),
+            MealType = MealType.AfternoonSnack,
+            ProductQuantity = 50
+        });
+    }
+
+    [Fact]
+    public async Task UpdatingServings_LogsServingsOfDefaultQuantity_AndKeepsTimeAndOrder()
+    {
+        var lunch = GivenLoggedLunch();
+
+        var json = await UpdateFoodLog(lunch.Id, servings: 4);
+
+        json["foodLog"]!["quantity"]!.GetValue<int>().Should().Be(100);
+        _updatedNote.Should().BeEquivalentTo(new { Time = new TimeOnly(12, 30), MealType = MealType.Lunch, DisplayOrder = 2 });
+    }
+
+    [Fact]
+    public async Task UpdatingDate_KeepsTime_AndPutsItLastInThatMeal()
+    {
+        var lunch = GivenLoggedLunch();
+        _notesRepository
+            .Setup(r => r.FindByDate(September2, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Note { Id = 50, Date = September2, MealType = MealType.Lunch, DisplayOrder = 3 }]);
+
+        var json = await UpdateFoodLog(lunch.Id, date: September2);
+
+        json["date"]!.GetValue<string>().Should().Be("2026-09-02");
+        _updatedNote.Should().BeEquivalentTo(new { Date = September2, Time = new TimeOnly(12, 30), DisplayOrder = 4 });
+    }
+
+    [Fact]
+    public async Task UpdatingUnknownFoodLog_IsToolError()
+    {
+        var act = () => UpdateFoodLog(404, quantity: 100);
+
+        await act.Should().ThrowExactlyAsync<McpException>().WithMessage("Food log 404 not found. Find it with `get_food_logs`.");
+        _updatedNote.Should().BeNull();
     }
 }

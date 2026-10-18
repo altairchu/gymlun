@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Globalization;
 using FoodDiary.Application.Notes.Create;
 using FoodDiary.Application.Notes.Delete;
+using FoodDiary.Application.Notes.Update;
 using FoodDiary.Domain.Entities;
 using FoodDiary.Domain.Enums;
 using FoodDiary.Domain.Repositories.v2;
@@ -18,6 +19,7 @@ public class FoodLogsWriteTool(
     IProductsRepository productsRepository,
     INotesRepository notesRepository,
     CreateNoteCommandHandler createNoteCommandHandler,
+    UpdateNoteCommandHandler updateNoteCommandHandler,
     DeleteNoteCommandHandler deleteNoteCommandHandler,
     ICaloriesCalculator caloriesCalculator)
 {
@@ -40,6 +42,15 @@ public class FoodLogsWriteTool(
         `date` is a calendar date with no time or timezone: use the person's local date.
         """;
 
+    private const string UpdateFoodLogToolDescription =
+        """
+        Changes one food log by its `id`, as returned by `get_food_logs` or `log_food`, and returns it as it is now. Pass only what changes: everything else stays as it was.
+
+        The amount works as in `log_food`: `quantity` in grams, or `servings` of the product's `defaultQuantity` grams, never both. `productId` swaps the product eaten and keeps the grams unless a new amount is passed too.
+
+        `time` and `mealType` work as in `log_food`: with `time` the meal follows from it, with only `mealType` the food log moves to that meal's usual time. `date` moves it to another day and keeps its time.
+        """;
+
     private const string DeleteFoodLogToolDescription =
         """
         Deletes one food log by its `id`, as returned by `get_food_logs` or `log_food`. Use it to undo a food log that was logged by mistake.
@@ -56,40 +67,14 @@ public class FoodLogsWriteTool(
         [Description("Meal slot: Breakfast, SecondBreakfast, Lunch, AfternoonSnack or Dinner. Omit it to follow from `time`.")] string? mealType = null,
         CancellationToken cancellationToken = default)
     {
-        if (quantity is not null && servings is not null)
-        {
-            throw new McpException("Pass either `quantity` or `servings`, not both.");
-        }
-
-        if (quantity is < MinQuantity or > MaxQuantity)
-        {
-            throw new McpException($"Requested quantity {quantity}; it must be from {MinQuantity} to {MaxQuantity} grams.");
-        }
-
-        if (servings is <= 0 or > MaxServings)
-        {
-            throw new McpException($"Requested servings {servings}; it must be more than 0 and at most {MaxServings}.");
-        }
+        ValidateAmount(quantity, servings);
 
         var (noteTime, meal) = MealType.ResolveTimeAndMeal(ParseTime(time), ParseMealType(mealType))
                                ?? throw new McpException("Pass `time`, `mealType` or both.");
 
-        var product = await productsRepository.FindById(productId, cancellationToken)
-                      ?? throw new McpException($"Product {productId} not found. Look it up with `list_products`.");
-
-        var grams = quantity ?? ServingsToGrams(servings ?? 1, product);
-
-        if (grams is < MinQuantity or > MaxQuantity)
-        {
-            throw new McpException($"That is {grams} g; it must be from {MinQuantity} to {MaxQuantity} grams. Check `servings`.");
-        }
-
-        var notesOfDate = await notesRepository.FindByDate(date, cancellationToken);
-        var displayOrder = notesOfDate
-            .Where(note => note.MealType == meal)
-            .Select(note => note.DisplayOrder + 1)
-            .DefaultIfEmpty(0)
-            .Max();
+        var product = await FindProduct(productId, cancellationToken);
+        var grams = ValidateGrams(quantity ?? ServingsToGrams(servings ?? 1, product));
+        var displayOrder = await NextDisplayOrder(date, meal, cancellationToken);
 
         var result = await createNoteCommandHandler.Handle(
             new CreateNoteCommand(date, noteTime, meal, productId, grams, displayOrder),
@@ -114,6 +99,57 @@ public class FoodLogsWriteTool(
         return new LogFoodResponse(date, meal.ToString(), FoodLogsToolMapper.ToFoodLog(note, caloriesCalculator));
     }
 
+    [McpServerTool(Name = "update_food_log", ReadOnly = false, Destructive = true, Idempotent = true, OpenWorld = false)]
+    [Description(UpdateFoodLogToolDescription)]
+    public async Task<UpdateFoodLogResponse> UpdateFoodLog(
+        [Description("Id of the food log to change.")] int id,
+        [Description("New calendar date, `yyyy-MM-dd`.")] DateOnly? date = null,
+        [Description("New time of day it was eaten, `HH:mm`, in the person's local time.")] string? time = null,
+        [Description("New meal slot: Breakfast, SecondBreakfast, Lunch, AfternoonSnack or Dinner.")] string? mealType = null,
+        [Description("New grams eaten, from 1 to 5000. Omit it when passing `servings`.")] int? quantity = null,
+        [Description("New pieces or servings eaten, more than 0 and at most 100. Omit it when passing `quantity`.")] decimal? servings = null,
+        [Description("Id of the product eaten instead.")] int? productId = null,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateAmount(quantity, servings);
+
+        var note = await notesRepository.FindById(id, cancellationToken)
+                   ?? throw new McpException($"Food log {id} not found. Find it with `get_food_logs`.");
+
+        var (noteTime, meal) = MealType.ResolveTimeAndMeal(ParseTime(time), ParseMealType(mealType))
+                               ?? (note.Time, note.MealType);
+
+        var product = await FindProduct(productId ?? note.ProductId, cancellationToken);
+        var grams = ValidateGrams(quantity ?? (servings is { } count ? ServingsToGrams(count, product) : note.ProductQuantity));
+        var noteDate = date ?? note.Date;
+
+        var displayOrder = noteDate == note.Date && meal == note.MealType
+            ? note.DisplayOrder
+            : await NextDisplayOrder(noteDate, meal, cancellationToken);
+
+        var result = await updateNoteCommandHandler.Handle(
+            new UpdateNoteCommand(id, noteDate, noteTime, meal, product.Id, grams, displayOrder),
+            cancellationToken);
+
+        if (result is not UpdateNoteResult.Success)
+        {
+            throw new McpException($"Food log {id} could not be changed.");
+        }
+
+        var updatedNote = new Note
+        {
+            Id = id,
+            Date = noteDate,
+            Time = noteTime,
+            MealType = meal,
+            ProductId = product.Id,
+            ProductQuantity = grams,
+            Product = product
+        };
+
+        return new UpdateFoodLogResponse(noteDate, meal.ToString(), FoodLogsToolMapper.ToFoodLog(updatedNote, caloriesCalculator));
+    }
+
     [McpServerTool(Name = "delete_food_log", ReadOnly = false, Destructive = true, Idempotent = true, OpenWorld = false)]
     [Description(DeleteFoodLogToolDescription)]
     public async Task<DeleteFoodLogResponse> DeleteFoodLog(
@@ -128,6 +164,43 @@ public class FoodLogsWriteTool(
             DeleteNoteResult.NotFound => throw new McpException($"Food log {id} not found."),
             _ => throw new McpException($"Food log {id} could not be deleted.")
         };
+    }
+
+    private static void ValidateAmount(int? quantity, decimal? servings)
+    {
+        if (quantity is not null && servings is not null)
+        {
+            throw new McpException("Pass either `quantity` or `servings`, not both.");
+        }
+
+        if (quantity is < MinQuantity or > MaxQuantity)
+        {
+            throw new McpException($"Requested quantity {quantity}; it must be from {MinQuantity} to {MaxQuantity} grams.");
+        }
+
+        if (servings is <= 0 or > MaxServings)
+        {
+            throw new McpException($"Requested servings {servings}; it must be more than 0 and at most {MaxServings}.");
+        }
+    }
+
+    private static int ValidateGrams(int grams) => grams is < MinQuantity or > MaxQuantity
+        ? throw new McpException($"That is {grams} g; it must be from {MinQuantity} to {MaxQuantity} grams. Check `servings`.")
+        : grams;
+
+    private async Task<Product> FindProduct(int productId, CancellationToken cancellationToken) =>
+        await productsRepository.FindById(productId, cancellationToken)
+        ?? throw new McpException($"Product {productId} not found. Look it up with `list_products`.");
+
+    private async Task<int> NextDisplayOrder(DateOnly date, MealType meal, CancellationToken cancellationToken)
+    {
+        var notesOfDate = await notesRepository.FindByDate(date, cancellationToken);
+
+        return notesOfDate
+            .Where(note => note.MealType == meal)
+            .Select(note => note.DisplayOrder + 1)
+            .DefaultIfEmpty(0)
+            .Max();
     }
 
     private static int ServingsToGrams(decimal servings, Product product) =>

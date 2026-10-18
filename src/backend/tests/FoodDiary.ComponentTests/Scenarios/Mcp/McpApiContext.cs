@@ -10,9 +10,13 @@ using FoodDiary.API.Mcp;
 using FoodDiary.API.Mcp.Authorization;
 using FoodDiary.ComponentTests.Infrastructure;
 using FoodDiary.Domain.Entities;
+using FoodDiary.Domain.Enums;
+using FoodDiary.Domain.WeightTracking;
+using FoodDiary.Infrastructure;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -106,6 +110,16 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         return Factory.SeedDataAsync(products);
     }
 
+    public Task Given_categories(params Category[] categories)
+    {
+        return Factory.SeedDataAsync(categories);
+    }
+
+    public Task Given_weight_logs(params WeightLog[] weightLogs)
+    {
+        return Factory.SeedDataAsync(weightLogs);
+    }
+
     public async Task When_mcp_client_connects()
     {
         await using var mcpClient = await ConnectMcpClient();
@@ -149,6 +163,92 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
             ["time"] = time,
             ["servings"] = servings,
             ["productId"] = product.Id
+        });
+    }
+
+    public Task When_mcp_client_calls_update_food_log(Note note, string time, int quantity)
+    {
+        return When_mcp_client_calls_listed_tool("update_food_log", new Dictionary<string, object?>
+        {
+            ["id"] = note.Id,
+            ["time"] = time,
+            ["quantity"] = quantity
+        });
+    }
+
+    public Task When_mcp_client_calls_list_products_in_category(Category category)
+    {
+        return When_mcp_client_calls_listed_tool("list_products", new Dictionary<string, object?>
+        {
+            ["pageNumber"] = 1,
+            ["pageSize"] = 100,
+            ["categoryId"] = category.Id
+        });
+    }
+
+    public Task When_mcp_client_calls_update_product(Product product, int caloriesPer100g, string[] categories)
+    {
+        return When_mcp_client_calls_listed_tool("update_product", new Dictionary<string, object?>
+        {
+            ["id"] = product.Id,
+            ["caloriesPer100g"] = caloriesPer100g,
+            ["categories"] = categories
+        });
+    }
+
+    public Task When_mcp_client_calls_delete_product(Product product)
+    {
+        return When_mcp_client_calls_listed_tool("delete_product", new Dictionary<string, object?>
+        {
+            ["id"] = product.Id
+        });
+    }
+
+    public Task When_mcp_client_calls_list_categories()
+    {
+        return When_mcp_client_calls_listed_tool("list_categories", new Dictionary<string, object?>());
+    }
+
+    public Task When_mcp_client_calls_create_category(string name)
+    {
+        return When_mcp_client_calls_listed_tool("create_category", new Dictionary<string, object?>
+        {
+            ["name"] = name
+        });
+    }
+
+    public Task When_mcp_client_calls_rename_category(Category category, string name)
+    {
+        return When_mcp_client_calls_listed_tool("rename_category", new Dictionary<string, object?>
+        {
+            ["id"] = category.Id,
+            ["name"] = name
+        });
+    }
+
+    public Task When_mcp_client_calls_delete_category(Category category)
+    {
+        return When_mcp_client_calls_listed_tool("delete_category", new Dictionary<string, object?>
+        {
+            ["id"] = category.Id
+        });
+    }
+
+    public Task When_mcp_client_calls_get_weight_logs(string from, string to)
+    {
+        return When_mcp_client_calls_listed_tool("get_weight_logs", new Dictionary<string, object?>
+        {
+            ["from"] = from,
+            ["to"] = to
+        });
+    }
+
+    public Task When_mcp_client_calls_log_weight(string date, decimal weight)
+    {
+        return When_mcp_client_calls_listed_tool("log_weight", new Dictionary<string, object?>
+        {
+            ["date"] = date,
+            ["weight"] = weight
         });
     }
 
@@ -582,6 +682,109 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         return Task.CompletedTask;
     }
 
+    public async Task Then_food_log_is_changed_to(Note note, string time, string mealType, int quantity)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        using var response = JsonDocument.Parse(ToolResultText());
+        response.RootElement.GetProperty("mealType").GetString().Should().Be(mealType);
+        response.RootElement.GetProperty("foodLog").GetProperty("time").GetString().Should().Be(time);
+
+        var savedNote = await QueryDatabase(db => db.Notes.AsNoTracking().SingleAsync(n => n.Id == note.Id));
+        savedNote.Should().BeEquivalentTo(new
+        {
+            note.Date,
+            Time = TimeOnly.Parse(time, CultureInfo.InvariantCulture),
+            MealType = Enum.Parse<MealType>(mealType),
+            ProductQuantity = quantity
+        });
+    }
+
+    public async Task Then_product_is_changed_to(Product product, int caloriesPer100g, string[] categories)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        using var response = JsonDocument.Parse(ToolResultText());
+        var changedProduct = response.RootElement.GetProperty("product");
+        changedProduct.GetProperty("name").GetString().Should().Be(product.Name);
+        changedProduct.GetProperty("per100g").GetProperty("calories").GetInt32().Should().Be(caloriesPer100g);
+
+        var savedProduct = await QueryDatabase(db => db.Products.AsNoTracking()
+            .Include(p => p.Categories)
+            .SingleAsync(p => p.Id == product.Id));
+        savedProduct.CaloriesCost.Should().Be(caloriesPer100g);
+        savedProduct.Protein.Should().Be(product.Protein);
+        savedProduct.Categories.Select(c => c.Name).Should().BeEquivalentTo(categories);
+    }
+
+    public async Task Then_product_and_its_food_logs_are_deleted(Product product)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        using var response = JsonDocument.Parse(ToolResultText());
+        response.RootElement.GetProperty("deletedId").GetInt32().Should().Be(product.Id);
+
+        (await QueryDatabase(db => db.Products.AnyAsync(p => p.Id == product.Id))).Should().BeFalse();
+        (await QueryDatabase(db => db.Notes.AnyAsync(n => n.ProductId == product.Id))).Should().BeFalse();
+    }
+
+    public Task Then_categories_are_listed_with_product_counts(params (string Name, int ProductCount)[] categories)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        using var response = JsonDocument.Parse(ToolResultText());
+        response.RootElement.GetProperty("categories").EnumerateArray()
+            .Select(category => (category.GetProperty("name").GetString()!, category.GetProperty("productCount").GetInt32()))
+            .Should().Equal(categories);
+
+        return Task.CompletedTask;
+    }
+
+    public async Task Then_category_is_saved_as(string name)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        using var response = JsonDocument.Parse(ToolResultText());
+        var id = response.RootElement.GetProperty("id").GetInt32();
+        response.RootElement.GetProperty("name").GetString().Should().Be(name);
+
+        var savedCategory = await QueryDatabase(db => db.Categories.AsNoTracking().SingleAsync(c => c.Id == id));
+        savedCategory.Name.Should().Be(name);
+    }
+
+    public async Task Then_category_is_deleted_and_its_products_stay(Category category, Product product)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        (await QueryDatabase(db => db.Categories.AnyAsync(c => c.Id == category.Id))).Should().BeFalse();
+
+        var savedProduct = await QueryDatabase(db => db.Products.AsNoTracking()
+            .Include(p => p.Categories)
+            .SingleAsync(p => p.Id == product.Id));
+        savedProduct.Categories.Should().BeEmpty();
+    }
+
+    public Task Then_weight_logs_are(params (string Date, decimal Weight)[] weightLogs)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        using var response = JsonDocument.Parse(ToolResultText());
+        response.RootElement.GetProperty("weightLogs").EnumerateArray()
+            .Select(weightLog => (weightLog.GetProperty("date").GetString()!, weightLog.GetProperty("weight").GetDecimal()))
+            .Should().Equal(weightLogs);
+
+        return Task.CompletedTask;
+    }
+
+    public async Task Then_weight_is_logged(string date, decimal weight)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        var loggedDate = DateOnly.Parse(date, CultureInfo.InvariantCulture);
+        var savedWeightLog = await QueryDatabase(db => db.WeightLogs.AsNoTracking().SingleAsync(wl => wl.Date == loggedDate));
+        savedWeightLog.Weight.Should().Be(weight);
+    }
+
     public Task Then_tool_call_is_error(string message)
     {
         _toolResult.IsError.Should().BeTrue();
@@ -742,6 +945,12 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         string? ClientSecret,
         string RedirectUri,
         string TokenEndpointAuthMethod);
+
+    private async Task<TResult> QueryDatabase<TResult>(Func<FoodDiaryContext, Task<TResult>> query)
+    {
+        await using var scope = Factory.Services.CreateAsyncScope();
+        return await query(scope.ServiceProvider.GetRequiredService<FoodDiaryContext>());
+    }
 
     private string ToolResultText() => _toolResult.Content.OfType<TextContentBlock>().Single().Text;
 
