@@ -32,6 +32,7 @@ public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApi
     [InlineData("GET", "/.well-known/oauth-authorization-server")]
     [InlineData("GET", "/authorize")]
     [InlineData("POST", "/token")]
+    [InlineData("POST", "/register")]
     public Task The_client_cannot_find_mcp_server_when_it_is_disabled(string method, string path)
     {
         return CtxRunner.RunScenarioAsync(
@@ -201,6 +202,57 @@ public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApi
             c => c.When_client_exchanges_authorization_code(),
             c => c.When_client_exchanges_authorization_code(),
             c => c.Then_only_the_first_code_exchange_succeeds());
+    }
+
+    [Scenario]
+    public Task The_client_can_register_itself_and_connect_once_the_owner_allows_it()
+    {
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_authenticated_user(),
+            c => c.When_client_registers("ChatGPT", "https://chatgpt.com/connector_platform_oauth_redirect", "none"),
+            c => c.When_registered_client_requests_authorization(),
+            c => c.Then_client_is_registered_as("ChatGPT", "none"),
+            c => c.Then_owner_is_asked_to_allow("ChatGPT"),
+            c => c.When_owner_allows_the_connection(),
+            c => c.When_registered_client_exchanges_authorization_code(),
+            c => c.When_mcp_client_connects(),
+            c => c.Then_authorization_response_carries_state_and_issuer(),
+            c => c.Then_mcp_client_is_connected());
+    }
+
+    [Scenario]
+    public Task The_registered_client_with_secret_can_exchange_authorization_code_with_basic_authentication()
+    {
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_authenticated_user(),
+            c => c.When_client_registers("Some AI app", "https://ai.example/oauth/callback", "client_secret_basic"),
+            c => c.When_registered_client_requests_authorization(),
+            c => c.When_owner_allows_the_connection(),
+            c => c.When_registered_client_exchanges_authorization_code(),
+            c => c.Then_client_is_registered_as("Some AI app", "client_secret_basic"),
+            c => c.Then_client_receives_access_and_refresh_tokens());
+    }
+
+    [Scenario]
+    public Task The_registered_client_is_redirected_back_with_access_denied_when_the_owner_does_not_allow_it()
+    {
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_authenticated_user(),
+            c => c.When_client_registers("Unknown app", "https://unknown.example/callback", "none"),
+            c => c.When_registered_client_requests_authorization(),
+            c => c.When_owner_does_not_allow_the_connection(),
+            c => c.Then_authorization_error_response_carries_state_and_issuer("access_denied"));
+    }
+
+    [Scenario]
+    [InlineData("http://attacker.example/callback")]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("/relative/callback")]
+    public Task The_client_cannot_register_unsafe_redirect_uri(string redirectUri)
+    {
+        return CtxRunner.RunScenarioAsync(
+            c => c.When_client_registers("Some AI app", redirectUri, "none"),
+            c => c.Then_registration_is_rejected_with("invalid_redirect_uri"));
     }
 
     [Scenario]

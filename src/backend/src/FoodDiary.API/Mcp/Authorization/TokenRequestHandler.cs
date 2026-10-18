@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using JetBrains.Annotations;
@@ -6,7 +7,10 @@ using Microsoft.Extensions.Options;
 
 namespace FoodDiary.API.Mcp.Authorization;
 
-internal sealed class TokenRequestHandler(McpTokenService tokenService, IOptions<McpOptions> options)
+internal sealed class TokenRequestHandler(
+    McpTokenService tokenService,
+    McpClientRegistry clientRegistry,
+    IOptions<McpOptions> options)
 {
     [PublicAPI]
     private sealed record TokenResponse(
@@ -31,9 +35,10 @@ internal sealed class TokenRequestHandler(McpTokenService tokenService, IOptions
         }
 
         var form = await context.Request.ReadFormAsync(context.RequestAborted);
-        var client = options.Value.FindClient(SingleValue(form, "client_id"));
+        var (clientId, clientSecret) = ReadClientCredentials(context.Request, form);
+        var client = clientRegistry.Find(clientId);
 
-        if (client is null || !SecretMatches(SingleValue(form, "client_secret"), client.ClientSecret!))
+        if (client is null || !clientRegistry.Authenticate(client, clientSecret))
         {
             return Error("invalid_client", "Client authentication failed", StatusCodes.Status401Unauthorized);
         }
@@ -46,7 +51,7 @@ internal sealed class TokenRequestHandler(McpTokenService tokenService, IOptions
         };
     }
 
-    private IResult ExchangeAuthorizationCode(IFormCollection form, McpClientRegistration client)
+    private IResult ExchangeAuthorizationCode(IFormCollection form, RegisteredClient client)
     {
         var grant = tokenService.RedeemAuthorizationCode(SingleValue(form, "code") ?? string.Empty);
 
@@ -75,7 +80,7 @@ internal sealed class TokenRequestHandler(McpTokenService tokenService, IOptions
         return TokensIssued(tokens.AccessToken, tokens.RefreshToken, grant.Access.Scope);
     }
 
-    private IResult RefreshAccessToken(IFormCollection form, McpClientRegistration client)
+    private IResult RefreshAccessToken(IFormCollection form, RegisteredClient client)
     {
         var access = tokenService.ValidateRefreshToken(SingleValue(form, "refresh_token") ?? string.Empty);
 
@@ -98,10 +103,32 @@ internal sealed class TokenRequestHandler(McpTokenService tokenService, IOptions
     private static string? SingleValue(IFormCollection form, string key) =>
         form[key] is { Count: 1 } values ? values[0] : null;
 
-    private static bool SecretMatches(string? presentedSecret, string registeredSecret) =>
-        presentedSecret is not null && CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(presentedSecret),
-            Encoding.UTF8.GetBytes(registeredSecret));
+    /// <summary>
+    /// client_secret_basic sends the credentials form-urlencoded inside the Basic header (RFC 6749 §2.3.1).
+    /// </summary>
+    private static (string? ClientId, string? ClientSecret) ReadClientCredentials(HttpRequest request, IFormCollection form)
+    {
+        if (!AuthenticationHeaderValue.TryParse(request.Headers.Authorization, out var header) ||
+            !header.Scheme.Equals("Basic", StringComparison.OrdinalIgnoreCase))
+        {
+            return (SingleValue(form, "client_id"), SingleValue(form, "client_secret"));
+        }
+
+        try
+        {
+            var credentials = Encoding.UTF8.GetString(Convert.FromBase64String(header.Parameter ?? string.Empty));
+            var separator = credentials.IndexOf(':');
+
+            return separator < 0
+                ? (null, null)
+                : (Uri.UnescapeDataString(credentials[..separator].Replace('+', ' ')),
+                    Uri.UnescapeDataString(credentials[(separator + 1)..].Replace('+', ' ')));
+        }
+        catch (FormatException)
+        {
+            return (null, null);
+        }
+    }
 
     private static bool CodeVerifierMatches(string? codeVerifier, string codeChallenge) =>
         codeVerifier is not null &&

@@ -14,7 +14,7 @@ public static class McpExtensions
     private const string McpAuthorizationPolicy = "Mcp";
     public const string McpWritePolicy = "McpWrite";
 
-    private static readonly PathString[] McpAndOAuthPaths = ["/mcp", "/authorize", "/token", "/.well-known"];
+    private static readonly PathString[] McpAndOAuthPaths = ["/mcp", "/authorize", "/token", "/register", "/.well-known"];
 
     public static void AddFoodDiaryMcp(this IServiceCollection services, IConfiguration configuration)
     {
@@ -27,10 +27,12 @@ public static class McpExtensions
         services.AddSingleton<IValidateOptions<McpOptions>, McpOptionsValidator>();
 
         services.AddMemoryCache();
+        services.AddSingleton<McpClientRegistry>();
         services.AddSingleton<AuthorizeRequestValidator>();
         services.AddSingleton<McpTokenService>();
         services.AddScoped<AuthorizeRequestHandler>();
         services.AddScoped<TokenRequestHandler>();
+        services.AddScoped<RegistrationRequestHandler>();
 
         if (mcpSection.Get<McpOptions>() is { Enabled: true })
         {

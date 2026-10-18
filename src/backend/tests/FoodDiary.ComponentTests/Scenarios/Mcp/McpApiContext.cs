@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -41,6 +42,9 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
     private HttpResponseMessage _resourceMetadataResponse = null!;
     private HttpResponseMessage _response = null!;
     private string? _accessToken;
+    private HttpResponseMessage _registrationResponse = null!;
+    private RegisteredClientCredentials? _registeredClient;
+    private HttpResponseMessage _consentPageResponse = null!;
     private Implementation _connectedServer = null!;
     private List<string> _listedToolNames = [];
     private CallToolResult _toolResult = null!;
@@ -369,10 +373,11 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
               "issuer": "http://localhost",
               "authorization_endpoint": "http://localhost/authorize",
               "token_endpoint": "http://localhost/token",
+              "registration_endpoint": "http://localhost/register",
               "response_types_supported": ["code"],
               "grant_types_supported": ["authorization_code", "refresh_token"],
               "code_challenge_methods_supported": ["S256"],
-              "token_endpoint_auth_methods_supported": ["client_secret_post"],
+              "token_endpoint_auth_methods_supported": ["client_secret_post", "client_secret_basic", "none"],
               "scopes_supported": ["food:read", "food:write"],
               "authorization_response_iss_parameter_supported": true
             }
@@ -601,6 +606,143 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         return await McpClient.CreateAsync(transport);
     }
 
+    public async Task When_client_registers(string clientName, string redirectUri, string tokenEndpointAuthMethod)
+    {
+        _registrationResponse = await OAuthClient.PostAsJsonAsync("/register", new
+        {
+            client_name = clientName,
+            redirect_uris = new[] { redirectUri },
+            token_endpoint_auth_method = tokenEndpointAuthMethod,
+            grant_types = new[] { "authorization_code", "refresh_token" },
+            response_types = new[] { "code" }
+        });
+
+        if (_registrationResponse.StatusCode == HttpStatusCode.Created)
+        {
+            using var registration = await ReadJson(_registrationResponse);
+            var root = registration.RootElement;
+
+            _registeredClient = new RegisteredClientCredentials(
+                root.GetProperty("client_id").GetString()!,
+                root.TryGetProperty("client_secret", out var secret) ? secret.GetString() : null,
+                redirectUri,
+                tokenEndpointAuthMethod);
+        }
+    }
+
+    public async Task When_registered_client_requests_authorization()
+    {
+        var authorizeUrl = QueryHelpers.AddQueryString("/authorize", new Dictionary<string, string?>
+        {
+            ["response_type"] = "code",
+            ["client_id"] = _registeredClient!.ClientId,
+            ["redirect_uri"] = _registeredClient.RedirectUri,
+            ["code_challenge"] = CodeChallenge,
+            ["code_challenge_method"] = "S256",
+            ["resource"] = McpResource,
+            ["state"] = State
+        });
+
+        _consentPageResponse = await OAuthClient.GetAsync(authorizeUrl);
+    }
+
+    public Task When_owner_allows_the_connection()
+    {
+        return AnswerConsent("allow");
+    }
+
+    public Task When_owner_does_not_allow_the_connection()
+    {
+        return AnswerConsent("deny");
+    }
+
+    public async Task When_registered_client_exchanges_authorization_code()
+    {
+        var form = new Dictionary<string, string>
+        {
+            ["grant_type"] = "authorization_code",
+            ["code"] = AuthorizationResponseParameter("code"),
+            ["redirect_uri"] = _registeredClient!.RedirectUri,
+            ["code_verifier"] = CodeVerifier,
+            ["resource"] = McpResource
+        };
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/token");
+
+        if (_registeredClient.TokenEndpointAuthMethod == "client_secret_basic")
+        {
+            var credentials = $"{Uri.EscapeDataString(_registeredClient.ClientId)}:{Uri.EscapeDataString(_registeredClient.ClientSecret!)}";
+            request.Headers.Authorization = new AuthenticationHeaderValue(
+                "Basic",
+                Convert.ToBase64String(Encoding.UTF8.GetBytes(credentials)));
+        }
+        else
+        {
+            form["client_id"] = _registeredClient.ClientId;
+        }
+
+        request.Content = new FormUrlEncodedContent(form);
+        var response = await OAuthClient.SendAsync(request);
+        _codeExchangeResponses.Add(response);
+
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            using var tokens = await ReadJson(response);
+            _accessToken = tokens.RootElement.GetProperty("access_token").GetString();
+        }
+    }
+
+    public async Task Then_client_is_registered_as(string clientName, string tokenEndpointAuthMethod)
+    {
+        _registrationResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        using var registration = await ReadJson(_registrationResponse);
+        var root = registration.RootElement;
+        root.GetProperty("client_name").GetString().Should().Be(clientName);
+        root.GetProperty("token_endpoint_auth_method").GetString().Should().Be(tokenEndpointAuthMethod);
+        root.GetProperty("redirect_uris").EnumerateArray().Select(uri => uri.GetString())
+            .Should().Equal(_registeredClient!.RedirectUri);
+        root.TryGetProperty("client_secret", out _).Should().Be(tokenEndpointAuthMethod != "none");
+    }
+
+    public async Task Then_registration_is_rejected_with(string error)
+    {
+        _registrationResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        using var response = await ReadJson(_registrationResponse);
+        response.RootElement.GetProperty("error").GetString().Should().Be(error);
+    }
+
+    public async Task Then_owner_is_asked_to_allow(string clientName)
+    {
+        _consentPageResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        _consentPageResponse.Content.Headers.ContentType?.MediaType.Should().Be("text/html");
+        _consentPageResponse.Headers.GetValues("X-Frame-Options").Should().Equal("DENY");
+
+        var page = await _consentPageResponse.Content.ReadAsStringAsync();
+        page.Should().Contain($"允許「{clientName}」連接你嘅 gymlun？");
+    }
+
+    private async Task AnswerConsent(string decision)
+    {
+        var page = await _consentPageResponse.Content.ReadAsStringAsync();
+        var consentTicket = WebUtility.HtmlDecode(
+            Regex.Match(page, "name=\"consent_ticket\" value=\"([^\"]+)\"").Groups[1].Value);
+
+        _authorizeResponse = await OAuthClient.PostAsync("/authorize", new FormUrlEncodedContent(
+            new Dictionary<string, string>
+            {
+                ["consent_ticket"] = consentTicket,
+                ["decision"] = decision
+            }));
+    }
+
+    private sealed record RegisteredClientCredentials(
+        string ClientId,
+        string? ClientSecret,
+        string RedirectUri,
+        string TokenEndpointAuthMethod);
+
     private string ToolResultText() => _toolResult.Content.OfType<TextContentBlock>().Single().Text;
 
     private AccessGrant AccessGrantFor(string email, string scope = "food:read food:write") =>
@@ -614,7 +756,7 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         _authorizeResponse.StatusCode.Should().Be(HttpStatusCode.Redirect);
 
         var location = _authorizeResponse.Headers.Location!;
-        location.GetLeftPart(UriPartial.Path).Should().Be(Client.RedirectUri);
+        location.GetLeftPart(UriPartial.Path).Should().Be(_registeredClient?.RedirectUri ?? Client.RedirectUri);
 
         return QueryHelpers.ParseQuery(location.Query).GetValueOrDefault(name).ToString();
     }

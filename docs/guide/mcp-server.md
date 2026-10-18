@@ -16,14 +16,18 @@ A client that asks for no scope is granted both. To keep a client read-only, hav
 
 The server is off by default. It lives at `/mcp` on your Food Diary domain, and you turn it on with the [MCP settings in the configuration reference](deployment.md#mcp-server).
 
-## Connecting Claude
+## Connecting an AI app
 
-1. Run the app on a public HTTPS domain. Claude connects from Anthropic's servers rather than from your browser, so it cannot reach `localhost`. **Your server should be located in a [supported country and region](https://www.anthropic.com/supported-countries)**.
-2. Choose a client ID and a client secret, e.g. `openssl rand -hex 32` for the secret.
-3. Set the [MCP settings](deployment.md#mcp-server) and restart the app. With the [Docker Compose setup](deployment.md#option-a-vps-with-docker-compose), uncomment the `Mcp__*` lines in `.env` and fill them in, then run `docker compose up -d`.
-4. In Claude, [add a custom connector](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp) with the URL `<Mcp:BaseUrl>/mcp`, and enter the client ID and secret in its advanced settings.
-5. Connect, and sign in with a Google account whose email is in `Auth:AllowedEmails`.
+Claude, ChatGPT and other AI apps that support remote MCP servers connect with nothing but a name and the server URL:
 
-## Other MCP clients
+1. Run the app on a public HTTPS domain. Hosted AI apps connect from their own servers rather than from your browser, so they cannot reach `localhost`. For Claude, **your server should be located in a [supported country and region](https://www.anthropic.com/supported-countries)**.
+2. Set `Mcp:Enabled` and `Mcp:BaseUrl` (see the [MCP settings](deployment.md#mcp-server)) and restart the app. With the [Docker Compose setup](deployment.md#option-a-vps-with-docker-compose), uncomment `Mcp__Enabled` in `.env`, then run `docker compose up -d`.
+3. In the AI app, add a custom connector with any name and the URL `<Mcp:BaseUrl>/mcp`, e.g. in Claude, [add a custom connector](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp). Leave any client ID and secret fields empty.
+4. Connect, and sign in with a Google account whose email is in `Auth:AllowedEmails`.
+5. Food Diary shows the app's name and what it will be able to do. Allow it, and you are back in the AI app, connected.
 
-Any MCP client that supports OAuth with a pre-registered client ID and secret can connect the same way. Give each client its own entry at the next index, e.g. `Mcp:Clients:1`, with its own `ClientId`, `ClientSecret`, and the `RedirectUri` that client uses for its OAuth callback.
+The app registers itself with [OAuth Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591), so the server needs no settings for it. Since anyone can register an app, Food Diary asks you before every self-registered app gets access: deny any request you did not just start yourself.
+
+## Pre-registered clients
+
+An MCP client that cannot register itself connects with a client ID and secret you choose instead. Give it an entry in `Mcp:Clients`, at the next free index, with its `ClientId`, `ClientSecret` (e.g. `openssl rand -hex 32`) and the `RedirectUri` it uses for its OAuth callback, then enter the ID and secret in its connector settings. A pre-registered client skips the approval page, because you configured it yourself.

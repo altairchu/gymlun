@@ -19,6 +19,7 @@ public static class AuthorizationServerEndpoints
         string Issuer,
         string AuthorizationEndpoint,
         string TokenEndpoint,
+        string RegistrationEndpoint,
         string[] ResponseTypesSupported,
         string[] GrantTypesSupported,
         string[] CodeChallengeMethodsSupported,
@@ -34,9 +35,17 @@ public static class AuthorizationServerEndpoints
             HttpContext context,
             [FromServices] AuthorizeRequestHandler handler) => handler.Handle(request, context));
 
+        endpoints.MapPost("/authorize", (
+            HttpContext context,
+            [FromServices] AuthorizeRequestHandler handler) => handler.HandleConsent(context));
+
         endpoints.MapPost("/token", (
             HttpContext context,
             [FromServices] TokenRequestHandler handler) => handler.Handle(context));
+
+        endpoints.MapPost("/register", (
+            HttpContext context,
+            [FromServices] RegistrationRequestHandler handler) => handler.Handle(context));
     }
 
     private static IResult GetMetadata(IOptions<McpOptions> options)
@@ -47,10 +56,11 @@ public static class AuthorizationServerEndpoints
             Issuer: baseUrl,
             AuthorizationEndpoint: $"{baseUrl}/authorize",
             TokenEndpoint: $"{baseUrl}/token",
+            RegistrationEndpoint: $"{baseUrl}/register",
             ResponseTypesSupported: ["code"],
             GrantTypesSupported: ["authorization_code", "refresh_token"],
             CodeChallengeMethodsSupported: ["S256"],
-            TokenEndpointAuthMethodsSupported: ["client_secret_post"],
+            TokenEndpointAuthMethodsSupported: TokenEndpointAuthMethods.Supported,
             ScopesSupported: McpScopes.Supported,
             AuthorizationResponseIssParameterSupported: true);
 

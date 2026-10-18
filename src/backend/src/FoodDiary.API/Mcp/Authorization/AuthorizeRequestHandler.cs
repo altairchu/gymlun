@@ -31,6 +31,34 @@ internal sealed class AuthorizeRequestHandler(
             _ => throw new UnreachableException()
         };
 
+    public async Task<IResult> HandleConsent(HttpContext context)
+    {
+        if (!context.Request.HasFormContentType)
+        {
+            return Results.Text("Expected a consent form", statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        var form = await context.Request.ReadFormAsync(context.RequestAborted);
+        var consent = tokenService.RedeemConsentTicket(form["consent_ticket"].ToString());
+        var email = await FindAllowedSignedInEmail(context);
+
+        if (consent is null || email is null || consent.Access.Email != email)
+        {
+            return Results.Text(
+                "This approval has expired. Connect again from your AI app.",
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        if (form["decision"].ToString() != "allow")
+        {
+            return RedirectToClient(consent.RedirectUri, consent.State,
+                ("error", "access_denied"),
+                ("error_description", "The owner did not allow this connection"));
+        }
+
+        return RedirectWithAuthorizationCode(consent);
+    }
+
     private async Task<IResult> AuthorizeSignedInUser(AuthorizeRequestValidation.Accepted request, HttpContext context)
     {
         var authentication = await context.AuthenticateAsync(Constants.AuthenticationSchemes.OAuthGoogle);
@@ -45,27 +73,61 @@ internal sealed class AuthorizeRequestHandler(
             return Results.Challenge(returnToThisRequest, [Constants.AuthenticationSchemes.OAuthGoogle]);
         }
 
-        var emailAllowlistCheck = await authorizationService.AuthorizeAsync(
-            authentication.Principal,
-            Constants.AuthorizationPolicies.GoogleAllowedEmails);
-
-        if (!emailAllowlistCheck.Succeeded)
+        if (!await IsAllowed(authentication.Principal))
         {
             return RedirectToClient(request.RedirectUri, request.State,
                 ("error", "access_denied"),
                 ("error_description", "This account is not allowed to use Food Diary"));
         }
 
-        var access = new AccessGrant(
-            request.ClientId,
-            authentication.Principal.FindFirstValue(Constants.ClaimTypes.Email)!,
-            request.Scope,
-            request.Resource);
+        var consent = new ConsentRequest(
+            new AccessGrant(
+                request.Client.ClientId,
+                authentication.Principal.FindFirstValue(Constants.ClaimTypes.Email)!,
+                request.Scope,
+                request.Resource),
+            request.RedirectUri,
+            request.CodeChallenge,
+            request.State);
 
+        if (!request.Client.IsDynamic)
+        {
+            return RedirectWithAuthorizationCode(consent);
+        }
+
+        context.Response.Headers.CacheControl = "no-store";
+        context.Response.Headers.ContentSecurityPolicy = "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'";
+        context.Response.Headers.XFrameOptions = "DENY";
+
+        return Results.Content(
+            ConsentPage.Render(request.Client, consent, tokenService.IssueConsentTicket(consent)),
+            "text/html; charset=utf-8");
+    }
+
+    private async Task<string?> FindAllowedSignedInEmail(HttpContext context)
+    {
+        var authentication = await context.AuthenticateAsync(Constants.AuthenticationSchemes.OAuthGoogle);
+
+        return authentication.Succeeded && await IsAllowed(authentication.Principal)
+            ? authentication.Principal.FindFirstValue(Constants.ClaimTypes.Email)
+            : null;
+    }
+
+    private async Task<bool> IsAllowed(ClaimsPrincipal principal)
+    {
+        var emailAllowlistCheck = await authorizationService.AuthorizeAsync(
+            principal,
+            Constants.AuthorizationPolicies.GoogleAllowedEmails);
+
+        return emailAllowlistCheck.Succeeded;
+    }
+
+    private IResult RedirectWithAuthorizationCode(ConsentRequest consent)
+    {
         var code = tokenService.IssueAuthorizationCode(
-            new AuthorizationCodeGrant(access, request.RedirectUri, request.CodeChallenge));
+            new AuthorizationCodeGrant(consent.Access, consent.RedirectUri, consent.CodeChallenge));
 
-        return RedirectToClient(request.RedirectUri, request.State, ("code", code));
+        return RedirectToClient(consent.RedirectUri, consent.State, ("code", code));
     }
 
     private IResult RedirectToClient(string redirectUri, string? state, params (string Name, string Value)[] parameters)

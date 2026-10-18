@@ -47,8 +47,6 @@ Vercel 會將 `/api`、`/signin-google`、`/mcp`、`/authorize`、`/token`、`/.
    | `Auth__AllowedEmails__0` | 你登入用嘅 Gmail，只有呢個 email 先入到 |
    | `GoogleAuth__ClientId` | 第 2 步嘅 Client ID |
    | `GoogleAuth__ClientSecret` | 第 2 步嘅 Client secret |
-   | `Mcp__Clients__0__ClientId` | 自己改一個名，例如 `claude` |
-   | `Mcp__Clients__0__ClientSecret` | 一串長嘅隨機字，例如喺 terminal 打 `openssl rand -hex 32` |
 
 4. 撳 Apply，等佢 build 完（第一次要幾分鐘）。
 
@@ -73,26 +71,18 @@ Render 免費 web service 15 分鐘冇人用就會瞓，再用要等一分鐘左
 
 ## 6. 連接 AI
 
-### Claude
+Claude、ChatGPT 或者其他支援遠端 MCP 嘅 AI app，都係只填名同網址：
 
-1. Claude → Settings → Connectors → **Add custom connector**。
-2. URL：`https://gymlun.vercel.app/mcp`
-3. Advanced settings 填返第 3 步嘅 `Mcp__Clients__0__ClientId` 同 `Mcp__Clients__0__ClientSecret`。
-4. 撳 Connect，用你個 Gmail 登入。
+1. 喺 AI app 加自訂 connector。Claude：Settings → Connectors → **Add custom connector**；ChatGPT 要先開 developer mode。
+2. 名：隨你，例如 `gymlun`。
+3. URL：`https://gymlun.vercel.app/mcp`
+4. Client ID 同 secret 嗰啲位留空。
+5. 撳 Connect，用你個 Gmail 登入。
+6. gymlun 會問「允許「…」連接你嘅 gymlun？」，撳 **允許**。
 
-之後可以同 Claude 講「我晏晝食咗一碟豬肉韭菜餃」，佢會搵你嘅常食食物，冇就幫你新增，再記錄落去。
+AI app 會自己登記，唔使喺 Render 加任何設定。因為任何 app 都可以登記，gymlun 每次都會先問你；如果唔係你啱啱撳連接，就撳「唔允許」。
 
-### ChatGPT 同其他 AI
-
-只要支援「OAuth + 預先登記 client ID 同 secret」嘅遠端 MCP，都可以用同一個方法接。每個 AI 要喺 Render 加多一組設定，用下一個號碼：
-
-| 變數 | 填乜 |
-|------|------|
-| `Mcp__Clients__1__ClientId` | 例如 `chatgpt` |
-| `Mcp__Clients__1__ClientSecret` | 另一串隨機字 |
-| `Mcp__Clients__1__RedirectUri` | 嗰個 AI 加 connector 時顯示嘅 callback URL |
-
-ChatGPT 要開 developer mode 先加到自訂 connector。Grok 等其他 AI 有冇得加自訂 MCP、用唔用到 OAuth，要睇佢哋當時嘅功能。
+之後可以同 AI 講「我晏晝食咗一碟豬肉韭菜餃」，佢會搵你嘅常食食物，冇就幫你新增，再記錄落去。
 
 ## 唔會收錢嘅提醒
 

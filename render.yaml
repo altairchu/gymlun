@@ -25,9 +25,3 @@ services:
         sync: false
       - key: GoogleAuth__ClientSecret
         sync: false
-      - key: Mcp__Clients__0__ClientId
-        sync: false
-      - key: Mcp__Clients__0__ClientSecret
-        sync: false
-      - key: Mcp__Clients__0__RedirectUri
-        value: https://claude.ai/api/mcp/auth_callback
