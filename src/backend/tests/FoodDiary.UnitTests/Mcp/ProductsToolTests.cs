@@ -75,6 +75,7 @@ public class ProductsToolTests
               "defaultQuantity": 60,
               "countBy": "grams",
               "isFavorite": false,
+              "hasPhoto": false,
               "per100g": {
                 "calories": 366,
                 "protein": 13.0,

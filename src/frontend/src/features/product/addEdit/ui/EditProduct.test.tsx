@@ -37,16 +37,16 @@ const renderEditProduct = (product: Product): Promise<unknown> =>
     />,
   );
 
-const whenDialogOpened = async (user: UserEvent): Promise<ReturnType<typeof within>> => {
+const whenDialogOpened = async (user: UserEvent): Promise<HTMLElement> => {
   await user.click(await screen.findByRole('button', { name: '編輯' }));
-  return within(await screen.findByRole('dialog', { name: '編輯食物' }));
+  return screen.findByRole('dialog', { name: '編輯食物' });
 };
 
 test('the saved photo is shown in the dialog', async () => {
   const user = userEvent.setup();
   await renderEditProduct(bread);
 
-  const dialog = await whenDialogOpened(user);
+  const dialog = within(await whenDialogOpened(user));
 
   expect(dialog.getByRole('img', { name: '食物相片' })).toHaveAttribute(
     'src',
@@ -66,7 +66,7 @@ test('a removed photo is deleted when the product is saved', async () => {
   );
   await renderEditProduct(bread);
 
-  const dialog = await whenDialogOpened(user);
+  const dialog = within(await whenDialogOpened(user));
   await user.click(dialog.getByRole('button', { name: '移除相' }));
   expect(dialog.getByRole('button', { name: '加相' })).toBeVisible();
   await user.click(dialog.getByRole('button', { name: '儲存' }));
@@ -87,7 +87,7 @@ test('a photo that cannot be saved keeps the dialog open, and the product unchan
   );
   await renderEditProduct(bread);
 
-  const dialog = await whenDialogOpened(user);
+  const dialog = within(await whenDialogOpened(user));
   await user.upload(
     dialog.getByRole('button', { name: '換相' }),
     new File(['photo'], 'bread.jpg', { type: 'image/jpeg' }),

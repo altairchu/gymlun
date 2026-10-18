@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tap a weight on the weight page to change it or delete it; deleting takes a second tap to confirm
 - MCP tools to change and delete a weight (`update_weight`, `delete_weight`); `log_weight` points to `update_weight` when the date already has a weight
 - The MCP `log_foods` tool logs up to 20 foods eaten together in one call, so an AI app such as ChatGPT asks you to approve the meal once instead of once per food
+- Each food can have a photo: add, change or remove it when adding or editing the food, and it shows on the food's card and in the products table
+- MCP tools to set, show and remove a food's photo (`set_product_photo`, `get_product_photo`, `remove_product_photo`), from a photo attached in the chat or an image URL; `list_products` tells which foods have a photo
 
 ### Changed
 
