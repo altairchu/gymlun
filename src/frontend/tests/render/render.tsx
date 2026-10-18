@@ -1,3 +1,4 @@
+import { setupListeners } from '@reduxjs/toolkit/query';
 import {
   createMemoryHistory,
   createRootRoute,
@@ -55,6 +56,7 @@ export const renderApp = async (
 
   const store = configureStore();
   const router = createAppRouter(store, createMemoryHistory({ initialEntries: [url] }));
+  onTestFinished(setupListeners(store.dispatch));
 
   rtlRender(
     <RootProvider store={store}>

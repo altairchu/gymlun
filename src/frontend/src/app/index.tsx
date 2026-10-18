@@ -1,4 +1,5 @@
 import 'date-fns';
+import { setupListeners } from '@reduxjs/toolkit/query';
 import { RouterProvider } from '@tanstack/react-router';
 import { createRoot } from 'react-dom/client';
 import { GOOGLE_ANALYTICS_ENABLED } from '@/shared/config';
@@ -17,6 +18,8 @@ const container = document.getElementById('root');
 if (!container) {
   throw new Error('Failed to find the root element');
 }
+
+setupListeners(store.dispatch);
 
 const root = createRoot(container);
 const router = createAppRouter(store);
