@@ -1,5 +1,6 @@
 using FoodDiary.API.Mcp;
 using FoodDiary.API.Mcp.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
 
 namespace FoodDiary.UnitTests.Mcp;
@@ -9,7 +10,7 @@ public class AuthorizeRequestValidatorTests
     private const string ClaudeCallback = "https://claude.ai/api/mcp/auth_callback";
     private const string InspectorCallback = "http://localhost:6274/oauth/callback";
 
-    private static readonly AuthorizeRequestValidator Validator = new(Options.Create(new McpOptions
+    private static readonly IOptions<McpOptions> ConfiguredOptions = Options.Create(new McpOptions
     {
         Enabled = true,
         BaseUrl = "https://diary.example.com",
@@ -21,7 +22,11 @@ public class AuthorizeRequestValidatorTests
                 ClientId = "inspector", ClientSecret = "another-secret", RedirectUri = InspectorCallback
             }
         ]
-    }));
+    });
+
+    private static readonly McpClientRegistry Registry = new(new EphemeralDataProtectionProvider(), TimeProvider.System, ConfiguredOptions);
+
+    private static readonly AuthorizeRequestValidator Validator = new(Registry, ConfiguredOptions);
 
     private static AuthorizeRequest Request(string? clientId, string? redirectUri, string? scope = "food:read") => new(
         ResponseType: "code",
@@ -68,6 +73,38 @@ public class AuthorizeRequestValidatorTests
         result.Should().BeOfType<AuthorizeRequestValidation.Refused>();
     }
 
+    [Fact]
+    public void DynamicClient_WithAnyOfItsRedirectUris_IsAccepted()
+    {
+        var client = RegisterDynamicClient("https://chatgpt.com/connector_platform_oauth_redirect", InspectorCallback);
+
+        var result = Validator.Validate(Request(client.ClientId, InspectorCallback));
+
+        result.Should().BeOfType<AuthorizeRequestValidation.Accepted>().Which.Client.IsDynamic.Should().BeTrue();
+    }
+
+    [Fact]
+    public void DynamicClient_WithRedirectUriItDidNotRegister_IsRefused()
+    {
+        var client = RegisterDynamicClient("https://chatgpt.com/connector_platform_oauth_redirect");
+
+        var result = Validator.Validate(Request(client.ClientId, ClaudeCallback));
+
+        result.Should().BeOfType<AuthorizeRequestValidation.Refused>();
+    }
+
+    [Fact]
+    public void DynamicClientId_ThatWasTamperedWith_IsRefused()
+    {
+        var clientId = RegisterDynamicClient(ClaudeCallback).ClientId.ToCharArray();
+        var middle = clientId.Length / 2;
+        clientId[middle] = clientId[middle] == 'A' ? 'B' : 'A';
+
+        var result = Validator.Validate(Request(new string(clientId), ClaudeCallback));
+
+        result.Should().BeOfType<AuthorizeRequestValidation.Refused>();
+    }
+
     [Theory]
     [InlineData(null, "food:read food:write")]
     [InlineData("", "food:read food:write")]
@@ -88,4 +125,7 @@ public class AuthorizeRequestValidatorTests
 
         result.Should().BeOfType<AuthorizeRequestValidation.ErrorRedirect>().Which.Error.Should().Be("invalid_scope");
     }
+
+    private static RegisteredClient RegisterDynamicClient(params string[] redirectUris) =>
+        Registry.Register(new ClientMetadata("ChatGPT", redirectUris, TokenEndpointAuthMethods.None)).Client;
 }

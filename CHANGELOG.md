@@ -14,10 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The day is a 0:00–23:59 timeline; drag a food, or a whole meal, to another time
 - Foods can be in several categories, and each food is counted either by weight or by servings
 - The MCP `log_food` tool takes a time of day and a number of servings; `create_product` takes several categories and how the food is counted
+- AI apps such as Claude or ChatGPT connect to the MCP server with just a name and its URL: they register themselves (OAuth Dynamic Client Registration), and you allow each one on an approval page before it gets access
 
 ### Changed
 
 - Food logs have a time of day; existing ones get their meal's usual time
+- `Mcp:Clients` is optional; it is needed only for an MCP client that cannot register itself
 
 ### Removed
 

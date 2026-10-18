@@ -5,7 +5,7 @@ namespace FoodDiary.API.Mcp.Authorization;
 public abstract record AuthorizeRequestValidation
 {
     public sealed record Accepted(
-        string ClientId,
+        RegisteredClient Client,
         string RedirectUri,
         string CodeChallenge,
         string Scope,
@@ -25,23 +25,21 @@ public abstract record AuthorizeRequestValidation
         string? State) : AuthorizeRequestValidation;
 }
 
-public sealed class AuthorizeRequestValidator(IOptions<McpOptions> options)
+public sealed class AuthorizeRequestValidator(McpClientRegistry clientRegistry, IOptions<McpOptions> options)
 {
     public AuthorizeRequestValidation Validate(AuthorizeRequest request)
     {
-        var client = options.Value.FindClient(request.ClientId);
+        var client = clientRegistry.Find(request.ClientId);
 
         if (client is null)
         {
             return new AuthorizeRequestValidation.Refused("client_id is not registered");
         }
 
-        if (request.RedirectUri != client.RedirectUri)
+        if (request.RedirectUri is not { } redirectUri || !client.RedirectUris.Contains(redirectUri))
         {
-            return new AuthorizeRequestValidation.Refused("redirect_uri is not the one registered for this client_id");
+            return new AuthorizeRequestValidation.Refused("redirect_uri is not one registered for this client_id");
         }
-
-        var redirectUri = client.RedirectUri!;
 
         AuthorizeRequestValidation.ErrorRedirect Error(string error, string description) =>
             new(redirectUri, error, description, request.State);
@@ -74,7 +72,7 @@ public sealed class AuthorizeRequestValidator(IOptions<McpOptions> options)
         }
 
         return new AuthorizeRequestValidation.Accepted(
-            client.ClientId!,
+            client,
             redirectUri,
             request.CodeChallenge,
             string.Join(' ', grantedScopes),

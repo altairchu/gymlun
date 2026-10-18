@@ -10,6 +10,8 @@ public sealed record AccessGrant(string ClientId, string Email, string Scope, st
 
 public sealed record AuthorizationCodeGrant(AccessGrant Access, string RedirectUri, string CodeChallenge);
 
+public sealed record ConsentRequest(AccessGrant Access, string RedirectUri, string CodeChallenge, string? State);
+
 public sealed record McpTokens(string AccessToken, string RefreshToken);
 
 public sealed class McpTokenService(
@@ -19,10 +21,12 @@ public sealed class McpTokenService(
     IOptions<McpOptions> options)
 {
     private static readonly TimeSpan AuthorizationCodeLifetime = TimeSpan.FromSeconds(60);
+    private static readonly TimeSpan ConsentTicketLifetime = TimeSpan.FromMinutes(10);
 
     private readonly IDataProtector _authorizationCodeProtector = dataProtectionProvider.CreateProtector("FoodDiary.Mcp.AuthorizationCode");
     private readonly IDataProtector _accessTokenProtector = dataProtectionProvider.CreateProtector("FoodDiary.Mcp.AccessToken");
     private readonly IDataProtector _refreshTokenProtector = dataProtectionProvider.CreateProtector("FoodDiary.Mcp.RefreshToken");
+    private readonly IDataProtector _consentTicketProtector = dataProtectionProvider.CreateProtector("FoodDiary.Mcp.ConsentTicket");
     private readonly McpOptions _options = options.Value;
     private readonly Lock _authorizationCodeRedemptionLock = new();
 
@@ -59,6 +63,15 @@ public sealed class McpTokenService(
         }
 
         return payload.Grant;
+    }
+
+    public string IssueConsentTicket(ConsentRequest consent) =>
+        Protect(_consentTicketProtector, new ConsentTicketPayload(consent, timeProvider.GetUtcNow() + ConsentTicketLifetime));
+
+    public ConsentRequest? RedeemConsentTicket(string consentTicket)
+    {
+        var payload = Unprotect<ConsentTicketPayload>(_consentTicketProtector, consentTicket);
+        return payload is null || IsExpired(payload.ExpiresAt) ? null : payload.Consent;
     }
 
     public McpTokens IssueTokens(AccessGrant grant) => new(
@@ -108,4 +121,6 @@ public sealed class McpTokenService(
     private sealed record AuthorizationCodePayload(string CodeId, AuthorizationCodeGrant Grant, DateTimeOffset ExpiresAt);
 
     private sealed record TokenPayload(AccessGrant Grant, DateTimeOffset ExpiresAt);
+
+    private sealed record ConsentTicketPayload(ConsentRequest Consent, DateTimeOffset ExpiresAt);
 }

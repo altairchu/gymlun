@@ -10,6 +10,7 @@
     { "source": "/mcp", "destination": "https://gymlun-api.onrender.com/mcp" },
     { "source": "/authorize", "destination": "https://gymlun-api.onrender.com/authorize" },
     { "source": "/token", "destination": "https://gymlun-api.onrender.com/token" },
+    { "source": "/register", "destination": "https://gymlun-api.onrender.com/register" },
     {
       "source": "/.well-known/:path*",
       "destination": "https://gymlun-api.onrender.com/.well-known/:path*"
