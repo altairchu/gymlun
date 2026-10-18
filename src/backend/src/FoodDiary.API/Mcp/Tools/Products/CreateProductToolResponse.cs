@@ -9,4 +9,4 @@ public record CreateProductToolResponse(ListProductsToolResponse.Product Product
 public record UpdateProductToolResponse(ListProductsToolResponse.Product Product);
 
 [PublicAPI]
-public record DeleteProductToolResponse(int DeletedId);
+public record DeleteProductsToolResponse(IReadOnlyList<int> DeletedIds);

@@ -4,7 +4,13 @@ using FoodDiary.Domain.Repositories.v2;
 
 namespace FoodDiary.Application.Notes.CreateMany;
 
-public record CreateNotesCommand(DateOnly Date, TimeOnly Time, IReadOnlyList<CreateNotesCommand.Item> Items)
+/// <param name="MealType">The meal the notes go in; follows from <paramref name="Time"/> when null</param>
+public record CreateNotesCommand(
+    DateOnly Date,
+    TimeOnly Time,
+    IReadOnlyList<CreateNotesCommand.Item> Items,
+    MealType? MealType = null,
+    int FirstDisplayOrder = 0)
 {
     public record Item(int ProductId, int ProductQuantity);
 }
@@ -32,7 +38,7 @@ public class CreateNotesCommandHandler(IProductsRepository productsRepository, I
             return CreateNotesResult.ProductsNotFound(missingProductIds);
         }
 
-        var mealType = MealType.FromTime(command.Time);
+        var mealType = command.MealType ?? MealType.FromTime(command.Time);
 
         var notes = command.Items
             .Select((item, index) => new Note
@@ -42,7 +48,7 @@ public class CreateNotesCommandHandler(IProductsRepository productsRepository, I
                 MealType = mealType,
                 ProductId = item.ProductId,
                 ProductQuantity = item.ProductQuantity,
-                DisplayOrder = index
+                DisplayOrder = command.FirstDisplayOrder + index
             })
             .ToList();
 

@@ -15,13 +15,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Foods can be in several categories, and each food is counted either by weight or by servings
 - The MCP `log_food` tool takes a time of day and a number of servings; `create_product` takes several categories and how the food is counted
 - AI apps such as Claude or ChatGPT connect to the MCP server with just a name and its URL: they register themselves (OAuth Dynamic Client Registration), and you allow each one on an approval page before it gets access
-- MCP tools for everything else the app does: change a food log (`update_food_log`), change or delete a product (`update_product`, `delete_product`), list, add, rename and delete categories (`list_categories`, `create_category`, `rename_category`, `delete_category`), and read and log your weight (`get_weight_logs`, `log_weight`); `list_products` lists one category's products with `categoryId`
+- MCP tools for everything else the app does: change a food log (`update_food_log`), change or delete products (`update_product`, `delete_products`), list, add, rename and delete categories (`list_categories`, `create_category`, `rename_category`, `delete_category`), and read and log your weight (`get_weight_logs`, `log_weight`); `list_products` lists one category's products with `categoryId`
 - A logged food can be swapped for another food when you change the log; the amount stays as entered, in grams or servings
+- Tap a weight on the weight page to change it or delete it; deleting takes a second tap to confirm
+- MCP tools to change and delete a weight (`update_weight`, `delete_weight`); `log_weight` points to `update_weight` when the date already has a weight
+- The MCP `log_foods` tool logs up to 20 foods eaten together in one call, so an AI app such as ChatGPT asks you to approve the meal once instead of once per food
 
 ### Changed
 
 - Food logs have a time of day; existing ones get their meal's usual time
 - `Mcp:Clients` is optional; it is needed only for an MCP client that cannot register itself
+- The MCP `delete_food_log` and `delete_product` tools are now `delete_food_logs` and `delete_products`: they take up to 50 ids in one call, and delete none of them when any id is not found
 
 ### Removed
 

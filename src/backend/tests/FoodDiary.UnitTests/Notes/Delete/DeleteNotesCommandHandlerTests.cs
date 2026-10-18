@@ -51,6 +51,32 @@ public class DeleteNotesCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_NotesOfSeveralMealsAndDates_RecalculatesRemainingOrdersOfEach()
+    {
+        var date = new DateOnly(2026, 7, 24);
+        var breakfast = new Note { Id = 1, Date = date, MealType = MealType.Breakfast };
+        var dinner = new Note { Id = 2, Date = date, MealType = MealType.Dinner };
+        var nextDayBreakfast = new Note { Id = 3, Date = date.AddDays(1), MealType = MealType.Breakfast };
+        var remainingBreakfast = new Note { Id = 4, Date = date, MealType = MealType.Breakfast };
+        var remainingDinner = new Note { Id = 5, Date = date, MealType = MealType.Dinner };
+        GivenNotes(breakfast, dinner, nextDayBreakfast, remainingBreakfast, remainingDinner);
+        var handler = new DeleteNotesCommandHandler(_repository.Object, _orderCalculator.Object);
+
+        await handler.Handle(new DeleteNotesCommand([1, 2, 3]), CancellationToken.None);
+
+        _orderCalculator.Verify(
+            c => c.RecalculateDisplayOrders(It.Is<IEnumerable<Note>>(notes => notes.Select(n => n.Id).SequenceEqual(new[] { 4 })), It.IsAny<int>()),
+            Times.Once);
+        _orderCalculator.Verify(
+            c => c.RecalculateDisplayOrders(It.Is<IEnumerable<Note>>(notes => notes.Select(n => n.Id).SequenceEqual(new[] { 5 })), It.IsAny<int>()),
+            Times.Once);
+        _orderCalculator.Verify(
+            c => c.RecalculateDisplayOrders(It.Is<IEnumerable<Note>>(notes => !notes.Any()), It.IsAny<int>()),
+            Times.Once);
+        _repository.Verify(r => r.RemoveRange(It.Is<IEnumerable<Note>>(notes => notes.Count() == 3)), Times.Once);
+    }
+
+    [Fact]
     public async Task Handle_NoMatchingNotes_ShortCircuitsToSuccessWithoutSideEffects()
     {
         GivenNotes();

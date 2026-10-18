@@ -39,6 +39,14 @@ public class NotesRepository(FoodDiaryContext context) : INotesRepository
         return await context.Notes.FindAsync([id], cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<Note>> FindByIds(IReadOnlyCollection<int> ids, CancellationToken cancellationToken)
+    {
+        return await context.Notes
+            .AsNoTracking()
+            .Where(n => ids.Contains(n.Id))
+            .ToListAsync(cancellationToken);
+    }
+
     public Task Add(Note note, CancellationToken cancellationToken)
     {
         context.Notes.Add(note);

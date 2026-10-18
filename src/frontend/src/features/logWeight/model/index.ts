@@ -7,3 +7,9 @@ export const schema = z.object({
 });
 
 export type FormValues = z.infer<typeof schema>;
+
+export const editSchema = z.object({
+  weight: weightSchema,
+});
+
+export type EditFormValues = z.infer<typeof editSchema>;

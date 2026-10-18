@@ -10,3 +10,9 @@ public record WeightLog(DateOnly Date, decimal Weight);
 
 [PublicAPI]
 public record LogWeightResponse(DateOnly Date, decimal Weight);
+
+[PublicAPI]
+public record UpdateWeightResponse(DateOnly Date, decimal Weight);
+
+[PublicAPI]
+public record DeleteWeightResponse(DateOnly DeletedDate);

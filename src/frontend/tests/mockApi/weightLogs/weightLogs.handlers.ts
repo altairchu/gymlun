@@ -1,5 +1,9 @@
 import { type PathParams, http, type HttpHandler } from 'msw';
-import { type WeightLogBody, type GetWeightLogsResponse } from '@/entities/weightLog';
+import {
+  type WeightLogBody,
+  type GetWeightLogsResponse,
+  type UpdateWeightLogBody,
+} from '@/entities/weightLog';
 import { API_URL } from '@/shared/config';
 import { db } from '../db';
 import { DelayedHttpResponse } from '../DelayedHttpResponse';
@@ -38,5 +42,27 @@ export const handlers: HttpHandler[] = [
     });
 
     return await DelayedHttpResponse.ok();
+  }),
+
+  http.put<{ date: string }, UpdateWeightLogBody>(
+    `${API_URL}/api/weight-logs/:date`,
+    async ({ params, request }) => {
+      const { value } = await request.json();
+
+      const updated = db.weightLog.update({
+        where: { date: { equals: params.date } },
+        data: { value },
+      });
+
+      return updated ? await DelayedHttpResponse.ok() : await DelayedHttpResponse.notFound();
+    },
+  ),
+
+  http.delete<{ date: string }>(`${API_URL}/api/weight-logs/:date`, async ({ params }) => {
+    const deleted = db.weightLog.delete({
+      where: { date: { equals: params.date } },
+    });
+
+    return deleted ? await DelayedHttpResponse.ok() : await DelayedHttpResponse.notFound();
   }),
 ];

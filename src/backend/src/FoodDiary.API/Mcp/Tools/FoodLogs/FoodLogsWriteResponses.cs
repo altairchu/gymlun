@@ -6,7 +6,10 @@ namespace FoodDiary.API.Mcp.Tools.FoodLogs;
 public record LogFoodResponse(DateOnly Date, string MealType, FoodLog FoodLog);
 
 [PublicAPI]
+public record LogFoodsResponse(DateOnly Date, string MealType, IReadOnlyList<FoodLog> FoodLogs);
+
+[PublicAPI]
 public record UpdateFoodLogResponse(DateOnly Date, string MealType, FoodLog FoodLog);
 
 [PublicAPI]
-public record DeleteFoodLogResponse(int DeletedId);
+public record DeleteFoodLogsResponse(IReadOnlyList<int> DeletedIds);

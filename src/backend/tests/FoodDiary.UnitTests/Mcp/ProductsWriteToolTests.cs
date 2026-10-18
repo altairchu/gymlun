@@ -72,7 +72,7 @@ public class ProductsWriteToolTests
         new CreateProductCommandHandler(_productsRepository.Object, _unitOfWork.Object),
         _productRepository.Object,
         new UpdateProductCommandHandler(_productRepository.Object, _unitOfWork.Object),
-        new DeleteProductCommandHandler(_productRepository.Object));
+        new DeleteProductsCommandHandler(_productRepository.Object));
 
     private Task<CreateProductToolResponse> CreateProduct(
         string[]? categories = null,
@@ -239,5 +239,40 @@ public class ProductsWriteToolTests
         var act = () => CreateTool().UpdateProduct(404, name: "Tofu", cancellationToken: CancellationToken.None);
 
         await act.Should().ThrowExactlyAsync<McpException>().WithMessage("Product 404 not found. Look it up with `list_products`.");
+    }
+
+    [Fact]
+    public async Task DeleteProducts_DeletesEachProductOnce()
+    {
+        var chicken = GivenChickenBreast();
+
+        var response = await CreateTool().DeleteProducts([chicken.Id, chicken.Id], CancellationToken.None);
+
+        response.DeletedIds.Should().Equal(chicken.Id);
+        _productRepository.Verify(
+            r => r.RemoveRange(It.Is<IEnumerable<Product>>(products => products.Single() == chicken)),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteProducts_SomeNotFound_IsToolErrorAndDeletesNothing()
+    {
+        var chicken = GivenChickenBreast();
+
+        var act = () => CreateTool().DeleteProducts([chicken.Id, 404, 405], CancellationToken.None);
+
+        await act.Should().ThrowExactlyAsync<McpException>()
+            .WithMessage("Products not found: 404, 405. Nothing was deleted; look them up with `list_products`.");
+        _productRepository.Verify(r => r.RemoveRange(It.IsAny<IEnumerable<Product>>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(51)]
+    public async Task DeleteProducts_NoneOrMoreThan50_IsToolError(int count)
+    {
+        var act = () => CreateTool().DeleteProducts(Enumerable.Range(1, count).ToArray(), CancellationToken.None);
+
+        await act.Should().ThrowExactlyAsync<McpException>().WithMessage($"Requested {count} ids; pass 1 to 50.");
     }
 }

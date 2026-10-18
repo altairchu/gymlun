@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using FoodDiary.API.Mcp.Tools.FoodLogs;
 using FoodDiary.Application.Notes.Create;
+using FoodDiary.Application.Notes.CreateMany;
 using FoodDiary.Application.Notes.Delete;
 using FoodDiary.Application.Notes.Update;
 using FoodDiary.Domain.Entities;
@@ -22,6 +23,7 @@ public class FoodLogsWriteToolTests
 
     private readonly Mock<IProductsRepository> _productsRepository = new();
     private readonly Mock<INotesRepository> _notesRepository = new();
+    private readonly Mock<INoteRepository> _noteRepository = new();
     private readonly List<Note> _addedNotes = [];
     private Note? _updatedNote;
 
@@ -39,11 +41,29 @@ public class FoodLogsWriteToolTests
         Salt = null
     };
 
+    private static readonly Product Rice = new()
+    {
+        Id = 9,
+        Name = "白飯",
+        CaloriesCost = 130,
+        DefaultQuantity = 200,
+        QuantityUnit = QuantityUnit.Grams,
+        Protein = null,
+        Fats = null,
+        Carbs = null,
+        Sugar = null,
+        Salt = null
+    };
+
     public FoodLogsWriteToolTests()
     {
         _productsRepository
             .Setup(r => r.FindById(Dumpling.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Dumpling);
+        _productsRepository
+            .Setup(r => r.FindByIds(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyCollection<int> ids, CancellationToken _) =>
+                new[] { Dumpling, Rice }.Where(p => ids.Contains(p.Id)).ToArray());
         _notesRepository
             .Setup(r => r.FindByDate(It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => _addedNotes);
@@ -56,6 +76,17 @@ public class FoodLogsWriteToolTests
             })
             .Returns(Task.CompletedTask);
         _notesRepository
+            .Setup(r => r.AddRange(It.IsAny<IReadOnlyCollection<Note>>(), It.IsAny<CancellationToken>()))
+            .Callback((IReadOnlyCollection<Note> notes, CancellationToken _) =>
+            {
+                foreach (var note in notes)
+                {
+                    note.Id = _addedNotes.Count + 1;
+                    _addedNotes.Add(note);
+                }
+            })
+            .Returns(Task.CompletedTask);
+        _notesRepository
             .Setup(r => r.Update(It.IsAny<Note>(), It.IsAny<CancellationToken>()))
             .Callback((Note note, CancellationToken _) => _updatedNote = note)
             .Returns(Task.CompletedTask);
@@ -65,8 +96,9 @@ public class FoodLogsWriteToolTests
         _productsRepository.Object,
         _notesRepository.Object,
         new CreateNoteCommandHandler(_productsRepository.Object, _notesRepository.Object),
+        new CreateNotesCommandHandler(_productsRepository.Object, _notesRepository.Object),
         new UpdateNoteCommandHandler(_productsRepository.Object, _notesRepository.Object),
-        new DeleteNoteCommandHandler(Mock.Of<INoteRepository>(), Mock.Of<INotesOrderCalculator>()),
+        new DeleteNotesCommandHandler(_noteRepository.Object, Mock.Of<INotesOrderCalculator>()),
         new CaloriesCalculator());
 
     private async Task<JsonNode> LogFood(
@@ -256,5 +288,112 @@ public class FoodLogsWriteToolTests
 
         await act.Should().ThrowExactlyAsync<McpException>().WithMessage("Food log 404 not found. Find it with `get_food_logs`.");
         _updatedNote.Should().BeNull();
+    }
+
+    private async Task<JsonNode> LogFoods(LogFoodsItem[] items, string? time = null, string? mealType = null)
+    {
+        var response = await CreateTool().LogFoods(September1, items, time, mealType, CancellationToken.None);
+
+        return JsonSerializer.SerializeToNode(response, McpJsonUtilities.DefaultOptions)!;
+    }
+
+    [Fact]
+    public async Task LogFoods_LogsEveryItemAtOneTime_InTheMealNamed_AfterTheFoodLogsAlreadyInIt()
+    {
+        _addedNotes.Add(new Note { Id = 1, Date = September1, MealType = MealType.Lunch, DisplayOrder = 4 });
+
+        var json = await LogFoods(
+            [
+                new LogFoodsItem { ProductId = Dumpling.Id, Servings = 10 },
+                new LogFoodsItem { ProductId = Rice.Id, Quantity = 150 },
+                new LogFoodsItem { ProductId = Rice.Id }
+            ],
+            time: "15:30",
+            mealType: "Lunch");
+
+        json["mealType"]!.GetValue<string>().Should().Be("Lunch");
+        json["foodLogs"]!.AsArray().Select(foodLog => (foodLog!["product"]!["name"]!.GetValue<string>(), foodLog["quantity"]!.GetValue<int>()))
+            .Should().Equal(("餃子", 250), ("白飯", 150), ("白飯", 200));
+        _addedNotes.Skip(1).Select(note => (note.ProductId, note.ProductQuantity, note.DisplayOrder)).Should().Equal(
+            (Dumpling.Id, 250, 5),
+            (Rice.Id, 150, 6),
+            (Rice.Id, 200, 7));
+        _addedNotes.Skip(1).Should().AllSatisfy(note =>
+            note.Should().BeEquivalentTo(new { Date = September1, Time = new TimeOnly(15, 30), MealType = MealType.Lunch }));
+    }
+
+    [Fact]
+    public async Task LogFoods_UnknownProduct_IsToolErrorAndLogsNothing()
+    {
+        var act = () => LogFoods(
+            [new LogFoodsItem { ProductId = Dumpling.Id }, new LogFoodsItem { ProductId = 404 }],
+            mealType: "Dinner");
+
+        await act.Should().ThrowExactlyAsync<McpException>()
+            .WithMessage("Products not found: 404. Nothing was logged; look them up with `list_products`.");
+        _addedNotes.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(0, null, "`items[1]` (product 9): Requested quantity 0; it must be from 1 to 5000 grams.")]
+    [InlineData(100, 1.0, "`items[1]` (product 9): Pass either `quantity` or `servings`, not both.")]
+    [InlineData(null, 300.0, "`items[1]` (product 9): Requested servings 300")]
+    public async Task LogFoods_InvalidAmountOfOneItem_IsToolErrorNamingItAndLogsNothing(int? quantity, double? servings, string message)
+    {
+        var act = () => LogFoods(
+            [
+                new LogFoodsItem { ProductId = Dumpling.Id },
+                new LogFoodsItem { ProductId = Rice.Id, Quantity = quantity, Servings = (decimal?)servings }
+            ],
+            time: "12:30");
+
+        await act.Should().ThrowExactlyAsync<McpException>().WithMessage($"{message}*");
+        _addedNotes.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task LogFoods_ServingsAboveMaxGrams_IsToolErrorNamingTheItem()
+    {
+        var act = () => LogFoods([new LogFoodsItem { ProductId = Rice.Id, Servings = 30 }], time: "12:30");
+
+        await act.Should().ThrowExactlyAsync<McpException>()
+            .WithMessage("`items[0]` (product 9): That is 6000 g; it must be from 1 to 5000 grams. Check `servings`.");
+        _addedNotes.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(21)]
+    public async Task LogFoods_NoneOrMoreThan20Items_IsToolError(int count)
+    {
+        var items = Enumerable.Range(0, count).Select(_ => new LogFoodsItem { ProductId = Rice.Id }).ToArray();
+
+        var act = () => LogFoods(items, time: "12:30");
+
+        await act.Should().ThrowExactlyAsync<McpException>().WithMessage($"Requested {count} items; pass 1 to 20.");
+    }
+
+    [Fact]
+    public async Task DeleteFoodLogs_SomeNotFound_IsToolErrorAndDeletesNothing()
+    {
+        _notesRepository
+            .Setup(r => r.FindByIds(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Note { Id = 41 }]);
+
+        var act = () => CreateTool().DeleteFoodLogs([41, 404, 405], CancellationToken.None);
+
+        await act.Should().ThrowExactlyAsync<McpException>()
+            .WithMessage("Food logs not found: 404, 405. Nothing was deleted; find them with `get_food_logs`.");
+        _noteRepository.Verify(r => r.RemoveRange(It.IsAny<IEnumerable<Note>>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(51)]
+    public async Task DeleteFoodLogs_NoneOrMoreThan50_IsToolError(int count)
+    {
+        var act = () => CreateTool().DeleteFoodLogs(Enumerable.Range(1, count).ToArray(), CancellationToken.None);
+
+        await act.Should().ThrowExactlyAsync<McpException>().WithMessage($"Requested {count} ids; pass 1 to 50.");
     }
 }
