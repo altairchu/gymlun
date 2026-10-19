@@ -21,7 +21,7 @@ public class ProductsWriteTool(
     CreateProductCommandHandler createProductCommandHandler,
     IProductRepository productRepository,
     UpdateProductCommandHandler updateProductCommandHandler,
-    DeleteProductCommandHandler deleteProductCommandHandler)
+    DeleteProductsCommandHandler deleteProductsCommandHandler)
 {
     internal const int MinServingGrams = 1;
     internal const int MaxServingGrams = 1000;
@@ -29,6 +29,7 @@ public class ProductsWriteTool(
     internal const int MaxCategories = 10;
     internal const int MaxCategoryNameLength = 64;
     internal const int MaxNutrientGramsPer100g = 100;
+    internal const int MaxDeleteProductsIds = 50;
 
     private const string CreateProductToolDescription =
         """
@@ -54,9 +55,11 @@ public class ProductsWriteTool(
         Food logs of the product keep their grams, so their nutrition follows the new values.
         """;
 
-    private const string DeleteProductToolDescription =
+    private const string DeleteProductsToolDescription =
         """
-        Deletes one product by its `id`, as returned by `list_products`. Every food log of the product is deleted with it, so make sure the person means it; to fix a wrong value, use `update_product` instead.
+        Deletes products by their `id`, as returned by `list_products`: pass every product to delete in `ids`, 1 to 50 of them, in one call. Every food log of these products is deleted with them, so make sure the person means it; to fix a wrong value, use `update_product` instead.
+
+        When any of `ids` is not found, nothing is deleted.
         """;
 
     [McpServerTool(Name = "create_product", ReadOnly = false, Destructive = false, Idempotent = false, OpenWorld = false)]
@@ -236,20 +239,26 @@ public class ProductsWriteTool(
         };
     }
 
-    [McpServerTool(Name = "delete_product", ReadOnly = false, Destructive = true, Idempotent = true, OpenWorld = false)]
-    [Description(DeleteProductToolDescription)]
-    public async Task<DeleteProductToolResponse> DeleteProduct(
-        [Description("Id of the product to delete.")] int id,
+    [McpServerTool(Name = "delete_products", ReadOnly = false, Destructive = true, Idempotent = true, OpenWorld = false)]
+    [Description(DeleteProductsToolDescription)]
+    public async Task<DeleteProductsToolResponse> DeleteProducts(
+        [Description("Ids of the products to delete, 1 to 50.")] int[] ids,
         CancellationToken cancellationToken)
     {
-        var result = await deleteProductCommandHandler.Handle(new DeleteProductCommand(id), cancellationToken);
+        var distinctIds = IdsArgument.Distinct(ids, MaxDeleteProductsIds);
+        var productsQuery = productRepository.GetQueryWithoutTracking().Where(p => distinctIds.Contains(p.Id));
+        var foundProducts = await productRepository.GetByQueryAsync(productsQuery, cancellationToken);
+        var missingIds = distinctIds.Except(foundProducts.Select(p => p.Id)).ToList();
 
-        return result switch
+        if (missingIds.Count > 0)
         {
-            DeleteProductResult.Success => new DeleteProductToolResponse(id),
-            DeleteProductResult.NotFound => throw new McpException($"Product {id} not found."),
-            _ => throw new McpException($"Product {id} could not be deleted.")
-        };
+            throw new McpException(
+                $"Products not found: {IdsArgument.Join(missingIds)}. Nothing was deleted; look them up with `list_products`.");
+        }
+
+        await deleteProductsCommandHandler.Handle(new DeleteProductsCommand(distinctIds), cancellationToken);
+
+        return new DeleteProductsToolResponse(distinctIds);
     }
 
     private static List<string> ToCategoryNames(IEnumerable<string> categories)

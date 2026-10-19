@@ -76,6 +76,22 @@ public class CreateNotesCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_GivenMealAndFirstDisplayOrder_AddsNotesInThatMealOrderedFromIt()
+    {
+        GivenProducts(1, 2);
+        var command = new CreateNotesCommand(
+            Date,
+            new TimeOnly(15, 30),
+            [new(1, 100), new(2, 200)],
+            MealType.Lunch,
+            FirstDisplayOrder: 3);
+
+        await Handler.Handle(command, CancellationToken.None);
+
+        _addedNotes.Select(n => (n.MealType, n.DisplayOrder)).Should().Equal((MealType.Lunch, 3), (MealType.Lunch, 4));
+    }
+
+    [Fact]
     public async Task Handle_UnknownProduct_ReturnsValidationErrorAndAddsNothing()
     {
         GivenProducts(1);

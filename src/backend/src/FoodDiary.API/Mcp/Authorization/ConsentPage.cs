@@ -7,7 +7,7 @@ internal static class ConsentPage
     private static readonly Dictionary<string, string> ScopeDescriptions = new()
     {
         [McpScopes.FoodRead] = "讀取你嘅食物記錄、食物清單、分類同體重",
-        [McpScopes.FoodWrite] = "幫你記低、修改或者刪除食物記錄，管理食物同分類，同埋記低體重"
+        [McpScopes.FoodWrite] = "幫你記低、修改或者刪除食物記錄，管理食物同分類，同埋記低、修改或者刪除體重"
     };
 
     public static string Render(RegisteredClient client, ConsentRequest consent, string consentTicket)

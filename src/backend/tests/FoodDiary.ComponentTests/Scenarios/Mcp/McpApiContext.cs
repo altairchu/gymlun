@@ -166,6 +166,26 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         });
     }
 
+    public Task When_mcp_client_calls_log_foods(
+        string date,
+        string time,
+        Product productCountedInServings,
+        decimal servings,
+        Product weighedProduct,
+        int quantity)
+    {
+        return When_mcp_client_calls_listed_tool("log_foods", new Dictionary<string, object?>
+        {
+            ["date"] = date,
+            ["time"] = time,
+            ["items"] = new[]
+            {
+                new Dictionary<string, object?> { ["productId"] = productCountedInServings.Id, ["servings"] = servings },
+                new Dictionary<string, object?> { ["productId"] = weighedProduct.Id, ["quantity"] = quantity }
+            }
+        });
+    }
+
     public Task When_mcp_client_calls_update_food_log(Note note, string time, int quantity)
     {
         return When_mcp_client_calls_listed_tool("update_food_log", new Dictionary<string, object?>
@@ -196,11 +216,11 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         });
     }
 
-    public Task When_mcp_client_calls_delete_product(Product product)
+    public Task When_mcp_client_calls_delete_products(params Product[] products)
     {
-        return When_mcp_client_calls_listed_tool("delete_product", new Dictionary<string, object?>
+        return When_mcp_client_calls_listed_tool("delete_products", new Dictionary<string, object?>
         {
-            ["id"] = product.Id
+            ["ids"] = products.Select(product => product.Id).ToArray()
         });
     }
 
@@ -252,11 +272,33 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         });
     }
 
-    public Task When_mcp_client_calls_delete_food_log(Note note)
+    public Task When_mcp_client_calls_update_weight(string date, decimal weight)
     {
-        return When_mcp_client_calls_listed_tool("delete_food_log", new Dictionary<string, object?>
+        return When_mcp_client_calls_listed_tool("update_weight", new Dictionary<string, object?>
         {
-            ["id"] = note.Id
+            ["date"] = date,
+            ["weight"] = weight
+        });
+    }
+
+    public Task When_mcp_client_calls_delete_weight(string date)
+    {
+        return When_mcp_client_calls_listed_tool("delete_weight", new Dictionary<string, object?>
+        {
+            ["date"] = date
+        });
+    }
+
+    public Task When_mcp_client_calls_delete_food_logs(params Note[] notes)
+    {
+        return When_mcp_client_calls_delete_food_logs_by_ids(notes.Select(note => note.Id).ToArray());
+    }
+
+    public Task When_mcp_client_calls_delete_food_logs_by_ids(params int[] ids)
+    {
+        return When_mcp_client_calls_listed_tool("delete_food_logs", new Dictionary<string, object?>
+        {
+            ["ids"] = ids
         });
     }
 
@@ -632,14 +674,53 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         return Task.CompletedTask;
     }
 
-    public Task Then_food_log_is_deleted(Note note)
+    public async Task Then_food_logs_are_logged_at(
+        string date,
+        string time,
+        string mealType,
+        params (Product Product, int Quantity)[] foodLogs)
     {
         _toolResult.IsError.Should().NotBe(true, ToolResultText());
 
         using var response = JsonDocument.Parse(ToolResultText());
-        response.RootElement.GetProperty("deletedId").GetInt32().Should().Be(note.Id);
+        response.RootElement.GetProperty("date").GetString().Should().Be(date);
+        response.RootElement.GetProperty("mealType").GetString().Should().Be(mealType);
+        response.RootElement.GetProperty("foodLogs").EnumerateArray()
+            .Select(foodLog => (
+                foodLog.GetProperty("time").GetString(),
+                foodLog.GetProperty("product").GetProperty("name").GetString(),
+                foodLog.GetProperty("quantity").GetInt32()))
+            .Should().Equal(foodLogs.Select(foodLog => ((string?)time, (string?)foodLog.Product.Name, foodLog.Quantity)));
 
-        return Task.CompletedTask;
+        var loggedDate = DateOnly.Parse(date, CultureInfo.InvariantCulture);
+        var savedNotes = await QueryDatabase(db => db.Notes.AsNoTracking()
+            .Where(n => n.Date == loggedDate)
+            .OrderBy(n => n.DisplayOrder)
+            .ToListAsync());
+        savedNotes.Select(n => (n.ProductId, n.ProductQuantity, n.Time, n.MealType)).Should().Equal(
+            foodLogs.Select(foodLog => (
+                foodLog.Product.Id,
+                foodLog.Quantity,
+                TimeOnly.Parse(time, CultureInfo.InvariantCulture),
+                Enum.Parse<MealType>(mealType))));
+    }
+
+    public async Task Then_food_logs_are_deleted(params Note[] notes)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        using var response = JsonDocument.Parse(ToolResultText());
+        response.RootElement.GetProperty("deletedIds").EnumerateArray().Select(id => id.GetInt32())
+            .Should().Equal(notes.Select(note => note.Id));
+
+        var noteIds = notes.Select(note => note.Id).ToList();
+        (await QueryDatabase(db => db.Notes.AnyAsync(n => noteIds.Contains(n.Id)))).Should().BeFalse();
+    }
+
+    public async Task Then_food_logs_are_kept(params Note[] notes)
+    {
+        var noteIds = notes.Select(note => note.Id).ToList();
+        (await QueryDatabase(db => db.Notes.CountAsync(n => noteIds.Contains(n.Id)))).Should().Be(notes.Length);
     }
 
     public Task Then_created_product_is_favorite_with_nutrition_per_100g(
@@ -717,15 +798,17 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         savedProduct.Categories.Select(c => c.Name).Should().BeEquivalentTo(categories);
     }
 
-    public async Task Then_product_and_its_food_logs_are_deleted(Product product)
+    public async Task Then_products_and_their_food_logs_are_deleted(params Product[] products)
     {
         _toolResult.IsError.Should().NotBe(true, ToolResultText());
 
         using var response = JsonDocument.Parse(ToolResultText());
-        response.RootElement.GetProperty("deletedId").GetInt32().Should().Be(product.Id);
+        response.RootElement.GetProperty("deletedIds").EnumerateArray().Select(id => id.GetInt32())
+            .Should().Equal(products.Select(product => product.Id));
 
-        (await QueryDatabase(db => db.Products.AnyAsync(p => p.Id == product.Id))).Should().BeFalse();
-        (await QueryDatabase(db => db.Notes.AnyAsync(n => n.ProductId == product.Id))).Should().BeFalse();
+        var productIds = products.Select(product => product.Id).ToList();
+        (await QueryDatabase(db => db.Products.AnyAsync(p => productIds.Contains(p.Id)))).Should().BeFalse();
+        (await QueryDatabase(db => db.Notes.AnyAsync(n => productIds.Contains(n.ProductId)))).Should().BeFalse();
     }
 
     public Task Then_categories_are_listed_with_product_counts(params (string Name, int ProductCount)[] categories)
@@ -783,6 +866,28 @@ public class McpApiContext(FoodDiaryWebApplicationFactory factory) : BaseContext
         var loggedDate = DateOnly.Parse(date, CultureInfo.InvariantCulture);
         var savedWeightLog = await QueryDatabase(db => db.WeightLogs.AsNoTracking().SingleAsync(wl => wl.Date == loggedDate));
         savedWeightLog.Weight.Should().Be(weight);
+    }
+
+    public async Task Then_weight_is_changed_to(string date, decimal weight)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        using var response = JsonDocument.Parse(ToolResultText());
+        response.RootElement.GetProperty("date").GetString().Should().Be(date);
+        response.RootElement.GetProperty("weight").GetDecimal().Should().Be(weight);
+
+        await Then_weight_is_logged(date, weight);
+    }
+
+    public async Task Then_weight_is_deleted(string date)
+    {
+        _toolResult.IsError.Should().NotBe(true, ToolResultText());
+
+        using var response = JsonDocument.Parse(ToolResultText());
+        response.RootElement.GetProperty("deletedDate").GetString().Should().Be(date);
+
+        var deletedDate = DateOnly.Parse(date, CultureInfo.InvariantCulture);
+        (await QueryDatabase(db => db.WeightLogs.AnyAsync(wl => wl.Date == deletedDate))).Should().BeFalse();
     }
 
     public Task Then_tool_call_is_error(string message)

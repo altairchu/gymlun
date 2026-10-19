@@ -1,5 +1,6 @@
 using FoodDiary.ComponentTests.Dsl;
 using FoodDiary.ComponentTests.Infrastructure;
+using FoodDiary.Domain.Entities;
 using FoodDiary.Domain.WeightTracking;
 
 namespace FoodDiary.ComponentTests.Scenarios.Mcp;
@@ -11,10 +12,10 @@ public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApi
     private static readonly string[] AllTools =
     [
         ..ReadTools,
-        "log_food", "update_food_log", "delete_food_log",
-        "create_product", "update_product", "delete_product",
+        "log_food", "log_foods", "update_food_log", "delete_food_logs",
+        "create_product", "update_product", "delete_products",
         "create_category", "rename_category", "delete_category",
-        "log_weight"
+        "log_weight", "update_weight", "delete_weight"
     ];
 
     [Scenario]
@@ -122,16 +123,45 @@ public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApi
     }
 
     [Scenario]
-    public Task The_client_can_delete_food_log()
+    public Task The_client_can_log_several_foods_at_once()
+    {
+        var dumplings = Create.Product("餃子").CountedInServingsOf(25).Please();
+        var rice = Create.Product("白飯").Please();
+        (Product Product, int Quantity)[] expectedFoodLogs = [(dumplings, 250), (rice, 150)];
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_products(dumplings, rice),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_log_foods("2026-09-01", "12:45", dumplings, 10, rice, 150),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_food_logs_are_logged_at("2026-09-01", "12:45", "Lunch", expectedFoodLogs));
+    }
+
+    [Scenario]
+    public Task The_client_can_delete_several_food_logs_at_once()
+    {
+        var oatmeal = Create.Note().WithDate("2026-09-01").WithProduct("Oatmeal", quantity: 60).Please();
+        var apple = Create.Note().WithDate("2026-09-02").WithTime("15:30").WithProduct("Apple", quantity: 150).Please();
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_notes(oatmeal, apple),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_delete_food_logs(oatmeal, apple),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_food_logs_are_deleted(oatmeal, apple));
+    }
+
+    [Scenario]
+    public Task The_client_deletes_no_food_log_when_one_of_them_is_not_found()
     {
         var note = Create.Note().WithDate("2026-09-01").WithProduct("Oatmeal", quantity: 60).Please();
 
         return CtxRunner.RunScenarioAsync(
             c => c.Given_notes(note),
             c => c.Given_access_token_was_issued(),
-            c => c.When_mcp_client_calls_delete_food_log(note),
-            c => c.Then_mcp_client_lists_tools(AllTools),
-            c => c.Then_food_log_is_deleted(note));
+            c => c.When_mcp_client_calls_delete_food_logs_by_ids(note.Id, -1),
+            c => c.Then_tool_call_is_error("Food logs not found: -1. Nothing was deleted"),
+            c => c.Then_food_logs_are_kept(note));
     }
 
     [Scenario]
@@ -177,16 +207,17 @@ public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApi
     }
 
     [Scenario]
-    public Task The_client_can_delete_product_with_its_food_logs()
+    public Task The_client_can_delete_several_products_with_their_food_logs_at_once()
     {
-        var note = Create.Note().WithDate("2026-09-01").WithProduct("Oatmeal", quantity: 60).Please();
+        var oatmeal = Create.Note().WithDate("2026-09-01").WithProduct("Oatmeal", quantity: 60).Please();
+        var apple = Create.Note().WithDate("2026-09-01").WithProduct("Apple", quantity: 150).Please();
 
         return CtxRunner.RunScenarioAsync(
-            c => c.Given_notes(note),
+            c => c.Given_notes(oatmeal, apple),
             c => c.Given_access_token_was_issued(),
-            c => c.When_mcp_client_calls_delete_product(note.Product!),
+            c => c.When_mcp_client_calls_delete_products(oatmeal.Product!, apple.Product!),
             c => c.Then_mcp_client_lists_tools(AllTools),
-            c => c.Then_product_and_its_food_logs_are_deleted(note.Product!));
+            c => c.Then_products_and_their_food_logs_are_deleted(oatmeal.Product!, apple.Product!));
     }
 
     [Scenario]
@@ -270,6 +301,44 @@ public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApi
             c => c.When_mcp_client_calls_log_weight("2026-09-01", 72.4m),
             c => c.Then_mcp_client_lists_tools(AllTools),
             c => c.Then_weight_is_logged("2026-09-01", 72.4m));
+    }
+
+    [Scenario]
+    public Task The_client_can_update_weight()
+    {
+        var weightLog = new WeightLog { Date = DateOnly.Parse("2026-09-01"), Weight = 72.8m };
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_weight_logs(weightLog),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_update_weight("2026-09-01", 72.4m),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_weight_is_changed_to("2026-09-01", 72.4m));
+    }
+
+    [Scenario]
+    public Task The_client_can_delete_weight()
+    {
+        var weightLog = new WeightLog { Date = DateOnly.Parse("2026-09-01"), Weight = 72.8m };
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_weight_logs(weightLog),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_delete_weight("2026-09-01"),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_weight_is_deleted("2026-09-01"));
+    }
+
+    [Scenario]
+    public Task The_client_is_told_to_update_weight_on_a_date_that_has_one()
+    {
+        var weightLog = new WeightLog { Date = DateOnly.Parse("2026-09-01"), Weight = 72.8m };
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_weight_logs(weightLog),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_log_weight("2026-09-01", 72.4m),
+            c => c.Then_tool_call_is_error("72.8 kg is already logged for 2026-09-01. Change it with `update_weight`."));
     }
 
     [Scenario]

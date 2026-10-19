@@ -23,19 +23,20 @@ public class DeleteNotesCommandHandler(INoteRepository noteRepository, INotesOrd
         }
 
         var notesForDeleteIds = notesForDelete.Select(n => n.Id).ToList();
-        var date = notesForDelete[0].Date;
-        var mealType = notesForDelete[0].MealType;
 
-        var remainingQuery = noteRepository.GetQuery()
-            .Where(n => n.Date == date)
-            .Where(n => n.MealType == mealType)
-            .Where(n => !notesForDeleteIds.Contains(n.Id))
-            .OrderBy(n => n.Time)
-            .ThenBy(n => n.DisplayOrder)
-            .ThenBy(n => n.Id);
-        var remainingNotes = await noteRepository.GetByQueryAsync(remainingQuery, cancellationToken);
+        foreach (var (date, mealType) in notesForDelete.Select(n => (n.Date, n.MealType)).Distinct())
+        {
+            var remainingQuery = noteRepository.GetQuery()
+                .Where(n => n.Date == date)
+                .Where(n => n.MealType == mealType)
+                .Where(n => !notesForDeleteIds.Contains(n.Id))
+                .OrderBy(n => n.Time)
+                .ThenBy(n => n.DisplayOrder)
+                .ThenBy(n => n.Id);
+            var remainingNotes = await noteRepository.GetByQueryAsync(remainingQuery, cancellationToken);
 
-        notesOrderCalculator.RecalculateDisplayOrders(remainingNotes);
+            notesOrderCalculator.RecalculateDisplayOrders(remainingNotes);
+        }
 
         noteRepository.RemoveRange(notesForDelete);
         await noteRepository.UnitOfWork.SaveChangesAsync(cancellationToken);

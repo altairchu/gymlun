@@ -11,15 +11,20 @@ Food Diary can share your food logs, products and weight with Claude, or any oth
 | `list_categories` | `food:read` | Categories, with how many products each one has |
 | `get_weight_logs` | `food:read` | Your weight over a date range |
 | `log_food` | `food:write` | Logs a product on a date at a time of day or in a meal, in grams or servings; one serving unless told otherwise |
+| `log_foods` | `food:write` | Logs up to 20 products eaten together, at one time of day, each in grams or servings; logs none of them if any product or amount is wrong |
 | `update_food_log` | `food:write` | Changes a food log's date, time, meal, amount or product, keeping whatever is not passed |
-| `delete_food_log` | `food:write` | Deletes a food log, to undo a mistake |
+| `delete_food_logs` | `food:write` | Deletes up to 50 food logs, to undo mistakes; deletes none of them if any is not found |
 | `create_product` | `food:write` | Adds a product from nutrition values for one serving, in any number of categories, counted in grams or servings, marked as a favorite by default |
 | `update_product` | `food:write` | Changes a product's name, serving, nutrition values per 100 g, categories or favorite mark, keeping whatever is not passed |
-| `delete_product` | `food:write` | Deletes a product together with all its food logs |
+| `delete_products` | `food:write` | Deletes up to 50 products together with all their food logs; deletes none of them if any is not found |
 | `create_category` | `food:write` | Adds a category |
 | `rename_category` | `food:write` | Renames a category |
 | `delete_category` | `food:write` | Deletes a category; its products stay |
 | `log_weight` | `food:write` | Logs your weight on a date; a date holds one weight |
+| `update_weight` | `food:write` | Changes the weight logged on a date |
+| `delete_weight` | `food:write` | Deletes the weight logged on a date |
+
+AI apps such as ChatGPT ask you to approve each call that changes something, so `log_foods`, `delete_food_logs` and `delete_products` take a whole meal or a whole clean-up in one call, and one approval.
 
 Both scopes also cover categories and weight. A client that asks for no scope is granted both. To keep a client read-only, have it request only `food:read`: it then never sees the write tools.
 
