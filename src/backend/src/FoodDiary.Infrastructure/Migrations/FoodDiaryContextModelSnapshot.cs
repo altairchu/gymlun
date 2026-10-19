@@ -110,6 +110,9 @@ namespace FoodDiary.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTimeOffset?>("PhotoUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<decimal?>("Protein")
                         .HasColumnType("numeric");
 
@@ -128,6 +131,20 @@ namespace FoodDiary.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Products", (string)null);
+                });
+
+            modelBuilder.Entity("FoodDiary.Domain.Entities.ProductPhoto", b =>
+                {
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("Content")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.HasKey("ProductId");
+
+                    b.ToTable("ProductPhotos", (string)null);
                 });
 
             modelBuilder.Entity("FoodDiary.Domain.WeightTracking.WeightLog", b =>
@@ -188,6 +205,15 @@ namespace FoodDiary.Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("FoodDiary.Domain.Entities.ProductPhoto", b =>
+                {
+                    b.HasOne("FoodDiary.Domain.Entities.Product", null)
+                        .WithOne("Photo")
+                        .HasForeignKey("FoodDiary.Domain.Entities.ProductPhoto", "ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ProductCategories", b =>
                 {
                     b.HasOne("FoodDiary.Domain.Entities.Category", null)
@@ -206,6 +232,8 @@ namespace FoodDiary.Infrastructure.Migrations
             modelBuilder.Entity("FoodDiary.Domain.Entities.Product", b =>
                 {
                     b.Navigation("Notes");
+
+                    b.Navigation("Photo");
                 });
 #pragma warning restore 612, 618
         }

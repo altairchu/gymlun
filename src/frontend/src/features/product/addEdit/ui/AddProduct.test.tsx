@@ -6,6 +6,7 @@ import {
   type CreateProductRequest,
   type CreateProductResponse,
   productModel,
+  type SetProductPhotoResponse,
 } from '@/entities/product';
 import { API_URL } from '@/shared/config';
 import { server } from '@tests/mockApi/server';
@@ -107,4 +108,67 @@ test('the created product is sent with its categories and counting unit', async 
       isFavorite: false,
     },
   ]);
+});
+
+test('a picked photo is saved for the new product', async () => {
+  const user = userEvent.setup();
+  givenProductCreatedWithId(99);
+  const photoRequests: { productId: string; hasPhoto: boolean }[] = [];
+  server.use(
+    http.put<{ id: string }>(
+      `${API_URL}/api/v1/products/:id/photo`,
+      async ({ params, request }) => {
+        // jsdom's File does not survive Node's fetch, so the body cannot be parsed as form data here
+        photoRequests.push({
+          productId: params.id,
+          hasPhoto: (await request.text()).includes('name="photo"'),
+        });
+        return HttpResponse.json<SetProductPhotoResponse>({
+          photoUrl: '/api/v1/products/99/photo?v=1',
+        });
+      },
+    ),
+  );
+  await render(<AddProduct initialName="雞翼" />);
+
+  await user.click(await screen.findByRole('button', { name: '加入新食物' }));
+  const dialog = within(await screen.findByRole('dialog', { name: '新食物' }));
+  await user.upload(
+    dialog.getByRole('button', { name: '加相' }),
+    new File(['wings'], 'wings.jpg', { type: 'image/jpeg' }),
+  );
+  expect(await dialog.findByRole('img', { name: '食物相片' })).toHaveAttribute(
+    'src',
+    expect.stringMatching(/^data:image\/jpeg;base64,/) as string,
+  );
+  await whenProductSaved(user);
+
+  expect(photoRequests).toStrictEqual([{ productId: '99', hasPhoto: true }]);
+});
+
+test('a photo picked and then removed is not saved', async () => {
+  const user = userEvent.setup();
+  givenProductCreatedWithId(99);
+  const savePhoto = vi.fn<() => void>();
+  server.use(
+    http.put(`${API_URL}/api/v1/products/:id/photo`, () => {
+      savePhoto();
+      return HttpResponse.json<SetProductPhotoResponse>({
+        photoUrl: '/api/v1/products/99/photo?v=1',
+      });
+    }),
+  );
+  await render(<AddProduct initialName="雞翼" />);
+
+  await user.click(await screen.findByRole('button', { name: '加入新食物' }));
+  const dialog = within(await screen.findByRole('dialog', { name: '新食物' }));
+  await user.upload(
+    dialog.getByRole('button', { name: '加相' }),
+    new File(['photo'], 'wings.jpg', { type: 'image/jpeg' }),
+  );
+  await user.click(await dialog.findByRole('button', { name: '移除相' }));
+  expect(dialog.queryByRole('img', { name: '食物相片' })).not.toBeInTheDocument();
+  await whenProductSaved(user);
+
+  expect(savePhoto).not.toHaveBeenCalled();
 });

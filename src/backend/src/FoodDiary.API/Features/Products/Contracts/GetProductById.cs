@@ -18,6 +18,7 @@ public class GetProductByIdResponse
     public required decimal? Sugar { get; init; }
     public required decimal? Salt { get; init; }
     public required bool IsFavorite { get; init; }
+    public required string? PhotoUrl { get; init; }
 }
 
 [PublicAPI]

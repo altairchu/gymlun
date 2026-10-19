@@ -211,6 +211,7 @@ public class ProductsWriteTool(
             Carbs = Nutrient(carbsPer100g, product.Carbs, nameof(carbsPer100g)),
             Sugar = Nutrient(sugarPer100g, product.Sugar, nameof(sugarPer100g)),
             Salt = Nutrient(saltPer100g, product.Salt, nameof(saltPer100g)),
+            PhotoUpdatedAt = product.PhotoUpdatedAt,
             Categories = productCategories
         };
 

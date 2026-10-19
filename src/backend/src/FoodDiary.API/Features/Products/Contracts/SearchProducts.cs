@@ -18,5 +18,6 @@ public record SearchProductsResponse(IReadOnlyCollection<SearchProductsResponse.
         decimal? Carbs,
         decimal? Sugar,
         decimal? Salt,
-        bool IsFavorite);
+        bool IsFavorite,
+        string? PhotoUrl);
 }

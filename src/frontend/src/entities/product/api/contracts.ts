@@ -13,6 +13,8 @@ export interface Product {
   sugar: number | null;
   salt: number | null;
   isFavorite: boolean;
+  /** Relative to `API_URL` */
+  photoUrl: string | null;
 }
 
 export interface Category {
@@ -45,6 +47,7 @@ export interface GetProductByIdResponse {
   sugar: number | null;
   salt: number | null;
   isFavorite: boolean;
+  photoUrl: string | null;
 }
 
 export interface ProductSelectOption {
@@ -60,6 +63,7 @@ export interface ProductSelectOption {
   sugar: number | null;
   salt: number | null;
   isFavorite: boolean;
+  photoUrl: string | null;
 }
 
 export interface CreateProductRequest {
@@ -93,6 +97,15 @@ export interface EditProductRequest {
   sugar: number | null;
   salt: number | null;
   isFavorite: boolean;
+}
+
+export interface SetProductPhotoRequest {
+  productId: number;
+  photo: Blob;
+}
+
+export interface SetProductPhotoResponse {
+  photoUrl: string;
 }
 
 export interface DeleteProductsRequest {

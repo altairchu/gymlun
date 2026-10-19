@@ -7,7 +7,8 @@ Food Diary can share your food logs, products and weight with Claude, or any oth
 | Tool | Scope | What it does |
 |------|-------|--------------|
 | `get_food_logs` | `food:read` | Food logs over a date range in order of the time eaten, with daily and range totals |
-| `list_products` | `food:read` | Products in your catalogue; `favoritesOnly` lists the ones you eat often, `categoryId` the ones in a category |
+| `list_products` | `food:read` | Products in your catalogue; `favoritesOnly` lists the ones you eat often, `categoryId` the ones in a category; `hasPhoto` tells which ones have a photo |
+| `get_product_photo` | `food:read` | Shows a product's photo |
 | `list_categories` | `food:read` | Categories, with how many products each one has |
 | `get_weight_logs` | `food:read` | Your weight over a date range |
 | `log_food` | `food:write` | Logs a product on a date at a time of day or in a meal, in grams or servings; one serving unless told otherwise |
@@ -17,6 +18,8 @@ Food Diary can share your food logs, products and weight with Claude, or any oth
 | `create_product` | `food:write` | Adds a product from nutrition values for one serving, in any number of categories, counted in grams or servings, marked as a favorite by default |
 | `update_product` | `food:write` | Changes a product's name, serving, nutrition values per 100 g, categories or favorite mark, keeping whatever is not passed |
 | `delete_products` | `food:write` | Deletes up to 50 products together with all their food logs; deletes none of them if any is not found |
+| `set_product_photo` | `food:write` | Sets or replaces a product's photo, from a photo attached in the chat or a public `https` image URL; it is shrunk to 640 px on its longest side |
+| `remove_product_photo` | `food:write` | Removes a product's photo |
 | `create_category` | `food:write` | Adds a category |
 | `rename_category` | `food:write` | Renames a category |
 | `delete_category` | `food:write` | Deletes a category; its products stay |
@@ -25,6 +28,8 @@ Food Diary can share your food logs, products and weight with Claude, or any oth
 | `delete_weight` | `food:write` | Deletes the weight logged on a date |
 
 AI apps such as ChatGPT ask you to approve each call that changes something, so `log_foods`, `delete_food_logs` and `delete_products` take a whole meal or a whole clean-up in one call, and one approval.
+
+ChatGPT hands `set_product_photo` the photos you attach in the chat. Where an app cannot pass an attached photo, give it the photo's URL instead, or set the photo on the product page.
 
 Both scopes also cover categories and weight. A client that asks for no scope is granted both. To keep a client read-only, have it request only `food:read`: it then never sees the write tools.
 

@@ -19,6 +19,7 @@ const product = (
   carbs: null,
   sugar: null,
   salt: null,
+  photoUrl: null,
 });
 
 const MEAT = 1;

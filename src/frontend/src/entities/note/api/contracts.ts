@@ -31,6 +31,7 @@ export interface Product {
   carbs: number | null;
   sugar: number | null;
   salt: number | null;
+  photoUrl: string | null;
 }
 
 export interface GetNotesHistoryRequest {

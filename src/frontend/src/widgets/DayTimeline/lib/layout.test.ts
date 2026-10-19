@@ -28,6 +28,7 @@ const note = (id: number, time: string): NoteItem => ({
     carbs: null,
     sugar: null,
     salt: null,
+    photoUrl: null,
   },
 });
 

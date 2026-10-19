@@ -4,7 +4,8 @@ import { type FC, type ReactElement, useMemo, useState } from 'react';
 import { useAppDispatch } from '@/app/store';
 import { categoryLib } from '@/entities/category';
 import { productApi, productModel } from '@/entities/product';
-import { mapToCreateProductRequest } from '../lib';
+import { mapToCreateProductRequest, useSaveProductPhoto } from '../lib';
+import { type PhotoChange, PHOTO_UNCHANGED } from '../model';
 import { ProductInputDialog } from './ProductInputDialog';
 
 interface Props {
@@ -29,8 +30,10 @@ export const AddProduct: FC<Props> = ({
   const dispatch = useAppDispatch();
   const [isDialogOpened, setIsDialogOpened] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [photo, setPhoto] = useState<PhotoChange>(PHOTO_UNCHANGED);
   const { categories, categoriesLoading } = categoryLib.useCategoriesForSelect();
   const [createProduct] = productApi.useCreateProductMutation();
+  const { savePhoto } = useSaveProductPhoto();
 
   const productFormValues = useMemo<productModel.ProductFormValues>(
     () => ({ ...productModel.EMPTY_FORM_VALUES, name: initialName }),
@@ -38,6 +41,7 @@ export const AddProduct: FC<Props> = ({
   );
 
   const handleDialogOpen = (): void => {
+    setPhoto(PHOTO_UNCHANGED);
     setIsDialogOpened(true);
   };
 
@@ -50,6 +54,9 @@ export const AddProduct: FC<Props> = ({
       if (data === undefined) {
         return;
       }
+
+      // Keeping the dialog open after a failed photo would add the product twice on the next try
+      await savePhoto(data.id, photo);
 
       // Keeps the dialog open until the queries refetched by the product tag invalidation
       // have settled, so the caller already sees the new product
@@ -74,9 +81,13 @@ export const AddProduct: FC<Props> = ({
         submitText="加入"
         isLoading={isSaving}
         productFormValues={productFormValues}
+        savedPhotoUrl={null}
+        photo={photo}
+        photoSaveFailed={false}
         categories={categories}
         categoriesLoading={categoriesLoading}
         onSubmit={handleDialogSubmit}
+        onPhotoChange={setPhoto}
         onClose={handleDialogClose}
       />
     </>

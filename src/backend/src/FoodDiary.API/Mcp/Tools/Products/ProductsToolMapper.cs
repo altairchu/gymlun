@@ -41,6 +41,7 @@ public static class ProductsToolMapper
         product.DefaultQuantity,
         product.QuantityUnit.ToCountBy(),
         product.IsFavorite,
+        product.PhotoUpdatedAt is not null,
         new ListProductsToolResponse.ProductNutrition(
             product.CaloriesCost,
             product.Protein,

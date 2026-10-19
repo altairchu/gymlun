@@ -61,6 +61,34 @@ const allCategoriesExist = (categoryIds: number[]): boolean =>
 
 export const count = (): number => db.product.count();
 
+interface StoredPhoto {
+  content: Blob;
+  version: number;
+}
+
+const photos = new Map<number, StoredPhoto>();
+let lastPhotoVersion = 0;
+
+export const photoUrlOf = (productId: number): string | null => {
+  const photo = photos.get(productId);
+  return photo ? `/api/v1/products/${productId}/photo?v=${photo.version}` : null;
+};
+
+export const getPhoto = (productId: number): Blob | null => photos.get(productId)?.content ?? null;
+
+export const setPhoto = (productId: number, content: Blob): void => {
+  lastPhotoVersion += 1;
+  photos.set(productId, { content, version: lastPhotoVersion });
+};
+
+export const deletePhoto = (productId: number): void => {
+  photos.delete(productId);
+};
+
+export const clearPhotos = (): void => {
+  photos.clear();
+};
+
 interface CreateProductResultSuccess {
   type: 'Success';
   id: number;
@@ -174,4 +202,6 @@ export const deleteMany = (ids: number[]): void => {
       id: { in: ids },
     },
   });
+
+  ids.forEach(deletePhoto);
 };
