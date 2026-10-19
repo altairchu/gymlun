@@ -1,13 +1,19 @@
+using FoodDiary.API.Mcp.Tools.Workouts;
 using FoodDiary.ComponentTests.Dsl;
 using FoodDiary.ComponentTests.Infrastructure;
 using FoodDiary.Domain.Entities;
 using FoodDiary.Domain.WeightTracking;
+using FoodDiary.Domain.Workouts;
 
 namespace FoodDiary.ComponentTests.Scenarios.Mcp;
 
 public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApiContext>(infrastructure)
 {
-    private static readonly string[] ReadTools = ["get_food_logs", "list_products", "get_product_photo", "list_categories", "get_weight_logs"];
+    private static readonly string[] ReadTools =
+    [
+        "get_food_logs", "list_products", "get_product_photo", "list_categories", "get_weight_logs",
+        "get_workouts", "list_exercises"
+    ];
 
     private static readonly string[] AllTools =
     [
@@ -16,7 +22,8 @@ public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApi
         "create_product", "update_product", "delete_products",
         "set_product_photo", "remove_product_photo",
         "create_category", "rename_category", "delete_category",
-        "log_weight", "update_weight", "delete_weight"
+        "log_weight", "update_weight", "delete_weight",
+        "log_workout", "update_workout_set", "delete_workout_sets"
     ];
 
     [Scenario]
@@ -432,6 +439,133 @@ public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApi
     }
 
     [Scenario]
+    public Task The_client_can_get_workouts()
+    {
+        WorkoutSet[] workoutSets =
+        [
+            WorkoutSet("2026-08-31", "Deadlift", 5, 140m),
+            WorkoutSet("2026-09-01", "Bench Press", 10, 60m),
+            WorkoutSet("2026-09-01", "Pull-up", 8, 0m),
+            WorkoutSet("2026-09-01", "Bench Press", 8, 62.5m),
+            WorkoutSet("2026-09-03", "Squat", 5, 100m)
+        ];
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_workout_sets(workoutSets),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_get_workouts("2026-09-01", "2026-09-07"),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_workout_days_are(
+                "2026-09-01: Bench Press 10 x 60, 8 x 62.5; Pull-up 8 x 0",
+                "2026-09-03: Squat 5 x 100"));
+    }
+
+    [Scenario]
+    public Task The_client_is_told_to_split_workouts_range_wider_than_366_days()
+    {
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_get_workouts("2025-09-01", "2026-09-02"),
+            c => c.Then_tool_call_is_error("Requested 367 days; the maximum is 366. Split the range."));
+    }
+
+    [Scenario]
+    public Task The_client_can_list_exercises()
+    {
+        WorkoutSet[] workoutSets =
+        [
+            WorkoutSet("2026-08-28", "Bench Press", 10, 57.5m),
+            WorkoutSet("2026-08-30", "Squat", 5, 100m),
+            WorkoutSet("2026-09-01", "Bench Press", 10, 60m),
+            WorkoutSet("2026-09-01", "Bench Press", 8, 62.5m)
+        ];
+        (string Name, string LastDone, int DaysDone)[] expectedExercises =
+            [("Bench Press", "2026-09-01", 2), ("Squat", "2026-08-30", 1)];
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_workout_sets(workoutSets),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_list_exercises(),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_exercises_are_listed(expectedExercises));
+    }
+
+    [Scenario]
+    public Task The_client_can_log_a_whole_workout_at_once_under_names_already_logged()
+    {
+        var benchPress = WorkoutSet("2026-08-28", "Bench Press", 10, 57.5m);
+        LogWorkoutExercise[] exercises =
+        [
+            Exercise("bench press", (10, 60m), (8, 62.5m)),
+            Exercise("Pull-up", (8, 0m), (6, 0m))
+        ];
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_workout_sets(benchPress),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_log_workout("2026-09-01", exercises),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_workout_is_logged("2026-09-01", "Bench Press 10 x 60, 8 x 62.5; Pull-up 8 x 0, 6 x 0"));
+    }
+
+    [Scenario]
+    public Task The_client_logs_no_set_of_a_workout_when_one_of_them_is_out_of_range()
+    {
+        LogWorkoutExercise[] exercises =
+        [
+            Exercise("Bench Press", (10, 60m)),
+            Exercise("Squat", (5, 100m), (0, 100m))
+        ];
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_log_workout("2026-09-01", exercises),
+            c => c.Then_tool_call_is_error("`exercises[1].sets[1]` (Squat): Requested 0 reps"),
+            c => c.When_mcp_client_calls_get_workouts("2026-09-01", "2026-09-01"),
+            c => c.Then_workout_days_are());
+    }
+
+    [Scenario]
+    public Task The_client_can_update_workout_set()
+    {
+        var bench = WorkoutSet("2026-09-01", "Bench Press", 10, 60m);
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_workout_sets(bench),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_update_workout_set(bench, 8, 62.5m),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_workout_set_is_changed_to(bench, 8, 62.5m));
+    }
+
+    [Scenario]
+    public Task The_client_can_delete_several_workout_sets_at_once()
+    {
+        var bench = WorkoutSet("2026-09-01", "Bench Press", 10, 60m);
+        var squat = WorkoutSet("2026-09-02", "Squat", 5, 100m);
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_workout_sets(bench, squat),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_delete_workout_sets(bench, squat),
+            c => c.Then_mcp_client_lists_tools(AllTools),
+            c => c.Then_workout_sets_are_deleted(bench, squat));
+    }
+
+    [Scenario]
+    public Task The_client_deletes_no_workout_set_when_one_of_them_is_not_found()
+    {
+        var bench = WorkoutSet("2026-09-01", "Bench Press", 10, 60m);
+
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_workout_sets(bench),
+            c => c.Given_access_token_was_issued(),
+            c => c.When_mcp_client_calls_delete_workout_sets_by_ids(bench.Id, -1),
+            c => c.Then_tool_call_is_error("Workout sets not found: -1. Nothing was deleted"),
+            c => c.Then_workout_sets_are_kept(bench));
+    }
+
+    [Scenario]
     public Task The_client_can_create_product_from_serving_nutrition()
     {
         return CtxRunner.RunScenarioAsync(
@@ -570,4 +704,18 @@ public class McpApiTests(InfrastructureFixture infrastructure) : BaseTest<McpApi
             c => c.When_client_refreshes_access_token(),
             c => c.Then_client_receives_new_access_token());
     }
+
+    private static WorkoutSet WorkoutSet(string date, string exercise, int reps, decimal weightKg) => new()
+    {
+        Date = DateOnly.Parse(date),
+        Exercise = exercise,
+        Reps = reps,
+        WeightKg = weightKg
+    };
+
+    private static LogWorkoutExercise Exercise(string exercise, params (int Reps, decimal WeightKg)[] sets) => new()
+    {
+        Exercise = exercise,
+        Sets = sets.Select(set => new LogWorkoutSet { Reps = set.Reps, WeightKg = set.WeightKg }).ToArray()
+    };
 }

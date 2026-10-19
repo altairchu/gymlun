@@ -38,6 +38,7 @@ public class DatabaseFixture
                               truncate table "Products" cascade;
                               truncate table "Categories" cascade;
                               truncate table "WeightLogs";
+                              truncate table "WorkoutSets";
                               """;
 
         await command.ExecuteScalarAsync();

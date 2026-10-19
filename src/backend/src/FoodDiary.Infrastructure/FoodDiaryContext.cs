@@ -3,6 +3,7 @@ using System.Reflection;
 using FoodDiary.Domain.Abstractions;
 using FoodDiary.Domain.Entities;
 using FoodDiary.Domain.WeightTracking;
+using FoodDiary.Domain.Workouts;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,7 @@ public class FoodDiaryContext(DbContextOptions options) : DbContext(options), IU
     public DbSet<Category> Categories { get; init; }
     public DbSet<WeightLog> WeightLogs { get; init; }
     public DbSet<ProductPhoto> ProductPhotos { get; init; }
+    public DbSet<WorkoutSet> WorkoutSets { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

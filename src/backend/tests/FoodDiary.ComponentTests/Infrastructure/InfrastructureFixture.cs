@@ -9,6 +9,7 @@ using FoodDiary.ComponentTests.Scenarios.Notes;
 using FoodDiary.ComponentTests.Scenarios.ProductPhotos;
 using FoodDiary.ComponentTests.Scenarios.Products;
 using FoodDiary.ComponentTests.Scenarios.WeightTracking;
+using FoodDiary.ComponentTests.Scenarios.Workouts;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -35,7 +36,8 @@ public class InfrastructureFixture : IAsyncLifetime, IDisposable
             .AddScoped<NotesApiContext>()
             .AddScoped<ProductsApiContext>()
             .AddScoped<ProductPhotosApiContext>()
-            .AddScoped<WeightLogsApiContext>();
+            .AddScoped<WeightLogsApiContext>()
+            .AddScoped<WorkoutSetsApiContext>();
 
         services
             .AddSingleton<FoodDiaryWebApplicationFactory>()

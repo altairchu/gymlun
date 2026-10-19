@@ -3,6 +3,7 @@ using FoodDiary.API.Extensions;
 using FoodDiary.API.Features.ProductPhotos;
 using FoodDiary.API.Features.Products.Extensions;
 using FoodDiary.API.Features.WeightTracking;
+using FoodDiary.API.Features.Workouts;
 using FoodDiary.API.Logging;
 using FoodDiary.API.Mcp;
 using FoodDiary.API.Mcp.Authorization;
@@ -137,6 +138,7 @@ public class Startup
         services.AddProducts();
         services.AddProductPhotos();
         services.AddWeightLogs();
+        services.AddWorkoutSets();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -164,6 +166,7 @@ public class Startup
             endpoints.MapControllers();
             endpoints.MapProductPhotos();
             endpoints.MapWeightLogs();
+            endpoints.MapWorkoutSets();
             
             endpoints.MapHealthChecks("/healthz/live", new HealthCheckOptions
             {
