@@ -1,6 +1,6 @@
 # MCP server
 
-Food Diary can share your food logs, products and weight with Claude, or any other compatible [MCP](https://modelcontextprotocol.io) client, so you can ask things like "what did I eat last week?", "plan my meals for next week" or "I had a plate of dumplings for lunch, log it". The tools cover what the app itself does, apart from photo recognition and nutrition suggestions, which an AI app does by itself.
+Food Diary can share your food logs, products, weight and workouts with Claude, or any other compatible [MCP](https://modelcontextprotocol.io) client, so you can ask things like "what did I eat last week?", "plan my meals for next week" or "I had a plate of dumplings for lunch, log it". The tools cover what the app itself does, apart from photo recognition and nutrition suggestions, which an AI app does by itself.
 
 ## Tools
 
@@ -11,6 +11,8 @@ Food Diary can share your food logs, products and weight with Claude, or any oth
 | `get_product_photo` | `food:read` | Shows a product's photo |
 | `list_categories` | `food:read` | Categories, with how many products each one has |
 | `get_weight_logs` | `food:read` | Your weight over a date range |
+| `get_workouts` | `food:read` | Your workouts over a date range: each day's sets, grouped by exercise in the order you did them |
+| `list_exercises` | `food:read` | Exercises you have logged, most recently done first, with when you last did each one and on how many days |
 | `log_food` | `food:write` | Logs a product on a date at a time of day or in a meal, in grams or servings; one serving unless told otherwise |
 | `log_foods` | `food:write` | Logs up to 20 products eaten together, at one time of day, each in grams or servings; logs none of them if any product or amount is wrong |
 | `update_food_log` | `food:write` | Changes a food log's date, time, meal, amount or product, keeping whatever is not passed |
@@ -26,12 +28,15 @@ Food Diary can share your food logs, products and weight with Claude, or any oth
 | `log_weight` | `food:write` | Logs your weight on a date; a date holds one weight |
 | `update_weight` | `food:write` | Changes the weight logged on a date |
 | `delete_weight` | `food:write` | Deletes the weight logged on a date |
+| `log_workout` | `food:write` | Logs a whole workout on a date: up to 20 exercises and 100 sets in total, each set with reps and added weight in kg (0 for bodyweight); logs none of them if any is wrong. An exercise name that matches one already logged, ignoring case, keeps the logged spelling |
+| `update_workout_set` | `food:write` | Changes a set's date, exercise, reps or weight, keeping whatever is not passed |
+| `delete_workout_sets` | `food:write` | Deletes up to 50 sets, to undo mistakes; deletes none of them if any is not found |
 
-AI apps such as ChatGPT ask you to approve each call that changes something, so `log_foods`, `delete_food_logs` and `delete_products` take a whole meal or a whole clean-up in one call, and one approval.
+AI apps such as ChatGPT ask you to approve each call that changes something, so `log_foods`, `log_workout`, `delete_food_logs`, `delete_products` and `delete_workout_sets` take a whole meal, a whole workout or a whole clean-up in one call, and one approval.
 
 ChatGPT hands `set_product_photo` the photos you attach in the chat. Where an app cannot pass an attached photo, give it the photo's URL instead, or set the photo on the product page.
 
-Both scopes also cover categories and weight. A client that asks for no scope is granted both. To keep a client read-only, have it request only `food:read`: it then never sees the write tools.
+Both scopes also cover categories, weight and workouts. A client that asks for no scope is granted both. To keep a client read-only, have it request only `food:read`: it then never sees the write tools.
 
 The server is off by default. It lives at `/mcp` on your Food Diary domain, and you turn it on with the [MCP settings in the configuration reference](deployment.md#mcp-server).
 

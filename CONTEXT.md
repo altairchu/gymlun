@@ -57,3 +57,13 @@ or in none.
 **Weight Log**:
 The weight recorded for one date. At most one per date.
 _Avoid_: weigh-in, measurement
+
+**Workout Set**:
+One set of an Exercise done on a date: its reps and the added weight in kilograms, 0 for
+bodyweight. The sets of a date run in the order they were logged.
+_Avoid_: rep, workout entry
+
+**Exercise**:
+The free-text name a Workout Set is logged under, e.g. Bench Press. A name that matches one
+already logged, ignoring case, is stored with the logged spelling.
+_Avoid_: movement, lift

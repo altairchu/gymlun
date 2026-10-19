@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The MCP `log_foods` tool logs up to 20 foods eaten together in one call, so an AI app such as ChatGPT asks you to approve the meal once instead of once per food
 - Each food can have a photo: add, change or remove it when adding or editing the food, and it shows on the food's card and in the products table
 - MCP tools to set, show and remove a food's photo (`set_product_photo`, `get_product_photo`, `remove_product_photo`), from a photo attached in the chat or an image URL; `list_products` tells which foods have a photo
+- A workouts page (健身) logs strength training: pick a day, log an exercise with its sets of reps and weight (or bodyweight), and tap a set to change or delete it
+- MCP tools to read and log workouts (`get_workouts`, `list_exercises`, `log_workout`, `update_workout_set`, `delete_workout_sets`); `log_workout` logs a whole session in one call
 
 ### Changed
 

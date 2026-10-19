@@ -3,6 +3,7 @@ import { categoriesHandlers } from './categories';
 import { notesHandlers } from './notes';
 import { productsHandlers } from './products';
 import { weightLogsHandlers } from './weightLogs';
+import { workoutsHandlers } from './workouts';
 
 export const handlers = [
   ...authHandlers,
@@ -10,4 +11,5 @@ export const handlers = [
   ...productsHandlers,
   ...categoriesHandlers,
   ...weightLogsHandlers,
+  ...workoutsHandlers,
 ];

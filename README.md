@@ -9,7 +9,7 @@ Why use it:
 
 - **Instant daily totals.** Log what you eat and immediately see your calories, protein, fats, carbs, sugar and salt for the day. Paper can't do that.
 - **Your data stays yours.** It runs on your own server. No subscription, no ads, no account with anyone else.
-- **Only the essentials.** Food logs, your own product list and weight tracking, plus AI that fills in nutrition values from a photo and access for Claude or any other MCP client to read and log what you eat.
+- **Only the essentials.** Food logs, your own product list, weight tracking and a workout log, plus AI that fills in nutrition values from a photo and access for Claude or any other MCP client to read and log what you eat.
 
 **You run your own copy.** There is no hosted version to sign up for. You need a server or container platform that runs Docker, a Google account to sign in with, and a domain with HTTPS to use it anywhere other than the machine it runs on.
 
@@ -39,6 +39,7 @@ To run your own copy:
 - 🥗 Nutrition tracking: calories, protein, fats, carbs, sugar, and salt
 - 🗂️ Personal food database with nutrition values for each product
 - ⚖️ Weight tracking
+- 🏋️ Workout log: exercises, sets, reps and weights
 - 📱 PWA and multi-device support
 - 📸 AI-powered food recognition from photos
 - ⭐ Favorite products you eat often, logged in one tap

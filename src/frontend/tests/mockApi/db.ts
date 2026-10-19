@@ -41,6 +41,14 @@ export const db = factory({
     date: primaryKey(Date),
     value: Number,
   },
+
+  workoutSet: {
+    id: primaryKey(Number),
+    date: String,
+    exercise: String,
+    reps: Number,
+    weightKg: Number,
+  },
 });
 
 type EntityKey = Exclude<keyof typeof db, typeof DATABASE_INSTANCE>;
@@ -59,3 +67,4 @@ export type DbNote = EntityOf<'note'>;
 export type DbProduct = EntityOf<'product'>;
 export type DbUpdatableProduct = UpdatableEntityOf<'product'>;
 export type DbCategory = EntityOf<'category'>;
+export type DbWorkoutSet = EntityOf<'workoutSet'>;
