@@ -1,6 +1,7 @@
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import CategoryIcon from '@mui/icons-material/Category';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeight';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import { Box, List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
@@ -24,6 +25,11 @@ const NAV_LINKS = linkOptions([
     icon: <MonitorWeightIcon />,
     title: '體重',
     to: '/weight',
+  },
+  {
+    icon: <FitnessCenterIcon />,
+    title: '健身',
+    to: '/workouts',
   },
   {
     icon: <RestaurantIcon />,

@@ -18,6 +18,7 @@ import { Route as AppCategoriesRouteImport } from './routes/_app/categories'
 import { Route as AppHistoryRouteImport } from './routes/_app/history'
 import { Route as AppProductsRouteImport } from './routes/_app/products'
 import { Route as AppWeightRouteImport } from './routes/_app/weight'
+import { Route as AppWorkoutsRouteImport } from './routes/_app/workouts'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -63,6 +64,11 @@ const AppWeightRoute = AppWeightRouteImport.update({
   path: '/weight',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWorkoutsRoute = AppWorkoutsRouteImport.update({
+  id: '/workouts',
+  path: '/workouts',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/history': typeof AppHistoryRoute
   '/products': typeof AppProductsRoute
   '/weight': typeof AppWeightRoute
+  '/workouts': typeof AppWorkoutsRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/history': typeof AppHistoryRoute
   '/products': typeof AppProductsRoute
   '/weight': typeof AppWeightRoute
+  '/workouts': typeof AppWorkoutsRoute
   '/': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/_app/history': typeof AppHistoryRoute
   '/_app/products': typeof AppProductsRoute
   '/_app/weight': typeof AppWeightRoute
+  '/_app/workouts': typeof AppWorkoutsRoute
   '/_app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/products'
     | '/weight'
+    | '/workouts'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/products'
     | '/weight'
+    | '/workouts'
     | '/'
   id:
     | '__root__'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/_app/history'
     | '/_app/products'
     | '/_app/weight'
+    | '/_app/workouts'
     | '/_app/'
   fileRoutesById: FileRoutesById
 }
@@ -202,6 +214,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWeightRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/workouts': {
+      id: '/_app/workouts'
+      path: '/workouts'
+      fullPath: '/workouts'
+      preLoaderRoute: typeof AppWorkoutsRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -210,6 +229,7 @@ interface AppRouteChildren {
   AppHistoryRoute: typeof AppHistoryRoute
   AppProductsRoute: typeof AppProductsRoute
   AppWeightRoute: typeof AppWeightRoute
+  AppWorkoutsRoute: typeof AppWorkoutsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -218,6 +238,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppHistoryRoute: AppHistoryRoute,
   AppProductsRoute: AppProductsRoute,
   AppWeightRoute: AppWeightRoute,
+  AppWorkoutsRoute: AppWorkoutsRoute,
   AppIndexRoute: AppIndexRoute,
 }
 

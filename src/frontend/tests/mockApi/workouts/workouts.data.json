@@ -1,0 +1,11 @@
+[
+  { "id": 1, "date": "2023-10-17", "exercise": "Deadlift", "reps": 5, "weightKg": 100 },
+  { "id": 2, "date": "2023-10-17", "exercise": "Deadlift", "reps": 5, "weightKg": 100 },
+  { "id": 3, "date": "2023-10-17", "exercise": "Pull-up", "reps": 6, "weightKg": 0 },
+  { "id": 4, "date": "2023-10-19", "exercise": "Bench Press", "reps": 10, "weightKg": 60 },
+  { "id": 5, "date": "2023-10-19", "exercise": "Bench Press", "reps": 8, "weightKg": 62.5 },
+  { "id": 6, "date": "2023-10-19", "exercise": "Bench Press", "reps": 6, "weightKg": 65 },
+  { "id": 7, "date": "2023-10-19", "exercise": "Pull-up", "reps": 8, "weightKg": 0 },
+  { "id": 8, "date": "2023-10-19", "exercise": "Pull-up", "reps": 7, "weightKg": 0 },
+  { "id": 9, "date": "2023-10-19", "exercise": "Squat", "reps": 5, "weightKg": 80 }
+]

@@ -176,6 +176,27 @@ test('switching the date on the diary shows the Food Logs of the new date', asyn
   expect(within(breakfast).queryByText('Beef')).not.toBeInTheDocument();
 });
 
+test('switching the date on the workouts screen shows the training of the new date', async () => {
+  const user = userEvent.setup();
+  await renderApp('/workouts', { signedIn: true });
+
+  expect(await screen.findByRole('region', { name: 'Bench Press' })).toBeVisible();
+  await user.click(screen.getByRole('button', { name: /2023年10月19日/ }));
+  await user.click(screen.getByRole('gridcell', { name: '17' }));
+  await user.click(screen.getByRole('button', { name: '確定' }));
+
+  expect(await screen.findByRole('button', { name: /2023年10月17日/ })).toBeVisible();
+  expect(await screen.findByRole('region', { name: 'Deadlift' })).toBeVisible();
+  expect(screen.queryByRole('region', { name: 'Bench Press' })).not.toBeInTheDocument();
+});
+
+test('opening a workouts date by URL shows the training of that date', async () => {
+  await renderApp('/workouts?date=2023-10-18', { signedIn: true });
+
+  expect(await screen.findByRole('heading', { level: 1, name: /2023年10月18日/ })).toBeVisible();
+  expect(await screen.findByText('呢日未有訓練記錄')).toBeVisible();
+});
+
 interface DrawerLinkCase {
   link: string;
   from: string;
@@ -197,6 +218,11 @@ test.each<DrawerLinkCase>([
     link: '體重',
     from: '/',
     findSectionContent: () => screen.findByRole('button', { name: '記錄體重' }),
+  },
+  {
+    link: '健身',
+    from: '/',
+    findSectionContent: () => screen.findByRole('region', { name: 'Bench Press' }),
   },
   {
     link: '食物',

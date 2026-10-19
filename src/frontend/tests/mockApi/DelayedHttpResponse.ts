@@ -16,6 +16,8 @@ const status = async (code: number): Promise<HttpResponse<null>> => {
 
 const ok = (): Promise<HttpResponse<null>> => status(200);
 
+const noContent = (): Promise<HttpResponse<null>> => status(204);
+
 const badRequest = (): Promise<HttpResponse<null>> => status(400);
 
 const notFound = (): Promise<HttpResponse<null>> => status(404);
@@ -32,6 +34,7 @@ const json = async <T extends JsonBodyType>(data: T): Promise<HttpResponse<T>> =
 
 export const DelayedHttpResponse = {
   ok,
+  noContent,
   badRequest,
   notFound,
   json,

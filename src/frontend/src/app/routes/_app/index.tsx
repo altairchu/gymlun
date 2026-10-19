@@ -3,11 +3,7 @@ import { lazy } from 'react';
 import { z } from 'zod';
 import { noteApi } from '@/entities/note';
 import { IndexPage } from '@/pages/ui/IndexPage';
-import { MSW_ENABLED } from '@/shared/config';
-import { dateLib } from '@/shared/lib';
-
-const getDefaultDate = (): string =>
-  MSW_ENABLED ? '2023-10-19' : dateLib.formatToISOStringWithoutTime(new Date());
+import { getDefaultDate } from './-getDefaultDate';
 
 const DateSwitcherSlot = lazy(() =>
   import('./-DateSwitcherSlot').then(module => ({ default: module.DateSwitcherSlot })),

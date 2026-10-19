@@ -6,6 +6,7 @@ export const initMockApiDb = async (): Promise<void> => {
   const { fillProducts } = await import('./products');
   const { fillCategories } = await import('./categories');
   const { fillWeightLogs } = await import('./weightLogs');
+  const { fillWorkoutSets } = await import('./workouts');
 
   drop(db);
   fillUsers();
@@ -13,4 +14,5 @@ export const initMockApiDb = async (): Promise<void> => {
   fillProducts();
   fillCategories();
   fillWeightLogs();
+  fillWorkoutSets();
 };
