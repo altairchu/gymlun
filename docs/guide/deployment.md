@@ -97,6 +97,10 @@ Environment variable                  | Default | Description
 `ASPNETCORE_HTTP_PORTS`               | `8080`  | Port the container listens on
 `ForwardedHosts__0`                   | —       | Host of a frontend that proxies to the app, e.g. `gymlun.vercel.app`. The app then trusts that host in `X-Forwarded-Host`, so sign-in redirects and cookies use it. Needs `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true`
 `App__Logging__WriteLogsInJsonFormat` | `false` | Write logs as JSON instead of plain text, for log collectors that parse JSON
+`KeepAwake__Url`                      | —       | URL the app requests on a schedule to keep itself awake, for hosts that put an app to sleep when no traffic reaches it, e.g. `https://food.example.com/healthz/live`. Unset, the app requests nothing
+`KeepAwake__Interval`                 | `00:10:00` | Time between those requests
+`KeepAwake__QuietFrom`, `KeepAwake__QuietUntil` | — | Time of day, e.g. `03:00` and `07:00`, between which the app sends none, so the host can put it to sleep. Set both or neither
+`KeepAwake__TimeZone`                 | `UTC`   | Time zone of the quiet hours, e.g. `Asia/Hong_Kong`
 
 ### AI food recognition
 

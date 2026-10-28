@@ -38,6 +38,7 @@
     "tests",
     "types",
     "buildTargets.ts",
-    "buildTargets.test.ts"
+    "buildTargets.test.ts",
+    "api"
   ],
 }
