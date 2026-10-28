@@ -58,16 +58,15 @@ Vercel 會將 `/api`、`/signin-google`、`/mcp`、`/authorize`、`/token`、`/.
 4. 完成後打開 `https://gymlun.vercel.app`，用你個 Gmail 登入。
 5. 喺手機用瀏覽器打開，揀「加入主畫面」，就可以當 app 咁用。
 
-## 5. 唔俾後端瞓覺（建議）
+## 5. 唔俾後端瞓覺
 
-Render 免費 web service 15 分鐘冇人用就會瞓，再用要等一分鐘左右先醒。可以用 GitHub Actions 每 10 分鐘叫醒佢一次：
+Render 免費 web service 15 分鐘冇人用就會瞓，再用要等一分鐘左右先醒。`render.yaml` 已經設定好，唔使再做嘢：
 
-1. 喺你 fork 嘅 GitHub 頁面，去 **Actions** 撳 enable。
-2. **Settings → Secrets and variables → Actions → Variables**，加一個 variable：
-   - Name：`KEEP_AWAKE_URL`
-   - Value：`https://gymlun-api.onrender.com/healthz/live`
+- 後端每 10 分鐘叫醒自己一次（`KeepAwake__Url`），但香港時間凌晨 3 點到 7 點唔叫（`KeepAwake__QuietFrom`、`KeepAwake__QuietUntil`、`KeepAwake__TimeZone`），所以夜晚會瞓。
+- Vercel 每日排程（`vercel.json` 嘅 `crons`）喺香港時間朝早 7 點到 8 點之間叫醒後端。Vercel 免費版只保證喺嗰個鐘頭入面某個時間跑。
+- GitHub Actions（`keep-awake.yml`）係後備，不過 GitHub 實際上幾個鐘先跑一次，唔靠得住。
 
-一個 service 成個月長開大約用 744 小時，喺 Render 每月 750 小時免費額度之內。
+咁每個月大約用 620 小時，喺 Render 每月 750 小時免費額度之內。如果唔要凌晨休息，刪走 `KeepAwake__QuietFrom` 同 `KeepAwake__QuietUntil` 就得，全月長開都只係 744 小時。
 
 ## 6. 連接 AI
 

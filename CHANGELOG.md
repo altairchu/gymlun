@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The app can keep itself awake on hosts that put idle apps to sleep: set `KeepAwake__Url` to its own health check, optionally with quiet hours (`KeepAwake__QuietFrom`, `KeepAwake__QuietUntil`, `KeepAwake__TimeZone`)
 - The diary home is a grid of every food: filter it by several categories at once (only foods in all of them show) or by favourites, pick foods, set each one's amount in servings or grams, and log them together at a time picked from meal shortcuts
 - The day is a 0:00–23:59 timeline; drag a food, or a whole meal, to another time
 - Foods can be in several categories, and each food is counted either by weight or by servings

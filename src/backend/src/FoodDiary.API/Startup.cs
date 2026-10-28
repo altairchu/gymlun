@@ -1,5 +1,6 @@
 ﻿using FoodDiary.API.ErrorHandling;
 using FoodDiary.API.Extensions;
+using FoodDiary.API.Features.KeepAwake;
 using FoodDiary.API.Features.ProductPhotos;
 using FoodDiary.API.Features.Products.Extensions;
 using FoodDiary.API.Features.WeightTracking;
@@ -139,6 +140,7 @@ public class Startup
         services.AddProductPhotos();
         services.AddWeightLogs();
         services.AddWorkoutSets();
+        services.AddKeepAwake(_configuration);
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

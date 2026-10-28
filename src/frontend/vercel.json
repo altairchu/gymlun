@@ -15,5 +15,9 @@
       "source": "/.well-known/:path*",
       "destination": "https://gymlun-api.onrender.com/.well-known/:path*"
     }
-  ]
+  ],
+  "functions": {
+    "api/wake-server.ts": { "maxDuration": 120 }
+  },
+  "crons": [{ "path": "/api/wake-server", "schedule": "0 23 * * *" }]
 }

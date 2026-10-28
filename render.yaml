@@ -17,6 +17,15 @@ services:
         value: "true"
       - key: Mcp__BaseUrl
         value: https://gymlun.vercel.app
+      # Keeps the free service awake, except 03:00-07:00 Hong Kong time; Vercel wakes it again each morning
+      - key: KeepAwake__Url
+        value: https://gymlun-api.onrender.com/healthz/live
+      - key: KeepAwake__TimeZone
+        value: Asia/Hong_Kong
+      - key: KeepAwake__QuietFrom
+        value: "03:00"
+      - key: KeepAwake__QuietUntil
+        value: "07:00"
       - key: ConnectionStrings__Default
         sync: false
       - key: Auth__AllowedEmails__0
