@@ -1,0 +1,362 @@
+.gym-workspace {
+  --gym-bg: #f1f5fb;
+  --gym-paper: #fdfdff;
+  --gym-raised: #e7efff;
+  --gym-ink: #17254a;
+  --gym-muted: #526284;
+  --gym-line: #d2dcee;
+  --gym-accent: #1e3a8a;
+  --gym-blue-soft: #dbeafe;
+  --gym-tab-bar-height: calc(57px + env(safe-area-inset-bottom, 0px));
+  min-width: 0;
+  min-height: calc(100dvh - 56px);
+  padding-bottom: var(--gym-tab-bar-height);
+  background: var(--gym-bg);
+  color: var(--gym-ink);
+}
+
+.gym-workspace-content {
+  min-width: 0;
+}
+
+.gym-navigation {
+  position: fixed;
+  z-index: 1000;
+  inset: auto 0 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: start;
+  gap: 3px;
+  min-width: 0;
+  height: var(--gym-tab-bar-height);
+  padding: 4px 5px env(safe-area-inset-bottom, 0px);
+  border-top: 1px solid var(--gym-line);
+  background: var(--gym-paper);
+}
+
+.gym-navigation a,
+.gym-body-tabs a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 44px;
+  border-radius: 9px;
+  color: var(--gym-muted);
+  font-weight: 650;
+  text-align: center;
+  text-decoration: none;
+}
+
+.gym-navigation a {
+  flex-direction: column;
+  gap: 2px;
+  padding: 3px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.gym-navigation a:is([data-selected], [aria-current='page']),
+.gym-body-tabs a[aria-current='page'] {
+  background: var(--gym-blue-soft);
+  color: var(--gym-accent);
+}
+
+.gym-navigation a:hover,
+.gym-body-tabs a:hover {
+  background: var(--gym-raised);
+}
+
+.gym-workspace :focus-visible {
+  outline: 2px solid var(--gym-accent);
+  outline-offset: 2px;
+}
+
+.gym-body-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 360px;
+  gap: 4px;
+  padding: 4px;
+  margin: 0 0 12px;
+  border: 1px solid var(--gym-line);
+  border-radius: 12px;
+  background: var(--gym-paper);
+}
+
+.gym-body-tabs a {
+  min-height: 39px;
+  padding: 4px;
+  font-size: 13px;
+}
+
+.gym-feature-page {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  min-width: 0;
+}
+
+.gym-feature-page :is(h2, h3, p, dl, dd, figure) {
+  margin: 0;
+}
+.gym-feature-page h2 {
+  font-size: clamp(22px, 4vw, 30px);
+  line-height: 1.28;
+}
+.gym-feature-page h3 {
+  font-size: 17px;
+}
+.gym-muted {
+  color: var(--gym-muted);
+}
+.gym-notice {
+  color: var(--gym-accent);
+}
+
+.gym-feature-heading,
+.gym-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gym-action-row {
+  justify-content: flex-end;
+}
+
+.gym-card,
+.gym-plan-fieldset {
+  display: grid;
+  gap: 11px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--gym-line);
+  border-radius: 14px;
+  background: var(--gym-paper);
+}
+
+.gym-plan-fieldset {
+  margin: 0;
+}
+.gym-plan-fieldset legend {
+  padding-inline: 5px;
+  font-weight: 680;
+}
+
+.gym-plan-form {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.gym-plan-form label,
+.gym-analysis-controls label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  color: var(--gym-muted);
+  font-size: 13px;
+  font-weight: 630;
+}
+
+.gym-plan-form :is(input, select, textarea),
+.gym-analysis-controls select {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 6px 9px;
+  border: 1px solid var(--gym-line);
+  border-radius: 8px;
+  background: var(--gym-bg);
+  color: var(--gym-ink);
+  font: inherit;
+  font-size: 16px;
+}
+
+.gym-plan-form textarea {
+  resize: vertical;
+}
+
+.gym-form-grid,
+.gym-plan-summary,
+.gym-measurement-grid,
+.gym-analysis-controls {
+  display: grid;
+  gap: 9px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 132px), 1fr));
+}
+
+.gym-plan-summary {
+  padding: 12px;
+  border: 1px solid var(--gym-line);
+  border-radius: 14px;
+  background: var(--gym-blue-soft);
+}
+
+.gym-plan-summary > div,
+.gym-measurement-grid > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 9px;
+  border-radius: 8px;
+  background: var(--gym-paper);
+}
+
+.gym-plan-summary dt,
+.gym-measurement-grid dt {
+  color: var(--gym-muted);
+  font-size: 12px;
+}
+
+.gym-plan-summary dd,
+.gym-measurement-grid dd {
+  color: var(--gym-accent);
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.gym-plan-method {
+  padding: 9px 12px;
+  border-inline-start: 3px solid var(--gym-accent);
+  color: var(--gym-muted);
+  font-size: 13px;
+}
+
+.gym-measurement-module {
+  padding: 8px 10px;
+  border: 1px solid var(--gym-line);
+  border-radius: 9px;
+}
+
+.gym-feature-page summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+.gym-feature-page details[open] > summary {
+  margin-bottom: 9px;
+}
+.gym-record summary span {
+  margin-inline-start: 8px;
+  color: var(--gym-muted);
+  font-size: 13px;
+}
+.gym-measurement-grid > div {
+  background: var(--gym-bg);
+}
+
+.gym-analysis-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 240px;
+  color: var(--gym-accent);
+}
+
+.gym-derived-point {
+  fill: var(--gym-paper);
+}
+.gym-analysis-chart figcaption {
+  color: var(--gym-muted);
+  font-size: 12px;
+}
+.gym-connect-prompt {
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: var(--gym-blue-soft);
+}
+.gym-connect-address {
+  overflow-wrap: anywhere;
+}
+
+.gym-connections,
+.gym-analysis-values {
+  display: grid;
+  gap: 0;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.gym-connections li,
+.gym-analysis-values li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px 12px;
+  padding: 6px 0;
+  border-top: 1px solid var(--gym-line);
+}
+
+.gym-connections li > div:first-child {
+  display: grid;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.gym-connections li span,
+.gym-analysis-values li time {
+  color: var(--gym-muted);
+  font-size: 13px;
+}
+
+@media (min-width: 900px) {
+  .gym-workspace {
+    --gym-tab-bar-height: 0px;
+    display: grid;
+    grid-template-columns: 145px minmax(0, 1fr);
+    min-height: calc(100dvh - 64px);
+  }
+
+  .gym-navigation {
+    position: sticky;
+    inset: 64px auto auto;
+    grid-template-columns: 1fr;
+    align-content: start;
+    height: calc(100dvh - 64px);
+    padding: 16px 9px;
+    border-top: 0;
+    border-inline-end: 1px solid var(--gym-line);
+  }
+
+  .gym-navigation a {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 8px;
+    padding-inline: 10px;
+    font-size: 13px;
+  }
+}
+
+.gym-measurement-flag {
+  display: inline-block;
+  margin-inline-start: 5px;
+  color: var(--gym-muted);
+  font-size: 11px;
+}
+
+.gym-plan-layout,
+.gym-plan-sidebar {
+  display: grid;
+  gap: 13px;
+  min-width: 0;
+  align-content: start;
+}
+
+.gym-plan-sidebar {
+  grid-row: 1;
+}
+
+@media (min-width: 900px) {
+  .gym-plan-layout {
+    grid-template-columns: minmax(0, 1.28fr) minmax(220px, 1fr);
+  }
+  .gym-plan-sidebar {
+    grid-row: auto;
+  }
+}

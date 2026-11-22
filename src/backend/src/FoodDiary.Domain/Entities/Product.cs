@@ -1,12 +1,15 @@
-﻿using FoodDiary.Domain.Enums;
+﻿using FoodDiary.Domain.Abstractions;
+using FoodDiary.Domain.Enums;
 
 namespace FoodDiary.Domain.Entities;
 
 /// <summary>
 /// Eatable product (or dish) to store in diary  
 /// </summary>
-public class Product
+public class Product : IDiaryOwned
 {
+    public long OwnerId { get; set; } = IDiaryOwned.UnassignedOwnerId;
+
     public int Id { get; set; }
 
     /// <summary>

@@ -12,13 +12,15 @@ public class NoteConfiguration : IEntityTypeConfiguration<Note>
     {
         builder.ToTable("Notes");
         builder.HasKey(n => n.Id);
-        builder.HasIndex(n => n.Date);
+        builder.HasIndex(n => new { n.OwnerId, n.Date });
 
         builder.Property(n => n.Date)
             .HasDefaultValueSql("CURRENT_DATE");
 
         builder.HasOne(n => n.Product)
             .WithMany(p => p.Notes)
-            .HasForeignKey(n => n.ProductId);
+            .HasForeignKey(n => new { n.OwnerId, n.ProductId })
+            .HasPrincipalKey(p => new { p.OwnerId, p.Id })
+            .HasConstraintName("FK_Notes_Products_Owner");
     }
 }

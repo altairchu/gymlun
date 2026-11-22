@@ -1,10 +1,14 @@
+using FoodDiary.Domain.Abstractions;
+
 namespace FoodDiary.Domain.Workouts;
 
 /// <summary>
 /// One set of an exercise; the sets of a day run in order of <see cref="Id"/>, the order they were logged
 /// </summary>
-public class WorkoutSet
+public class WorkoutSet : IDiaryOwned
 {
+    public long OwnerId { get; set; } = IDiaryOwned.UnassignedOwnerId;
+
     public const int MaxExerciseLength = 100;
     public const int MinReps = 1;
     public const int MaxReps = 1000;

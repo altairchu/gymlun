@@ -1,8 +1,9 @@
 import CloseIcon from '@mui/icons-material/Close';
 import MenuIcon from '@mui/icons-material/Menu';
 import { Box, IconButton, Skeleton, Typography } from '@mui/material';
-import { useLocation, useMatches } from '@tanstack/react-router';
+import { Link, useLocation, useMatches } from '@tanstack/react-router';
 import { type FC, Suspense, useState } from 'react';
+import { PulsoIcon } from '@/shared/ui/PulsoIcon/PulsoIcon';
 import { type AppBarConfig } from '../model';
 import { NavigationDrawer } from './NavigationDrawer';
 
@@ -73,11 +74,23 @@ export const Navigation: FC = () => {
             />
             <AppBarTitle title={appBar.title} />
           </Box>
-          {appBar.Actions && (
-            <Suspense fallback={<SlotSkeleton />}>
-              <appBar.Actions />
-            </Suspense>
-          )}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {appBar.Actions ? (
+              <Suspense fallback={<SlotSkeleton />}>
+                <appBar.Actions />
+              </Suspense>
+            ) : null}
+            <IconButton
+              color="inherit"
+              href="https://atlasapple.space/"
+              aria-label="返回 AtlasApple"
+            >
+              <PulsoIcon name="arrow-left" />
+            </IconButton>
+            <IconButton color="inherit" component={Link} to="/ai-connect" aria-label="AI 連接">
+              <PulsoIcon name="plug" />
+            </IconButton>
+          </Box>
         </Box>
       );
   }

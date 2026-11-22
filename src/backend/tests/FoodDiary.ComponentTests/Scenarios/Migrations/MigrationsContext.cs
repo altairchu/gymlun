@@ -62,6 +62,33 @@ public class MigrationsContext(DatabaseFixture database)
 
     public Task When_database_is_migrated_to(string migration) => MigrateTo(migration);
 
+    public Task Given_other_legacy_data(int productId) => Execute(
+        """
+        INSERT INTO "ProductPhotos" ("ProductId", "Content") VALUES (@productId, DECODE('0102', 'hex'));
+        INSERT INTO "WeightLogs" ("Date", "Weight") VALUES (DATE '2026-09-01', 72);
+        INSERT INTO "WorkoutSets" ("Id", "Date", "Exercise", "Reps", "WeightKg")
+        VALUES (227, DATE '2026-09-01', 'Squat', 8, 30);
+        """,
+        ("productId", productId));
+
+    public async Task Then_all_legacy_records_are_owned_by_zero(int productId, int noteId, int categoryId)
+    {
+        var owners = await Query<long>(
+            """
+            SELECT "OwnerId" FROM "Categories" WHERE "Id" = @categoryId
+            UNION ALL SELECT "OwnerId" FROM "Products" WHERE "Id" = @productId
+            UNION ALL SELECT "OwnerId" FROM "ProductCategories" WHERE "ProductId" = @productId AND "CategoryId" = @categoryId
+            UNION ALL SELECT "OwnerId" FROM "Notes" WHERE "Id" = @noteId AND "ProductId" = @productId
+            UNION ALL SELECT "OwnerId" FROM "ProductPhotos" WHERE "ProductId" = @productId AND "Content" = DECODE('0102', 'hex')
+            UNION ALL SELECT "OwnerId" FROM "WeightLogs" WHERE "Date" = DATE '2026-09-01' AND "Weight" = 72
+            UNION ALL SELECT "OwnerId" FROM "WorkoutSets" WHERE "Id" = 227 AND "Exercise" = 'Squat'
+            """,
+            ("categoryId", categoryId),
+            ("productId", productId),
+            ("noteId", noteId));
+        owners.Should().Equal(Enumerable.Repeat(0L, 7));
+    }
+
     public async Task Then_product_is_in_categories(int productId, params int[] categoryIds)
     {
         var linkedCategoryIds = await Query<int>(

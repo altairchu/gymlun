@@ -7,6 +7,21 @@ public class MigrationsTests(InfrastructureFixture infrastructure) : BaseTest<Mi
 {
     private const string SingleCategoryPerProduct = "AddProductIsFavorite";
     private const string ManyCategoriesPerProduct = "AddProductCategoriesUnitsAndNoteTime";
+    private const string BeforeDiaryOwnership = "AddWorkoutSets";
+    private const string WithDiaryOwnership = "AtlasDiaryOwnership";
+
+    [Scenario]
+    public Task Upgrading_preserves_legacy_records_in_quarantine()
+    {
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_database_migrated_to(BeforeDiaryOwnership),
+            c => c.Given_category(501, "飯"),
+            c => c.Given_product_in_categories(10, "White rice", 501),
+            c => c.Given_note(100, 10, MealType.Lunch),
+            c => c.Given_other_legacy_data(10),
+            c => c.When_database_is_migrated_to(WithDiaryOwnership),
+            c => c.Then_all_legacy_records_are_owned_by_zero(10, 100, 501));
+    }
 
     [Scenario]
     public Task Products_keep_their_category_and_food_logs_get_time_of_their_meal()

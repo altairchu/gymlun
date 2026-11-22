@@ -13,10 +13,12 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useState, type FC, type ReactElement } from 'react';
+import { useGetGymContextQuery } from '@/entities/gym/gymApi';
 import { type NoteItem, noteLib, noteModel } from '@/entities/note';
 import { SelectedFoodsPanel, logFoodsModel, useFoodSelection } from '@/features/logFoods';
 import { EditNoteDialog } from '@/features/note/edit';
 import { APP_BAR_HEIGHT_SM } from '@/shared/constants';
+import { dateLib } from '@/shared/lib';
 import { Button, PageContainer } from '@/shared/ui';
 import { DayTimeline } from '@/widgets/DayTimeline';
 import { FoodPicker } from '@/widgets/FoodPicker';
@@ -33,6 +35,8 @@ const SELECTION_BAR_HEIGHT = 72;
 export const IndexPage: FC<Props> = ({ date }) => {
   const { data: notes } = noteLib.useNotes(date);
   const nutritionValues = noteModel.calculateNutritionValues(notes);
+  const isToday = date === dateLib.formatToISOStringWithoutTime(dateLib.getCurrentDate());
+  const { data: gymContext } = useGetGymContextQuery(undefined, { skip: !isToday });
   const selection = useFoodSelection();
   const isDesktop = useMediaQuery<Theme>(theme => theme.breakpoints.up('md'), { noSsr: true });
   const [tab, setTab] = useState<MobileTab>('pick');
@@ -74,7 +78,19 @@ export const IndexPage: FC<Props> = ({ date }) => {
         }}
       >
         <Stack spacing={2}>
-          <NutritionSummaryWidget nutritionValues={nutritionValues} />
+          <NutritionSummaryWidget
+            nutritionValues={nutritionValues}
+            targets={
+              gymContext
+                ? {
+                    calories: gymContext.targetKcal,
+                    protein: gymContext.dailyNeeds.targetProteinG,
+                    carbs: gymContext.targetCarbsG,
+                    fats: gymContext.targetFatG,
+                  }
+                : undefined
+            }
+          />
           {isDesktop ? (
             <Box
               sx={{
@@ -128,7 +144,7 @@ export const IndexPage: FC<Props> = ({ date }) => {
             position: 'fixed',
             left: 0,
             right: 0,
-            bottom: 0,
+            bottom: 'var(--gym-tab-bar-height, 0px)',
             height: SELECTION_BAR_HEIGHT,
             px: 2,
             display: 'flex',

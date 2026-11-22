@@ -14,8 +14,12 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as PostLoginRouteImport } from './routes/post-login'
 import { Route as PostLogoutRouteImport } from './routes/post-logout'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppAiConnectRouteImport } from './routes/_app/ai-connect'
+import { Route as AppBodyRouteImport } from './routes/_app/body'
+import { Route as AppBodyAnalysisRouteImport } from './routes/_app/body-analysis'
 import { Route as AppCategoriesRouteImport } from './routes/_app/categories'
 import { Route as AppHistoryRouteImport } from './routes/_app/history'
+import { Route as AppPlanRouteImport } from './routes/_app/plan'
 import { Route as AppProductsRouteImport } from './routes/_app/products'
 import { Route as AppWeightRouteImport } from './routes/_app/weight'
 import { Route as AppWorkoutsRouteImport } from './routes/_app/workouts'
@@ -44,6 +48,21 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAiConnectRoute = AppAiConnectRouteImport.update({
+  id: '/ai-connect',
+  path: '/ai-connect',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBodyRoute = AppBodyRouteImport.update({
+  id: '/body',
+  path: '/body',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBodyAnalysisRoute = AppBodyAnalysisRouteImport.update({
+  id: '/body-analysis',
+  path: '/body-analysis',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCategoriesRoute = AppCategoriesRouteImport.update({
   id: '/categories',
   path: '/categories',
@@ -52,6 +71,11 @@ const AppCategoriesRoute = AppCategoriesRouteImport.update({
 const AppHistoryRoute = AppHistoryRouteImport.update({
   id: '/history',
   path: '/history',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPlanRoute = AppPlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProductsRoute = AppProductsRouteImport.update({
@@ -75,8 +99,12 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/post-login': typeof PostLoginRoute
   '/post-logout': typeof PostLogoutRoute
+  '/ai-connect': typeof AppAiConnectRoute
+  '/body': typeof AppBodyRoute
+  '/body-analysis': typeof AppBodyAnalysisRoute
   '/categories': typeof AppCategoriesRoute
   '/history': typeof AppHistoryRoute
+  '/plan': typeof AppPlanRoute
   '/products': typeof AppProductsRoute
   '/weight': typeof AppWeightRoute
   '/workouts': typeof AppWorkoutsRoute
@@ -85,8 +113,12 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/post-login': typeof PostLoginRoute
   '/post-logout': typeof PostLogoutRoute
+  '/ai-connect': typeof AppAiConnectRoute
+  '/body': typeof AppBodyRoute
+  '/body-analysis': typeof AppBodyAnalysisRoute
   '/categories': typeof AppCategoriesRoute
   '/history': typeof AppHistoryRoute
+  '/plan': typeof AppPlanRoute
   '/products': typeof AppProductsRoute
   '/weight': typeof AppWeightRoute
   '/workouts': typeof AppWorkoutsRoute
@@ -98,8 +130,12 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/post-login': typeof PostLoginRoute
   '/post-logout': typeof PostLogoutRoute
+  '/_app/ai-connect': typeof AppAiConnectRoute
+  '/_app/body': typeof AppBodyRoute
+  '/_app/body-analysis': typeof AppBodyAnalysisRoute
   '/_app/categories': typeof AppCategoriesRoute
   '/_app/history': typeof AppHistoryRoute
+  '/_app/plan': typeof AppPlanRoute
   '/_app/products': typeof AppProductsRoute
   '/_app/weight': typeof AppWeightRoute
   '/_app/workouts': typeof AppWorkoutsRoute
@@ -112,8 +148,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/post-login'
     | '/post-logout'
+    | '/ai-connect'
+    | '/body'
+    | '/body-analysis'
     | '/categories'
     | '/history'
+    | '/plan'
     | '/products'
     | '/weight'
     | '/workouts'
@@ -122,8 +162,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/post-login'
     | '/post-logout'
+    | '/ai-connect'
+    | '/body'
+    | '/body-analysis'
     | '/categories'
     | '/history'
+    | '/plan'
     | '/products'
     | '/weight'
     | '/workouts'
@@ -134,8 +178,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/post-login'
     | '/post-logout'
+    | '/_app/ai-connect'
+    | '/_app/body'
+    | '/_app/body-analysis'
     | '/_app/categories'
     | '/_app/history'
+    | '/_app/plan'
     | '/_app/products'
     | '/_app/weight'
     | '/_app/workouts'
@@ -186,6 +234,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/ai-connect': {
+      id: '/_app/ai-connect'
+      path: '/ai-connect'
+      fullPath: '/ai-connect'
+      preLoaderRoute: typeof AppAiConnectRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/body': {
+      id: '/_app/body'
+      path: '/body'
+      fullPath: '/body'
+      preLoaderRoute: typeof AppBodyRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/body-analysis': {
+      id: '/_app/body-analysis'
+      path: '/body-analysis'
+      fullPath: '/body-analysis'
+      preLoaderRoute: typeof AppBodyAnalysisRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/categories': {
       id: '/_app/categories'
       path: '/categories'
@@ -198,6 +267,13 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof AppHistoryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/plan': {
+      id: '/_app/plan'
+      path: '/plan'
+      fullPath: '/plan'
+      preLoaderRoute: typeof AppPlanRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/products': {
@@ -225,8 +301,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAiConnectRoute: typeof AppAiConnectRoute
+  AppBodyRoute: typeof AppBodyRoute
+  AppBodyAnalysisRoute: typeof AppBodyAnalysisRoute
   AppCategoriesRoute: typeof AppCategoriesRoute
   AppHistoryRoute: typeof AppHistoryRoute
+  AppPlanRoute: typeof AppPlanRoute
   AppProductsRoute: typeof AppProductsRoute
   AppWeightRoute: typeof AppWeightRoute
   AppWorkoutsRoute: typeof AppWorkoutsRoute
@@ -234,8 +314,12 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAiConnectRoute: AppAiConnectRoute,
+  AppBodyRoute: AppBodyRoute,
+  AppBodyAnalysisRoute: AppBodyAnalysisRoute,
   AppCategoriesRoute: AppCategoriesRoute,
   AppHistoryRoute: AppHistoryRoute,
+  AppPlanRoute: AppPlanRoute,
   AppProductsRoute: AppProductsRoute,
   AppWeightRoute: AppWeightRoute,
   AppWorkoutsRoute: AppWorkoutsRoute,

@@ -53,7 +53,7 @@ dotnet ef migrations add <Name> \
     -o Migrations
 ```
 
-Required user-secrets on `FoodDiary.API`: `Auth:AllowedEmails:0`, `ConnectionStrings:Default`, `GoogleAuth:ClientId`, `GoogleAuth:ClientSecret`, optional `Integrations:OpenAI:ApiKey` and `Integrations:OpenAI:Model` (overrides default). Enabling the MCP server locally (`Mcp:Enabled` = `true`) also requires `Mcp:BaseUrl` (`https://localhost:8080`). MCP clients register themselves through `/register`, so `Mcp:Clients:N:ClientId`, `ClientSecret` and `RedirectUri` are needed only to pre-register one. Startup fails naming whichever value is missing or malformed.
+Standalone user-secrets on `FoodDiary.API`: `Auth:AllowedEmails:0`, `ConnectionStrings:Default`, `GoogleAuth:ClientId`, `GoogleAuth:ClientSecret`, optional `Integrations:OpenAI:ApiKey` and `Integrations:OpenAI:Model` (overrides default). Enabling the MCP server locally (`Mcp:Enabled` = `true`) also requires `Mcp:BaseUrl` (`https://localhost:8080`). MCP clients register themselves through `/register`, so `Mcp:Clients:N:ClientId`, `ClientSecret` and `RedirectUri` are needed only to pre-register one. For AtlasApple mode, set `AtlasApple:Enabled`, `AtlasApple:Authority`, `AtlasApple:ClientId`, and `AtlasApple:ClientSecret` and register the exact `/signin-atlasapple` callback as described in the README.
 
 ### E2E (`tests/`)
 
@@ -75,7 +75,7 @@ Backend component tests (`FoodDiary.ComponentTests`, via Testcontainers) and the
 
 ## Architecture notes
 
-- **Auth**: Google OAuth 2.0; backend gates access via `Auth:AllowedEmails` allowlist (this is a personal/self-hosted app, not multi-tenant). OAuth redirect URIs are `https://localhost:8080/signin-google` locally and `https://<your-domain>/signin-google` in production.
+- **Auth**: Standalone mode uses Google OAuth 2.0 gated by `Auth:AllowedEmails` and callback `/signin-google`. AtlasApple mode uses backend code exchange with PKCE, callback `/signin-atlasapple`, and scopes the diary by the validated `gym_owner_id` claim.
 - **API client**: frontend calls backend through RTK Query slices under `entities/*/api` and `features/*/api`. Mocked via MSW when `VITE_APP_MSW_ENABLED=true`.
 - **Database**: PostgreSQL via EF Core. The `FoodDiary.Migrator` console app — not the API — is responsible for applying migrations.
 - **AI integrations**: `FoodDiary.Integrations.OpenAI` power the photo-based note recognition feature. Demo mode (`VITE_APP_DEMO_MODE_ENABLED`) disables features that touch external integrations or the file system.

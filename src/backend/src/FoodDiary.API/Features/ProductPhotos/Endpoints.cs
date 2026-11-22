@@ -1,5 +1,7 @@
 using FoodDiary.API.Features.ProductPhotos.Contracts;
+using FoodDiary.Configuration;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace FoodDiary.API.Features.ProductPhotos;
 
@@ -15,8 +17,12 @@ public static class Endpoints
             string? v,
             HttpResponse response,
             [FromServices] GetProductPhotoHandler handler,
+            [FromServices] IOptions<AtlasAppleAuthOptions> atlas,
             CancellationToken cancellationToken) =>
         {
+            if (atlas.Value.Enabled)
+                response.Headers.CacheControl = "private, no-store";
+
             var photoFile = await handler.Handle(productId, cancellationToken);
 
             if (photoFile is null)
@@ -24,10 +30,12 @@ public static class Endpoints
                 return Results.NotFound();
             }
 
-            // Photo URLs carry the version they were handed out with, so a matching URL never changes content
-            response.Headers.CacheControl = v == photoFile.Version
-                ? "private, max-age=31536000, immutable"
-                : "private, no-cache";
+            if (!atlas.Value.Enabled)
+            {
+                response.Headers.CacheControl = v == photoFile.Version
+                    ? "private, max-age=31536000, immutable"
+                    : "private, no-cache";
+            }
 
             return Results.Bytes(photoFile.Content, "image/jpeg");
         });

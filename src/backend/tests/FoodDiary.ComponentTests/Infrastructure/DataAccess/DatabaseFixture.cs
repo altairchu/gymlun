@@ -19,7 +19,8 @@ public class DatabaseFixture
     public async Task Start()
     {
         await _dbContainer.StartAsync();
-        await MigrationRunner.RunMigrations([ConnectionString]);
+        if (await MigrationRunner.RunMigrations([ConnectionString]) != 0)
+            throw new InvalidOperationException("Could not migrate the component test database.");
     }
 
     public Task Stop()
@@ -39,6 +40,9 @@ public class DatabaseFixture
                               truncate table "Categories" cascade;
                               truncate table "WeightLogs";
                               truncate table "WorkoutSets";
+                              truncate table "GoalSettings";
+                              truncate table "BodyMeasurements";
+                              truncate table "McpConnections";
                               """;
 
         await command.ExecuteScalarAsync();

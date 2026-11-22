@@ -8,7 +8,7 @@ internal class ProductsRepository(FoodDiaryContext context) : IProductsRepositor
 {
     public async Task<Product?> FindById(int id, CancellationToken cancellationToken)
     {
-        return await context.Products.FindAsync([id], cancellationToken);
+        return await context.Products.FirstOrDefaultAsync(product => product.Id == id, cancellationToken);
     }
 
     public Task<Product[]> FindByIds(IReadOnlyCollection<int> ids, CancellationToken cancellationToken)

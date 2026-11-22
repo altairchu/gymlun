@@ -1,5 +1,7 @@
-﻿using FoodDiary.API.ErrorHandling;
+﻿using FoodDiary.API.Authentication;
+using FoodDiary.API.ErrorHandling;
 using FoodDiary.API.Extensions;
+using FoodDiary.API.Features.Gym;
 using FoodDiary.API.Features.KeepAwake;
 using FoodDiary.API.Features.ProductPhotos;
 using FoodDiary.API.Features.Products.Extensions;
@@ -12,6 +14,7 @@ using FoodDiary.API.Options;
 using FoodDiary.Application.Extensions;
 using FoodDiary.Configuration;
 using FoodDiary.Configuration.Extensions;
+using FoodDiary.Domain.Abstractions;
 using FoodDiary.Infrastructure.Extensions;
 using FoodDiary.Integrations.OpenAI.Extensions;
 using Microsoft.AspNetCore.Authentication.Google;
@@ -27,13 +30,16 @@ public class Startup
 {
     private readonly AuthOptions _authOptions;
     private readonly GoogleAuthOptions _googleAuthOptions;
+    private readonly AtlasAppleAuthOptions _atlasOptions;
     private readonly McpOptions _mcpOptions;
     private readonly IConfiguration _configuration;
 
     public Startup(IConfiguration configuration)
     {
         _configuration = configuration;
-        _authOptions = _configuration.GetSection("Auth").Get<AuthOptions>()!;
+        _authOptions = _configuration.GetSection("Auth").Get<AuthOptions>() ?? new AuthOptions();
+        _atlasOptions = _configuration.GetSection(AtlasAppleAuthOptions.SectionName).Get<AtlasAppleAuthOptions>() ?? new AtlasAppleAuthOptions();
+        AtlasAppleAuthentication.ValidateConfiguration(_atlasOptions);
         _googleAuthOptions = _configuration.GetSection("GoogleAuth").Get<GoogleAuthOptions>()!;
         _mcpOptions = _configuration.GetSection(McpOptions.SectionName).Get<McpOptions>()!;
     }
@@ -62,10 +68,34 @@ public class Startup
             configuration.RootPath = "frontend/dist";
         });
 
-        services.AddAuthentication(Constants.AuthenticationSchemes.OAuthGoogle)
+        var authentication = services.AddAuthentication(_atlasOptions.Enabled
+            ? Constants.AuthenticationSchemes.Cookie
+            : Constants.AuthenticationSchemes.OAuthGoogle)
             .AddCookie(Constants.AuthenticationSchemes.Cookie, options =>
             {
-                options.SlidingExpiration = true;
+                options.SlidingExpiration = !_atlasOptions.Enabled;
+                if (_atlasOptions.Enabled)
+                {
+                    options.Cookie.Name = "__Host-GymLunAtlas";
+                    options.Cookie.Path = "/";
+                    options.Events.OnValidatePrincipal = async context =>
+                    {
+                        var principal = context.Principal;
+                        var owner = AtlasAppleAuthentication.GetOwnerId(principal);
+                        if (principal is null || owner <= 0 ||
+                            !AtlasAppleAuthentication.TryGetClaim(principal, AtlasAppleAuthentication.AuthEpochClaim, out var epoch) ||
+                            !await context.HttpContext.RequestServices.GetRequiredService<AtlasAppleSessionValidator>()
+                                .IsCurrentAsync(owner, epoch, context.HttpContext.RequestAborted))
+                        {
+                            context.RejectPrincipal();
+                        }
+                    };
+                    options.Events.OnRedirectToLogin = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        return Task.CompletedTask;
+                    };
+                }
                 options.ExpireTimeSpan = Constants.AuthenticationParameters.CookieLifetime;
                 options.ReturnUrlParameter = "returnUrl";
                 options.Cookie.HttpOnly = true;
@@ -78,8 +108,17 @@ public class Startup
                     context.Response.Redirect("/#/post-logout");
                     return Task.CompletedTask;
                 };
-            })
-            .AddGoogle(Constants.AuthenticationSchemes.OAuthGoogle, options =>
+            });
+
+        if (_atlasOptions.Enabled)
+        {
+            authentication.AddAtlasApple(_atlasOptions);
+            services.AddHttpClient<AtlasAppleSessionValidator>(client => client.Timeout = TimeSpan.FromSeconds(5))
+                .ConfigurePrimaryHttpMessageHandler(AtlasAppleAuthentication.CreateBackchannelHandler);
+        }
+        else
+        {
+            authentication.AddGoogle(Constants.AuthenticationSchemes.OAuthGoogle, options =>
             {
                 options.SignInScheme = Constants.AuthenticationSchemes.Cookie;
                 options.ClientId = _googleAuthOptions.ClientId;
@@ -107,14 +146,23 @@ public class Startup
                     return Task.CompletedTask;
                 };
             });
+        }
 
         services.AddAuthorization(options =>
         {
             options.AddPolicy(Constants.AuthorizationPolicies.GoogleAllowedEmails, builder =>
             {
-                builder.AddAuthenticationSchemes(Constants.AuthenticationSchemes.OAuthGoogle)
-                    .RequireAuthenticatedUser()
-                    .RequireClaim(Constants.ClaimTypes.Email, _authOptions.AllowedEmails);
+                builder.RequireAuthenticatedUser();
+                if (_atlasOptions.Enabled)
+                {
+                    builder.AddAuthenticationSchemes(Constants.AuthenticationSchemes.Cookie)
+                        .RequireAssertion(context => AtlasAppleAuthentication.GetOwnerId(context.User) > 0);
+                }
+                else
+                {
+                    builder.AddAuthenticationSchemes(Constants.AuthenticationSchemes.OAuthGoogle)
+                        .RequireClaim(Constants.ClaimTypes.Email, _authOptions.AllowedEmails);
+                }
             });
         });
 
@@ -131,6 +179,7 @@ public class Startup
         services.AddFoodDiaryMcp(_configuration);
         
         services.AddInfrastructure();
+        services.AddScoped<IFoodDiaryOwner, AuthenticatedDiaryOwner>();
         services.AddOpenAIIntegration(_configuration);
 
         services.AddRepositories();
@@ -140,6 +189,7 @@ public class Startup
         services.AddProductPhotos();
         services.AddWeightLogs();
         services.AddWorkoutSets();
+        services.AddGymFeatures();
         services.AddKeepAwake(_configuration);
     }
 
@@ -160,6 +210,10 @@ public class Startup
         app.UseSerilogRequestLogging();
         app.UseRouting();
         app.UseAuthentication();
+        if (_atlasOptions.Enabled)
+        {
+            app.Use(AtlasAppleAccountContext.ValidateAsync);
+        }
         app.UseAuthorization();
         app.UseHttpsRedirection();
 
@@ -169,6 +223,7 @@ public class Startup
             endpoints.MapProductPhotos();
             endpoints.MapWeightLogs();
             endpoints.MapWorkoutSets();
+            endpoints.MapGymFeatures();
             
             endpoints.MapHealthChecks("/healthz/live", new HealthCheckOptions
             {

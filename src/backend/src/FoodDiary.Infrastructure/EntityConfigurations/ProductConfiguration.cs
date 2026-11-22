@@ -16,23 +16,26 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.HasMany(p => p.Categories)
             .WithMany(c => c.Products)
-            .UsingEntity(
-                "ProductCategories",
-                category => category.HasOne(typeof(Category))
+            .UsingEntity<ProductCategory>(
+                category => category.HasOne<Category>()
                     .WithMany()
-                    .HasForeignKey("CategoryId")
+                    .HasForeignKey(link => new { link.OwnerId, link.CategoryId })
+                    .HasPrincipalKey(c => new { c.OwnerId, c.Id })
+                    .HasConstraintName("FK_ProductCategories_Categories_Owner")
                     .OnDelete(DeleteBehavior.Cascade),
-                product => product.HasOne(typeof(Product))
+                product => product.HasOne<Product>()
                     .WithMany()
-                    .HasForeignKey("ProductId")
+                    .HasForeignKey(link => new { link.OwnerId, link.ProductId })
+                    .HasPrincipalKey(p => new { p.OwnerId, p.Id })
+                    .HasConstraintName("FK_ProductCategories_Products_Owner")
                     .OnDelete(DeleteBehavior.Cascade),
                 join =>
                 {
                     join.ToTable("ProductCategories");
-                    join.HasKey("ProductId", "CategoryId");
+                    join.HasKey(link => new { link.ProductId, link.CategoryId });
                 });
 
-        builder.HasIndex(p => p.Name).IsUnique();
+        builder.HasIndex(p => new { p.OwnerId, p.Name }).IsUnique();
 
         builder.Property(p => p.DefaultQuantity)
             .HasDefaultValue(100);

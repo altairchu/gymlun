@@ -10,7 +10,9 @@ namespace FoodDiary.API.Mcp.Authorization;
 internal sealed class TokenRequestHandler(
     McpTokenService tokenService,
     McpClientRegistry clientRegistry,
-    IOptions<McpOptions> options)
+    IOptions<McpOptions> options,
+    McpGrantValidator validator,
+    McpConnectionStore connections)
 {
     [PublicAPI]
     private sealed record TokenResponse(
@@ -45,13 +47,16 @@ internal sealed class TokenRequestHandler(
 
         return SingleValue(form, "grant_type") switch
         {
-            "authorization_code" => ExchangeAuthorizationCode(form, client),
-            "refresh_token" => RefreshAccessToken(form, client),
+            "authorization_code" => await ExchangeAuthorizationCode(form, client, context.RequestAborted),
+            "refresh_token" => await RefreshAccessToken(form, client, context.RequestAborted),
             _ => Error("unsupported_grant_type", "grant_type must be authorization_code or refresh_token")
         };
     }
 
-    private IResult ExchangeAuthorizationCode(IFormCollection form, RegisteredClient client)
+    private async Task<IResult> ExchangeAuthorizationCode(
+        IFormCollection form,
+        RegisteredClient client,
+        CancellationToken cancellationToken)
     {
         var grant = tokenService.RedeemAuthorizationCode(SingleValue(form, "code") ?? string.Empty);
 
@@ -75,21 +80,45 @@ internal sealed class TokenRequestHandler(
             return Error("invalid_target", "resource does not match the authorization request");
         }
 
-        var tokens = tokenService.IssueTokens(grant.Access);
+        if (!await validator.CanUse(grant.Access, cancellationToken))
+        {
+            return Error("invalid_grant", "The connection has been revoked or the account is no longer active");
+        }
 
+        var tokens = tokenService.IssueTokens(grant.Access);
         return TokensIssued(tokens.AccessToken, tokens.RefreshToken, grant.Access.Scope);
     }
 
-    private IResult RefreshAccessToken(IFormCollection form, RegisteredClient client)
+    private async Task<IResult> RefreshAccessToken(
+        IFormCollection form,
+        RegisteredClient client,
+        CancellationToken cancellationToken)
     {
         var access = tokenService.ValidateRefreshToken(SingleValue(form, "refresh_token") ?? string.Empty);
 
-        if (access is null || access.ClientId != client.ClientId)
+        if (access is null || access.ClientId != client.ClientId || !await validator.CanUse(access, cancellationToken))
         {
             return Error("invalid_grant", "Refresh token is invalid or expired");
         }
 
-        return TokensIssued(tokenService.IssueAccessToken(access), refreshToken: null, access.Scope);
+        if (SingleValue(form, "resource") is { } resource && resource != access.Resource)
+        {
+            return Error("invalid_target", "resource does not match the authorization request");
+        }
+
+        if (!validator.UsesAtlas)
+        {
+            return TokensIssued(tokenService.IssueAccessToken(access), refreshToken: null, access.Scope);
+        }
+
+        var rotated = await connections.RotateRefresh(access, cancellationToken);
+        if (rotated is null)
+        {
+            return Error("invalid_grant", "Refresh token was already used or the connection was revoked");
+        }
+
+        var tokens = tokenService.IssueTokens(rotated);
+        return TokensIssued(tokens.AccessToken, tokens.RefreshToken, rotated.Scope);
     }
 
     private IResult TokensIssued(string accessToken, string? refreshToken, string scope)

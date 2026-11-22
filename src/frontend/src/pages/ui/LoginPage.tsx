@@ -1,4 +1,4 @@
-import { Box, Container, Paper, Stack } from '@mui/material';
+import { Alert, Box, Container, Paper, Stack } from '@mui/material';
 import { type FC } from 'react';
 import { DemoModeWarning, type NavigateToHref, SignInForm } from '@/features/auth';
 import { UpdateAppBanner } from '@/features/updateApp';
@@ -8,9 +8,10 @@ import { AppName, Center } from '@/shared/ui';
 interface Props {
   returnUrl: string;
   navigate: NavigateToHref;
+  atlasLoginFailed?: boolean;
 }
 
-export const LoginPage: FC<Props> = ({ returnUrl, navigate }) => {
+export const LoginPage: FC<Props> = ({ returnUrl, navigate, atlasLoginFailed = false }) => {
   return (
     <>
       <Box
@@ -43,6 +44,9 @@ export const LoginPage: FC<Props> = ({ returnUrl, navigate }) => {
             }}
           >
             <AppName />
+            {atlasLoginFailed && (
+              <Alert severity="error">未能完成 AtlasApple 登入，請再試一次。</Alert>
+            )}
             <SignInForm returnUrl={returnUrl} navigate={navigate} />
           </Paper>
         </Container>

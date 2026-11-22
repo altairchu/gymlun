@@ -2,11 +2,16 @@ using FoodDiary.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FoodDiary.Migrator;
 
 public class FoodDiaryContextFactory(ILoggerFactory loggerFactory) : IDesignTimeDbContextFactory<FoodDiaryContext>
 {
+    public FoodDiaryContextFactory() : this(NullLoggerFactory.Instance)
+    {
+    }
+
     public FoodDiaryContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder()

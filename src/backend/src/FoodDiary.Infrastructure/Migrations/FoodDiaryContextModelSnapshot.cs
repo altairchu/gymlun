@@ -22,6 +22,48 @@ namespace FoodDiary.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("FoodDiary.Domain.Entities.BodyMeasurement", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Data")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<long>("OwnerId")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal?>("WeightKg")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId", "Date", "Id");
+
+                    b.ToTable("BodyMeasurements", t =>
+                        {
+                            t.HasCheckConstraint("CK_BodyMeasurements_OwnerId", "\"OwnerId\" >= 0");
+                        });
+                });
+
             modelBuilder.Entity("FoodDiary.Domain.Entities.Category", b =>
                 {
                     b.Property<int>("Id")
@@ -34,12 +76,117 @@ namespace FoodDiary.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<long>("OwnerId")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
+
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("OwnerId", "Name")
                         .IsUnique();
 
-                    b.ToTable("Categories", (string)null);
+                    b.ToTable("Categories", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Categories_OwnerId", "\"OwnerId\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("FoodDiary.Domain.Entities.GoalSettings", b =>
+                {
+                    b.Property<long>("OwnerId")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
+
+                    b.Property<decimal?>("ActivityFactor")
+                        .HasColumnType("numeric");
+
+                    b.Property<int?>("AgeYears")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EatingApproach")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Goal")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<decimal?>("HeightCm")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("ProteinPerKg")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("Sex")
+                        .HasMaxLength(1)
+                        .HasColumnType("character varying(1)");
+
+                    b.Property<decimal?>("TargetCarbsG")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("TargetFatG")
+                        .HasColumnType("numeric");
+
+                    b.Property<int?>("TargetKcal")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("TargetWeightKg")
+                        .HasColumnType("numeric");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("OwnerId");
+
+                    b.ToTable("GoalSettings", t =>
+                        {
+                            t.HasCheckConstraint("CK_GoalSettings_OwnerId", "\"OwnerId\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("FoodDiary.Domain.Entities.McpConnection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("AuthorizedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ClientName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<long>("OwnerId")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
+
+                    b.Property<long>("RefreshVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId", "RevokedAt");
+
+                    b.ToTable("McpConnections", t =>
+                        {
+                            t.HasCheckConstraint("CK_McpConnections_OwnerId", "\"OwnerId\" >= 0");
+                        });
                 });
 
             modelBuilder.Entity("FoodDiary.Domain.Entities.Note", b =>
@@ -61,6 +208,12 @@ namespace FoodDiary.Infrastructure.Migrations
                     b.Property<int>("MealType")
                         .HasColumnType("integer");
 
+                    b.Property<long>("OwnerId")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
+
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
 
@@ -72,11 +225,14 @@ namespace FoodDiary.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Date");
+                    b.HasIndex("OwnerId", "Date");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("OwnerId", "ProductId");
 
-                    b.ToTable("Notes", (string)null);
+                    b.ToTable("Notes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Notes_OwnerId", "\"OwnerId\" >= 0");
+                        });
                 });
 
             modelBuilder.Entity("FoodDiary.Domain.Entities.Product", b =>
@@ -110,6 +266,12 @@ namespace FoodDiary.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<long>("OwnerId")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
+
                     b.Property<DateTimeOffset?>("PhotoUpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -127,10 +289,13 @@ namespace FoodDiary.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("OwnerId", "Name")
                         .IsUnique();
 
-                    b.ToTable("Products", (string)null);
+                    b.ToTable("Products", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Products_OwnerId", "\"OwnerId\" >= 0");
+                        });
                 });
 
             modelBuilder.Entity("FoodDiary.Domain.Entities.ProductPhoto", b =>
@@ -142,22 +307,43 @@ namespace FoodDiary.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("bytea");
 
+                    b.Property<long>("OwnerId")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
+
                     b.HasKey("ProductId");
 
-                    b.ToTable("ProductPhotos", (string)null);
+                    b.HasIndex("OwnerId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("ProductPhotos", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ProductPhotos_OwnerId", "\"OwnerId\" >= 0");
+                        });
                 });
 
             modelBuilder.Entity("FoodDiary.Domain.WeightTracking.WeightLog", b =>
                 {
+                    b.Property<long>("OwnerId")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
+
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
                     b.Property<decimal>("Weight")
                         .HasColumnType("numeric");
 
-                    b.HasKey("Date");
+                    b.HasKey("OwnerId", "Date");
 
-                    b.ToTable("WeightLogs");
+                    b.ToTable("WeightLogs", t =>
+                        {
+                            t.HasCheckConstraint("CK_WeightLogs_OwnerId", "\"OwnerId\" >= 0");
+                        });
                 });
 
             modelBuilder.Entity("FoodDiary.Domain.Workouts.WorkoutSet", b =>
@@ -176,6 +362,12 @@ namespace FoodDiary.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<long>("OwnerId")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
+
                     b.Property<int>("Reps")
                         .HasColumnType("integer");
 
@@ -185,9 +377,38 @@ namespace FoodDiary.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Date");
+                    b.HasIndex("OwnerId", "Date");
 
-                    b.ToTable("WorkoutSets", (string)null);
+                    b.ToTable("WorkoutSets", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_WorkoutSets_OwnerId", "\"OwnerId\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("FoodDiary.Infrastructure.EntityConfigurations.ProductCategory", b =>
+                {
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("OwnerId")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.None);
+
+                    b.HasKey("ProductId", "CategoryId");
+
+                    b.HasIndex("OwnerId", "CategoryId");
+
+                    b.HasIndex("OwnerId", "ProductId");
+
+                    b.ToTable("ProductCategories", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ProductCategories_OwnerId", "\"OwnerId\" >= 0");
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
@@ -209,28 +430,15 @@ namespace FoodDiary.Infrastructure.Migrations
                     b.ToTable("DataProtectionKeys");
                 });
 
-            modelBuilder.Entity("ProductCategories", b =>
-                {
-                    b.Property<int>("ProductId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("CategoryId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("ProductId", "CategoryId");
-
-                    b.HasIndex("CategoryId");
-
-                    b.ToTable("ProductCategories", (string)null);
-                });
-
             modelBuilder.Entity("FoodDiary.Domain.Entities.Note", b =>
                 {
                     b.HasOne("FoodDiary.Domain.Entities.Product", "Product")
                         .WithMany("Notes")
-                        .HasForeignKey("ProductId")
+                        .HasForeignKey("OwnerId", "ProductId")
+                        .HasPrincipalKey("OwnerId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_Notes_Products_Owner");
 
                     b.Navigation("Product");
                 });
@@ -239,24 +447,30 @@ namespace FoodDiary.Infrastructure.Migrations
                 {
                     b.HasOne("FoodDiary.Domain.Entities.Product", null)
                         .WithOne("Photo")
-                        .HasForeignKey("FoodDiary.Domain.Entities.ProductPhoto", "ProductId")
+                        .HasForeignKey("FoodDiary.Domain.Entities.ProductPhoto", "OwnerId", "ProductId")
+                        .HasPrincipalKey("FoodDiary.Domain.Entities.Product", "OwnerId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_ProductPhotos_Products_Owner");
                 });
 
-            modelBuilder.Entity("ProductCategories", b =>
+            modelBuilder.Entity("FoodDiary.Infrastructure.EntityConfigurations.ProductCategory", b =>
                 {
                     b.HasOne("FoodDiary.Domain.Entities.Category", null)
                         .WithMany()
-                        .HasForeignKey("CategoryId")
+                        .HasForeignKey("OwnerId", "CategoryId")
+                        .HasPrincipalKey("OwnerId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_ProductCategories_Categories_Owner");
 
                     b.HasOne("FoodDiary.Domain.Entities.Product", null)
                         .WithMany()
-                        .HasForeignKey("ProductId")
+                        .HasForeignKey("OwnerId", "ProductId")
+                        .HasPrincipalKey("OwnerId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_ProductCategories_Products_Owner");
                 });
 
             modelBuilder.Entity("FoodDiary.Domain.Entities.Product", b =>

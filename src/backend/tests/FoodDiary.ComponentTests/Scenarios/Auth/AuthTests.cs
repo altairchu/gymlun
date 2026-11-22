@@ -27,4 +27,15 @@ public class AuthTests(InfrastructureFixture infrastructure) : BaseTest<AuthCont
             c => c.When_client_checks_auth_status(),
             c => c.Then_user_is_authenticated());
     }
+
+    [Scenario]
+    public Task AtlasApple_sign_in_binds_an_active_account_and_rejects_a_stale_or_revoked_session()
+    {
+        return CtxRunner.RunScenarioAsync(
+            c => c.Given_atlas_apple_is_the_authentication_provider(),
+            c => c.When_browser_signs_in_through_atlas_apple(),
+            c => c.Then_client_receives_the_current_atlas_account(),
+            c => c.Then_a_stale_account_context_cannot_read_the_new_accounts_diary(),
+            c => c.Then_revoking_the_atlas_session_revokes_diary_access());
+    }
 }

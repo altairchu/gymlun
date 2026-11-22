@@ -4,13 +4,14 @@ import { NutritionValueIcon, productModel } from '@/entities/product';
 
 interface Props {
   nutritionValues: productModel.NutritionValues;
+  targets?: Partial<Record<productModel.NutritionValueType, number | null>>;
 }
 
 const NUTRIENTS: productModel.NutritionValueType[] = ['protein', 'fats', 'carbs', 'sugar', 'salt'];
 
 const roundToTenths = (value: number): number => Math.round(value * 10) / 10;
 
-export const NutritionSummaryWidget: FC<Props> = ({ nutritionValues }) => {
+export const NutritionSummaryWidget: FC<Props> = ({ nutritionValues, targets }) => {
   const calories = productModel.nutritionValuesConfig.calories;
 
   return (
@@ -44,10 +45,16 @@ export const NutritionSummaryWidget: FC<Props> = ({ nutritionValues }) => {
         <Typography variant="body2" component="span" color="textSecondary">
           {calories.unit}
         </Typography>
+        {targets?.calories != null ? (
+          <Typography variant="caption" component="span" color="textSecondary">
+            / {targets.calories} kcal 目標
+          </Typography>
+        ) : null}
       </Stack>
       {NUTRIENTS.map(type => {
         const { shortLabel, unit, color } = productModel.nutritionValuesConfig[type];
         const value = nutritionValues[type];
+        const target = targets?.[type];
 
         return (
           <Box key={type} sx={{ minWidth: 0 }}>
@@ -70,6 +77,11 @@ export const NutritionSummaryWidget: FC<Props> = ({ nutritionValues }) => {
                 {unit}
               </Typography>
             </Typography>
+            {target != null ? (
+              <Typography variant="caption" component="div" color="textSecondary" noWrap>
+                / {roundToTenths(target)} {unit}
+              </Typography>
+            ) : null}
           </Box>
         );
       })}
