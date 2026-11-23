@@ -5,7 +5,10 @@ import { LoginPage } from '@/pages/ui/LoginPage';
 import { AppLoader } from '@/shared/ui';
 
 export const Route = createFileRoute('/login')({
-  validateSearch: z.object({ returnUrl: returnUrlSchema }),
+  validateSearch: z.object({
+    returnUrl: returnUrlSchema,
+    atlasLoginFailed: z.boolean().optional().catch(undefined),
+  }),
   staticData: { appBar: null },
   beforeLoad: async ({ context }) => {
     const authStatusQueryPromise = context.store.dispatch(
@@ -28,8 +31,14 @@ export const Route = createFileRoute('/login')({
 });
 
 function LoginRoute() {
-  const { returnUrl = '/' } = Route.useSearch();
+  const { returnUrl = '/', atlasLoginFailed = false } = Route.useSearch();
   const router = useRouter();
 
-  return <LoginPage returnUrl={returnUrl} navigate={router.history.push} />;
+  return (
+    <LoginPage
+      returnUrl={returnUrl}
+      navigate={router.history.push}
+      atlasLoginFailed={atlasLoginFailed}
+    />
+  );
 }

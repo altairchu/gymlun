@@ -1,6 +1,8 @@
 using System.Net.Http.Headers;
+using System.Globalization;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using FoodDiary.API.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
@@ -12,27 +14,29 @@ internal sealed class McpAccessTokenHandler(
     ILoggerFactory logger,
     UrlEncoder encoder,
     McpTokenService tokenService,
-    IOptions<McpOptions> mcpOptions) : AuthenticationHandler<AuthenticationSchemeOptions>(schemeOptions, logger, encoder)
+    IOptions<McpOptions> mcpOptions,
+    McpGrantValidator validator) : AuthenticationHandler<AuthenticationSchemeOptions>(schemeOptions, logger, encoder)
 {
     public const string SchemeName = "Bearer";
+    public const string ContextAccessClaim = "gym_mcp_access_id";
 
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         if (!AuthenticationHeaderValue.TryParse(Request.Headers.Authorization, out var authorization) ||
             !authorization.Scheme.Equals(SchemeName, StringComparison.OrdinalIgnoreCase) ||
             authorization.Parameter is null)
         {
-            return Task.FromResult(AuthenticateResult.NoResult());
+            return AuthenticateResult.NoResult();
         }
 
         var grant = tokenService.ValidateAccessToken(authorization.Parameter);
 
-        if (grant is null)
+        if (grant is null || !await validator.CanUse(grant, Context.RequestAborted))
         {
-            return Task.FromResult(AuthenticateResult.Fail("Access token is invalid, expired or issued for another resource"));
+            return AuthenticateResult.Fail("Access token is invalid, expired or revoked");
         }
 
-        Claim[] claims =
+        List<Claim> claims =
         [
             new(Constants.ClaimTypes.Email, grant.Email),
             ..grant.Scope
@@ -40,10 +44,18 @@ internal sealed class McpAccessTokenHandler(
                 .Select(scope => new Claim(McpScopes.ClaimType, scope))
         ];
 
+        if (validator.UsesAtlas)
+        {
+            if (!grant.AccessId.HasValue) return AuthenticateResult.Fail("Access token has no context identifier");
+            claims.Add(new Claim(AtlasAppleAuthentication.OwnerClaim, grant.OwnerId!.Value.ToString(CultureInfo.InvariantCulture)));
+            claims.Add(new Claim(AtlasAppleAuthentication.AuthEpochClaim, grant.AtlasAuthEpoch!.Value.ToString(CultureInfo.InvariantCulture)));
+            claims.Add(new Claim(ContextAccessClaim, grant.AccessId.Value.ToString("N")));
+        }
+
         var identity = new ClaimsIdentity(claims, Scheme.Name);
         var ticket = new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name);
 
-        return Task.FromResult(AuthenticateResult.Success(ticket));
+        return AuthenticateResult.Success(ticket);
     }
 
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)

@@ -8,9 +8,12 @@ import {
 } from '@tanstack/react-router';
 import { authApi, useAuthStatusCheckEffect } from '@/features/auth';
 import { UpdateAppBanner } from '@/features/updateApp';
+import { verifyGymAccount } from '@/shared/api/expectedAccount';
 import { APP_BAR_HEIGHT_SM, APP_BAR_HEIGHT_XS } from '@/shared/constants';
 import { AppLoader } from '@/shared/ui';
+import { GymNavigation } from '@/widgets/GymNavigation/ui/GymNavigation';
 import { Navigation } from '@/widgets/Navigation';
+import './-gymWorkspace.css';
 
 export const Route = createFileRoute('/_app')({
   staticData: { appBar: null },
@@ -24,6 +27,10 @@ export const Route = createFileRoute('/_app')({
 
       if (!authStatusQuery.data?.isAuthenticated) {
         throw redirect({ to: '/login', search: { returnUrl: location.href } });
+      }
+
+      if (!verifyGymAccount(authStatusQuery.data.accountId)) {
+        window.location.reload();
       }
     } finally {
       authStatusQueryPromise.unsubscribe();
@@ -63,7 +70,12 @@ function AuthenticatedLayout() {
         />
       </AppBar>
       <UpdateAppBanner withAppBar />
-      <Outlet />
+      <div className="gym-workspace">
+        <GymNavigation />
+        <main className="gym-workspace-content">
+          <Outlet />
+        </main>
+      </div>
     </>
   );
 }

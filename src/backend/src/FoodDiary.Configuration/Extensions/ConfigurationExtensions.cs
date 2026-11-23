@@ -9,6 +9,7 @@ public static class ConfigurationExtensions
     {
         services.Configure<AppOptions>(configuration.GetSection("App"));
         services.Configure<AuthOptions>(configuration.GetSection("Auth"));
+        services.Configure<AtlasAppleAuthOptions>(configuration.GetSection(AtlasAppleAuthOptions.SectionName));
         services.Configure<GoogleAuthOptions>(configuration.GetSection("GoogleAuth"));
     }
 }

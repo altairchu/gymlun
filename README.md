@@ -20,7 +20,7 @@ What it doesn't do:
 - No calorie or macro goals
 - No exercise or activity tracking
 - No syncing with fitness trackers
-- One person per install; no social or sharing features
+- Standalone installs use one private diary. AtlasApple mode gives each account its own diary.
 - No app-store app — install it from the browser as a [PWA](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps)
 
 ## Quick start
@@ -71,6 +71,17 @@ Connect Claude, or any other compatible MCP client, to your Food Diary and ask i
 ## Self-hosting
 
 The [deployment guide](docs/guide/deployment.md) covers running Food Diary on a VPS with Docker Compose or on a container platform, the full configuration reference, updating, and backups.
+
+## AtlasApple sign-in
+
+For deployments linked to AtlasApple, set `AtlasApple__Enabled=true` and configure
+`AtlasApple__Authority` as the trusted HTTPS origin (for example, `https://atlasapple.space`).
+Set `AtlasApple__ClientId` and `AtlasApple__ClientSecret` to the fixed registered GymLun client.
+Keep the secret in runtime configuration. Register this deployment's exact HTTPS URL ending in
+`/signin-atlasapple` on AtlasApple and proxy that callback to the GymLun API on the public origin.
+
+AtlasApple mode uses the AtlasApple account ID for diary ownership and validates session
+revocation against AtlasApple. Standalone mode continues to use the configured Google allowlist.
 
 ## Browser support
 

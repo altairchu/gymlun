@@ -1,9 +1,12 @@
-﻿using FoodDiary.Domain.Enums;
+﻿using FoodDiary.Domain.Abstractions;
+using FoodDiary.Domain.Enums;
 
 namespace FoodDiary.Domain.Entities;
 
-public class Note
+public class Note : IDiaryOwned
 {
+    public long OwnerId { get; set; } = IDiaryOwned.UnassignedOwnerId;
+
     public int Id { get; set; }
     public DateOnly Date { get; set; }
     public TimeOnly Time { get; set; }

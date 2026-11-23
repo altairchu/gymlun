@@ -8,6 +8,6 @@ public class WeightLogConfiguration : IEntityTypeConfiguration<WeightLog>
 {
     public void Configure(EntityTypeBuilder<WeightLog> builder)
     {
-        builder.HasKey(wl => wl.Date);
+        builder.HasKey(wl => new { wl.OwnerId, wl.Date });
     }
 }

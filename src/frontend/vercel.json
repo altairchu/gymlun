@@ -7,6 +7,7 @@
   "rewrites": [
     { "source": "/api/:path*", "destination": "https://gymlun-api.onrender.com/api/:path*" },
     { "source": "/signin-google", "destination": "https://gymlun-api.onrender.com/signin-google" },
+    { "source": "/signin-atlasapple", "destination": "https://gymlun-api.onrender.com/signin-atlasapple" },
     { "source": "/mcp", "destination": "https://gymlun-api.onrender.com/mcp" },
     { "source": "/authorize", "destination": "https://gymlun-api.onrender.com/authorize" },
     { "source": "/token", "destination": "https://gymlun-api.onrender.com/token" },

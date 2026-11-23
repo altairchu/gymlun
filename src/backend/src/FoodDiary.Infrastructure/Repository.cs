@@ -27,7 +27,7 @@ public class Repository<TEntity>(DbContext context) : IRepository<TEntity>
 
     public virtual Task<TEntity> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
-        return TargetDbSet.FindAsync(new object[] { id }, cancellationToken).AsTask()!;
+        return GetQuery().FirstOrDefaultAsync(entity => EF.Property<int>(entity, "Id") == id, cancellationToken)!;
     }
 
     public virtual Task<int> CountByQueryAsync(IQueryable<TEntity> query, CancellationToken cancellationToken)

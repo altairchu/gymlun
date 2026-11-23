@@ -6,6 +6,8 @@ import { PageContainer } from '@/shared/ui';
 import { WeightChart } from '@/widgets/WeightChart';
 import { WeightLogsList } from '@/widgets/WeightLogsList';
 
+import { BodyNavigation } from './gym/BodyNavigation';
+
 interface Props {
   weightLogsRequest: GetWeightLogsRequest;
 }
@@ -16,6 +18,7 @@ export const WeightPage: FC<Props> = ({ weightLogsRequest }) => {
 
   return (
     <PageContainer>
+      <BodyNavigation />
       <Typography variant="h6" component="h2">
         {from} — {to}
       </Typography>

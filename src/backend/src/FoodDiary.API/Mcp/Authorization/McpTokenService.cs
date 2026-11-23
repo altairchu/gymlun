@@ -6,7 +6,16 @@ using Microsoft.Extensions.Options;
 
 namespace FoodDiary.API.Mcp.Authorization;
 
-public sealed record AccessGrant(string ClientId, string Email, string Scope, string Resource);
+public sealed record AccessGrant(
+    string ClientId,
+    string Email,
+    string Scope,
+    string Resource,
+    long? OwnerId = null,
+    long? AtlasAuthEpoch = null,
+    Guid? ConnectionId = null,
+    long RefreshVersion = 0,
+    Guid? AccessId = null);
 
 public sealed record AuthorizationCodeGrant(AccessGrant Access, string RedirectUri, string CodeChallenge);
 
@@ -65,13 +74,33 @@ public sealed class McpTokenService(
         return payload.Grant;
     }
 
-    public string IssueConsentTicket(ConsentRequest consent) =>
-        Protect(_consentTicketProtector, new ConsentTicketPayload(consent, timeProvider.GetUtcNow() + ConsentTicketLifetime));
+    public string IssueConsentTicket(ConsentRequest consent)
+    {
+        var ticketId = Guid.NewGuid();
+        memoryCache.Set(ticketId, true, ConsentTicketLifetime);
+        return Protect(_consentTicketProtector,
+            new ConsentTicketPayload(ticketId, consent, timeProvider.GetUtcNow() + ConsentTicketLifetime));
+    }
 
     public ConsentRequest? RedeemConsentTicket(string consentTicket)
     {
         var payload = Unprotect<ConsentTicketPayload>(_consentTicketProtector, consentTicket);
-        return payload is null || IsExpired(payload.ExpiresAt) ? null : payload.Consent;
+        if (payload is null || IsExpired(payload.ExpiresAt))
+        {
+            return null;
+        }
+
+        lock (_authorizationCodeRedemptionLock)
+        {
+            if (!memoryCache.TryGetValue(payload.TicketId, out _))
+            {
+                return null;
+            }
+
+            memoryCache.Remove(payload.TicketId);
+        }
+
+        return payload.Consent;
     }
 
     public McpTokens IssueTokens(AccessGrant grant) => new(
@@ -79,7 +108,9 @@ public sealed class McpTokenService(
         Protect(_refreshTokenProtector, new TokenPayload(grant, timeProvider.GetUtcNow() + _options.RefreshTokenLifetime)));
 
     public string IssueAccessToken(AccessGrant grant) =>
-        Protect(_accessTokenProtector, new TokenPayload(grant, timeProvider.GetUtcNow() + _options.AccessTokenLifetime));
+        Protect(_accessTokenProtector, new TokenPayload(
+            grant.OwnerId.HasValue ? grant with { AccessId = Guid.NewGuid() } : grant,
+            timeProvider.GetUtcNow() + _options.AccessTokenLifetime));
 
     public AccessGrant? ValidateAccessToken(string accessToken)
     {
@@ -96,7 +127,9 @@ public sealed class McpTokenService(
     public AccessGrant? ValidateRefreshToken(string refreshToken)
     {
         var payload = Unprotect<TokenPayload>(_refreshTokenProtector, refreshToken);
-        return payload is null || IsExpired(payload.ExpiresAt) ? null : payload.Grant;
+        return payload is null || IsExpired(payload.ExpiresAt) || payload.Grant.Resource != _options.McpResource
+            ? null
+            : payload.Grant;
     }
 
     private bool IsExpired(DateTimeOffset expiresAt) => timeProvider.GetUtcNow() >= expiresAt;
@@ -122,5 +155,5 @@ public sealed class McpTokenService(
 
     private sealed record TokenPayload(AccessGrant Grant, DateTimeOffset ExpiresAt);
 
-    private sealed record ConsentTicketPayload(ConsentRequest Consent, DateTimeOffset ExpiresAt);
+    private sealed record ConsentTicketPayload(Guid TicketId, ConsentRequest Consent, DateTimeOffset ExpiresAt);
 }

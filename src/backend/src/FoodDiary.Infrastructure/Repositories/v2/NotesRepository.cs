@@ -36,7 +36,7 @@ public class NotesRepository(FoodDiaryContext context) : INotesRepository
 
     public async Task<Note?> FindById(int id, CancellationToken cancellationToken)
     {
-        return await context.Notes.FindAsync([id], cancellationToken);
+        return await context.Notes.FirstOrDefaultAsync(note => note.Id == id, cancellationToken);
     }
 
     public async Task<IReadOnlyCollection<Note>> FindByIds(IReadOnlyCollection<int> ids, CancellationToken cancellationToken)

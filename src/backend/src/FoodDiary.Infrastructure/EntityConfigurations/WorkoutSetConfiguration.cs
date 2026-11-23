@@ -20,6 +20,6 @@ public class WorkoutSetConfiguration : IEntityTypeConfiguration<WorkoutSet>
         builder.Property(s => s.WeightKg)
             .HasPrecision(6, 2);
 
-        builder.HasIndex(s => s.Date);
+        builder.HasIndex(s => new { s.OwnerId, s.Date });
     }
 }

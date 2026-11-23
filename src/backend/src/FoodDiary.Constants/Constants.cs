@@ -5,6 +5,7 @@ public static class Constants
     public static class AuthenticationSchemes
     {
         public const string OAuthGoogle = "oauth-google";
+        public const string AtlasApple = "AtlasApple";
         public const string Cookie = "fd-auth";
     }
 

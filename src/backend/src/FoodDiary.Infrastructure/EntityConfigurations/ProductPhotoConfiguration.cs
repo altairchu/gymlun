@@ -16,7 +16,9 @@ public class ProductPhotoConfiguration : IEntityTypeConfiguration<ProductPhoto>
 
         builder.HasOne<Product>()
             .WithOne(p => p.Photo)
-            .HasForeignKey<ProductPhoto>(p => p.ProductId)
+            .HasForeignKey<ProductPhoto>(p => new { p.OwnerId, p.ProductId })
+            .HasPrincipalKey<Product>(p => new { p.OwnerId, p.Id })
+            .HasConstraintName("FK_ProductPhotos_Products_Owner")
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

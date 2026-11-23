@@ -1,10 +1,14 @@
-﻿namespace FoodDiary.Domain.Entities;
+﻿using FoodDiary.Domain.Abstractions;
+
+namespace FoodDiary.Domain.Entities;
 
 /// <summary>
 /// Category of product (or dish) stored in diary
 /// </summary>
-public class Category
+public class Category : IDiaryOwned
 {
+    public long OwnerId { get; set; } = IDiaryOwned.UnassignedOwnerId;
+
     public int Id { get; set; }
 
     /// <summary>
